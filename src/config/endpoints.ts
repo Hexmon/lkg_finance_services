@@ -1,0 +1,57 @@
+export const RETAILER_ENDPOINTS = {
+    RETAILER_BBPS: {
+        BBPS_ONLINE: {
+            BILL_FETCH: {
+                CIRCLE_LIST: "/secure/bbps/circle-list",
+                CATEGORY_LIST: "/secure/bbps/bbps-category-list",
+                BILLER_LIST: "/secure/bbps/biller-list",
+                BILL_FETCH: "/secure/bbps/bills/bill-fetch",
+                BILLER_INFO: "/secure/bbps/bills/biller-info",
+            },
+            MULTIPLE_BILLS: {
+                ADD_ONLINE_BILLER: "/secure/bbps/add-online-biller",
+                ONLINE_BILLER_LIST: "/secure/bbps/online-biller-list",
+                UPDATE_ONLINE_BILLER: "/secure/bbps/update-online-biller",
+                REMOVE_ONLINE_BILLER: "/secure/bbps/remove-online-biller",
+                ONLINE_BILL_PROCEED: "/secure/bbps/online-bill-proceed",
+            },
+            BILL_AVENUE: {
+                BILL_PAYMENT: "/secure/bbps/bills/bill-payment",
+                TXN_STATUS: "/secure/bbps/bills/txn-status",
+                COMPLAINT_REGISTER: "/secure/bbps/bills/complaint-Reg",
+                TRACK_COMPLAINT: "/secure/bbps/bills/track-complaint",
+                BILL_VALIDATION: "/secure/bbps/billavenue/bill-validation",
+                ALL_PLANS: "/secure/bbps/bills/all-plans",
+            },
+        }
+    }
+}
+
+export const AUTHERIZATION_ENDPOINT = {
+    AUTH_LOGIN_PATH: '/secure/login',
+    AUTH_LOGOUT_PATH: '/secure/logout',
+    AUTH_CHANGE_PASSWORD_PATH: '/secure/change-password',
+    AUTH_RESET_PASSWORD_PATH: '/secure/reset-password ',
+    AUTH_VERIFY_OTP_PASSWORD_PATH: '/secure/verify-otp-password',
+    AUTH_FORGOT_USERNAME_PATH: '/secure/forgot-username',
+    AUTH_VERIFY_OTP_USERNAME_PATH: '/secure/verify-otp',
+    AUTH_FORGOT_PASSWORD_PATH: '/secure/forgot-password',
+    AUTH_SEND_OTP_PATH: '/secure/create',
+    AUTH_VERIFY_EMAIL_OTP_PATH: '/secure/verify-otp',
+    AUTH_GENERATE_EMAIL_OTP_PATH: '/secure/generate-email-otp',
+    AUTH_REGISTER_PATH: '/secure/register',
+    AUTH_AADHAAR_OTP_GENERATE_PATH: '/secure/aadhar-otp-generate',
+    AUTH_AADHAAR_OTP_VERIFY_PATH: '/secure/otp-verify',
+    AUTH_PAN_VERIFY_PATH: '/secure/pan-verify',
+    PROFILE_GET_PATH: '/secure/profile',
+    USER_PERMISSIONS_PATH: '/secure/get-user-permissions',
+    AUTH_SEND_DEVICE_OTP_PATH: '/secure/send-otp',
+    AUTH_VERIFY_ACCOUNT_OTP_PATH: '/secure/verify-otp',
+    AUTH_VERIFY_ACCOUNT_OTP_PATH_ALL: '/secure/verify-otp-all',
+    ADDRESS_PATH: '/secure/address',
+    ACCOUNT_UPGRADE_PATH: '/secure/account-upgrade',
+    AUTH_REQUEST_LOG_PATH: '/secure/request_log',
+    AUTH_SUPPORT_CREATE_TICKET_PATH: '/secure/create-ticket',
+    AUTH_SUPPORT_TICKETS_PATH: '/secure/tickets',
+    AUTH_HEALTH_PATH: '/health',
+}

@@ -1,2 +1,5 @@
-API doc : https://documenter.getpostman.com/view/25003912/2sB2iwHFiu#60cd8867-a4f0-4ae9-b421-5eb66270d6aa 
-figma : https://www.figma.com/design/g2NgZiendKReQq5FbL7w7l/LKG-PROJECT?node-id=553-10327&t=w0aGcG5oZAyg23MA-0
+<ul>
+<li>API doc : https://documenter.getpostman.com/view/25003912/2sB2iwHFiu#60cd8867-a4f0-4ae9-b421-5eb66270d6aa </li>
+<li>figma : https://www.figma.com/design/g2NgZiendKReQq5FbL7w7l/LKG-PROJECT?node-id=553-10327&t=w0aGcG5oZAyg23MA-0</li>
+<li>notion proejct managament : https://www.notion.so/invite/1570b4b9aec01da4682bc2dc469a8698bbf24f8c</li>
+</ul>
