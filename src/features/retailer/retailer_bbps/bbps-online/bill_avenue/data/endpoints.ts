@@ -119,7 +119,7 @@ export async function apiBillValidation(
 /** All Plans (Plan Pull)
  * GET /secure/bbps/bills/all-plans/{tenantId}/{billerId}
  */
-export async function apiAllPlans(billerId: string): Px3tromise<AllPlansResponse> {
+export async function apiAllPlans(billerId: string): Promise<AllPlansResponse> {
   const path = pathWithTenant(
     RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_AVENUE.ALL_PLANS,
     encodeURIComponent(billerId),
