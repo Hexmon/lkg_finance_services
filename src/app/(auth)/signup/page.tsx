@@ -1,3 +1,4 @@
+"use client"
 import OnboardingMain from "@/components/auth/Onboarding";
 import SignupMain from "@/components/auth/Signup";
 import AuthLayout from "@/lib/layouts/AuthLayout";
