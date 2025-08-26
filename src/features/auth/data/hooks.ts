@@ -64,7 +64,6 @@ export function useLoginMutation() {
     onSuccess: (data) => {
       // Save token only; fetch profile/permissions via Profile feature hooks
       dispatch(setToken(data.token));
-      document.cookie = `auth=${data.token}; Path=/; SameSite=Lax`;
       // Invalidate any cached queries that depend on auth (e.g., profile/permissions)
       qc.invalidateQueries();
     },

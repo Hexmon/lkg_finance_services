@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { store, persistor } from '@/lib/store';
 import { getQueryClient } from '@/lib/query/client';
+import { MessageProvider } from '@/hooks/useMessage';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const qc = getQueryClient();
@@ -13,7 +14,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <ReduxProvider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <QueryClientProvider client={qc}>
-          {children}
+          <MessageProvider>
+            {children}
+          </MessageProvider>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </PersistGate>
