@@ -8,6 +8,8 @@ export default function Home() {
     router.replace('/signin')
   }, [])
   return (
-    <>kfnksjdn</>
+    <div>
+      <h1 className="text-center mt-20">LKD Dashboard</h1>
+    </div>
   )
 }
