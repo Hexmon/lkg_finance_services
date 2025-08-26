@@ -1,3 +1,14 @@
+export const BASE_URLS = {
+    AUTH_BASE_URL: 'https://auth-uat.bhugtan.in', // AUTH UAT
+    ADMIN_BASE_URL: 'https://admin-uat.bhugtan.in', // Admin UAT
+    RETAILER_BASE_URL: 'https://retailer-uat.bhugtan.in', // Retailer UAT
+    DISTRIBUTOR_BASE_URL: 'https://distributor-uat.bhugtan.in', // Distributor UAT
+    PAYMENT_GATEWAY_BASE_URL: 'https://payment-uat.bhugtan.in', // Payment gateway UAT
+    PAYPOINT_BASE_URL: 'https://paypoint-uat.bhugtan.in', // Paypoint UAT
+    BBPS_BASE_URL: 'https://bbps-uat.bhugtan.in', // BBPS UAT
+    FASTAG_BASE_URL: 'https://fastag-uat.bhugtan.in', // Fastag UAT
+}
+
 export const RETAILER_ENDPOINTS = {
     RETAILER_BBPS: {
         BBPS_ONLINE: {
