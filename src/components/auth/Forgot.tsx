@@ -58,7 +58,7 @@ export const ForgotPasswordMain = () => {
         });
         error("Unexpected sign-in success. Please retry the forgot password flow.");
         return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (probeErr: any) {
         userId = extractUserIdFromApiError(probeErr);
       }
@@ -79,7 +79,7 @@ export const ForgotPasswordMain = () => {
       // sessionStorage.setItem("reset_ref_id", String(resp.ref_id));
       // sessionStorage.setItem("reset_user_id", userId);
       // router.push("/auth/reset-password/verify");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       const fallback =
         err?.data?.message ||
@@ -97,9 +97,9 @@ export const ForgotPasswordMain = () => {
   };
 
   return (
-    <div className="relative z-10 flex items-center justify-center min-h-dvh p-4">
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-dvh p-4">
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px]"
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[10px] p-6 z-4"
         styles={{ body: { padding: 24 } }}
       >
         {/* Logo */}
@@ -186,6 +186,9 @@ export const ForgotPasswordMain = () => {
           </div>
         </Form>
       </Card>
+      <div className="h-4 relative bottom-1 z-2 bg-[#D9D9D9B2] rounded-b-xl w-[492px] max-w-[432px]" />
+      <div className="h-5 relative bottom-4 z-1 bg-[#D9D9D9B2] rounded-b-2xl w-[492px] max-w-[426px]" />
+
     </div>
   );
 };
@@ -241,7 +244,7 @@ export const ForgotUsernameMain = () => {
       setShowOtp(true);
 
       success("OTP sent");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       const msg =
         e?.data?.message ||
@@ -276,7 +279,7 @@ export const ForgotUsernameMain = () => {
         success("Verified successfully.");
       }
       // router.replace("/signin"); // optional
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       const msg =
         e?.data?.message ||
@@ -288,9 +291,9 @@ export const ForgotUsernameMain = () => {
   };
 
   return (
-    <div className="relative z-10 flex items-center justify-center min-h-dvh p-4">
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-dvh p-4">
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px]"
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[10px] p-6 z-4"
         styles={{ body: { padding: 24 } }}
       >
         {/* Logo */}
@@ -419,6 +422,8 @@ export const ForgotUsernameMain = () => {
           </div>
         </Form>
       </Card>
+            <div className="h-4 relative bottom-1 z-2 bg-[#D9D9D9B2] rounded-b-xl w-[492px] max-w-[432px]" />
+            <div className="h-5 relative bottom-4 z-1 bg-[#D9D9D9B2] rounded-b-2xl w-[492px] max-w-[426px]" />
 
       {/* Inline global CSS for dashed OTP inputs */}
       <style jsx global>{`

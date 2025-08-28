@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { authRequest } from './client';
 import {
   LoginRequest, LoginRequestSchema,
@@ -63,7 +64,7 @@ const SEND_OTP_PATH = process.env.NEXT_PUBLIC_AUTH_SEND_OTP_PATH || '/secure/cre
 const GENERATE_EMAIL_OTP_PATH = process.env.NEXT_PUBLIC_AUTH_GENERATE_EMAIL_OTP_PATH || '/secure/generate-email-otp';
 const VERIFY_EMAIL_OTP_PATH = process.env.NEXT_PUBLIC_AUTH_VERIFY_EMAIL_OTP_PATH || '/secure/verify-otp';
 const AADHAAR_OTP_GENERATE_PATH = process.env.NEXT_PUBLIC_AUTH_AADHAAR_OTP_GENERATE_PATH || '/secure/aadhar-otp-generate';
-const AADHAAR_OTP_VERIFY_PATH = process.env.NEXT_PUBLIC_AUTH_AADHAAR_OTP_VERIFY_PATH || '/secure/aadhar-otp-verify';
+const AADHAAR_OTP_VERIFY_PATH = process.env.NEXT_PUBLIC_AUTH_AADHAAR_OTP_VERIFY_PATH || '/secure/otp-verify';
 const PAN_VERIFY_PATH = process.env.NEXT_PUBLIC_AUTH_PAN_VERIFY_PATH || '/secure/pan-verify';
 const REGISTER_PATH = process.env.NEXT_PUBLIC_AUTH_REGISTER_PATH || '/secure/register';
 const SEND_DEVICE_OTP_PATH = process.env.NEXT_PUBLIC_AUTH_SEND_DEVICE_OTP_PATH || '/secure/send-otp';
@@ -204,14 +205,31 @@ export async function apiAadhaarOtpGenerate(
   payload: AadhaarOtpGenerateRequest
 ): Promise<AadhaarOtpGenerateResponse> {
   const body = AadhaarOtpGenerateRequestSchema.parse(payload);
-  const data = await authRequest<AadhaarOtpGenerateResponse>(
+
+  const data = await authRequest<unknown>(
     AADHAAR_OTP_GENERATE_PATH,
     'POST',
     body,
     undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
+    { includeApiKey: true, includeAuth: false } // this endpoint is API-key only
   );
-  return AadhaarOtpGenerateResponseSchema.parse(data);
+
+  const parsed = AadhaarOtpGenerateResponseSchema.safeParse(data);
+  if (parsed.success) return parsed.data;
+
+  // Fallback for bare { ref_id, status } shapes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ref_id = (data as any)?.ref_id;
+  if (ref_id !== undefined) {
+    return {
+      ref_id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      status: (data as any)?.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      message: (data as any)?.message,
+    };
+  }
+  throw new Error('Unexpected response from Aadhaar OTP Generate');
 }
 
 /** ---------- Aadhaar OTP: Verify (API Key only) ---------- */
@@ -219,14 +237,25 @@ export async function apiAadhaarOtpVerify(
   payload: AadhaarOtpVerifyRequest
 ): Promise<AadhaarOtpVerifyResponse> {
   const body = AadhaarOtpVerifyRequestSchema.parse(payload);
-  const data = await authRequest<AadhaarOtpVerifyResponse>(
-    AADHAAR_OTP_VERIFY_PATH,
+
+  const data = await authRequest<unknown>(
+    AADHAAR_OTP_VERIFY_PATH, // '/secure/verify-otp'
     'POST',
     body,
     undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
+    { includeApiKey: true, includeAuth: false }
   );
-  return AadhaarOtpVerifyResponseSchema.parse(data);
+
+  const parsed = AadhaarOtpVerifyResponseSchema.safeParse(data);
+  if (parsed.success) return parsed.data;
+
+  // Minimal fallback if server only returns {status/message}
+  return {
+    status: (data as any)?.status,
+    message: (data as any)?.message,
+    urn: (data as any)?.urn,
+    purpose: (data as any)?.purpose,
+  };
 }
 
 /** ---------- PAN Verify (API Key only) ---------- */

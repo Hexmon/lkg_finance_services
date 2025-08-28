@@ -95,7 +95,11 @@ export type ForgotUsernameInitiateResponse = z.infer<typeof ForgotUsernameInitia
 /** ---------- Email OTP: Generate (Bearer + API Key optional) ---------- */
 export const GenerateEmailOtpRequestSchema = z.object({
   email: z.string().email(),
-  urn: z.string().min(1),
+  urn: z.preprocess(
+    v => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    z.string().trim().min(1).optional()
+  ),
+
 });
 export type GenerateEmailOtpRequest = z.infer<typeof GenerateEmailOtpRequestSchema>;
 
@@ -117,6 +121,7 @@ export type VerifyEmailOtpRequest = z.infer<typeof VerifyEmailOtpRequestSchema>;
 export const VerifyEmailOtpResponseSchema = z.object({
   status: z.union([z.string(), z.number()]),
   message: z.string(),
+  urn: z.string().optional(),
 });
 export type VerifyEmailOtpResponse = z.infer<typeof VerifyEmailOtpResponseSchema>;
 
@@ -144,15 +149,14 @@ export const AadhaarOtpGenerateRequestSchema = z.object({
 export type AadhaarOtpGenerateRequest = z.infer<typeof AadhaarOtpGenerateRequestSchema>;
 
 export const AadhaarOtpGenerateResponseSchema = z.object({
-  status: z.union([z.string(), z.number()]),
-  message: z.string(),
   ref_id: z.union([z.string(), z.number()]),
+  status: z.union([z.string(), z.number()]).optional(),
+  message: z.string().optional().nullable(),
 });
 export type AadhaarOtpGenerateResponse = z.infer<typeof AadhaarOtpGenerateResponseSchema>;
 
 /** ---------- Aadhaar OTP: Verify (API Key) ---------- */
 export const AadhaarOtpVerifyRequestSchema = z.object({
-  urn: z.string().min(1),
   otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
   ref_id: z.coerce.string().min(1),
 });
@@ -161,6 +165,8 @@ export type AadhaarOtpVerifyRequest = z.infer<typeof AadhaarOtpVerifyRequestSche
 export const AadhaarOtpVerifyResponseSchema = z.object({
   status: z.union([z.string(), z.number()]),
   message: z.string(),
+  urn: z.string().optional(),
+  purpose: z.string().optional(),
 });
 export type AadhaarOtpVerifyResponse = z.infer<typeof AadhaarOtpVerifyResponseSchema>;
 

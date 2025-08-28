@@ -47,9 +47,9 @@ export const LoginMain = () => {
     };
 
     return (
-        <div className="relative z-10 flex items-center justify-center min-h-dvh p-4">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-dvh pt-4 px-4">
             <Card
-                className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px] p-20"
+                className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md  border-[10px] p-6 z-4"
             >
                 {/* Logo */}
                 <div className="flex justify-center mb-3">
@@ -146,6 +146,9 @@ export const LoginMain = () => {
                     </div>
                 </Form>
             </Card>
+            <div className="h-4 relative bottom-1 z-2 bg-[#D9D9D9B2] rounded-b-xl w-[492px] max-w-[432px]" />
+            <div className="h-5 relative bottom-4 z-1 bg-[#D9D9D9B2] rounded-b-2xl w-[492px] max-w-[426px]" />
+
         </div>
     )
 }

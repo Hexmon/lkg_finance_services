@@ -17,8 +17,7 @@ type FormValues = {
   otpEmail?: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function SignupMain({ setStep }: { setStep: (step: number) => void }) {
+export default function SignupMain({ setStep, urn, setURN }: { setStep: (step: number) => void, urn: string, setURN: (urn: string) => void }) {
   const [form] = Form.useForm<FormValues>();
   const { success, error } = useMessage();
   const { mutateAsync: sendOtpMut } = useSendOtpMutation();
@@ -64,7 +63,6 @@ export default function SignupMain({ setStep }: { setStep: (step: number) => voi
         // Save ref_id for later verify
         const newRefId = String(resp.ref_id);
         setRefId((r) => ({ ...r, mobile: newRefId }));
-
         setSent((s) => ({ ...s, mobile: true }));
         setOtpVisible((v) => ({ ...v, mobile: true }));
         success(`OTP sent to mobile`);
@@ -72,10 +70,6 @@ export default function SignupMain({ setStep }: { setStep: (step: number) => voi
       }
 
       const email = form.getFieldValue("email")?.toString().trim();
-      const urn =
-        (typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("urn")
-          : null) ?? "REGISTRATION";
       const respEmail = await genEmailOtp({ email, urn });
 
       setRefId((r) => ({ ...r, email: String(respEmail.ref_id) }));
@@ -105,6 +99,7 @@ export default function SignupMain({ setStep }: { setStep: (step: number) => voi
         }
 
         const resp = await verifyOtpMut({ ref_id: currentRefId, otp });
+        setURN(resp.urn ?? "");
 
         const ok =
           resp?.status === 200 ||
@@ -161,10 +156,10 @@ export default function SignupMain({ setStep }: { setStep: (step: number) => voi
   );
 
   return (
-    <div className="relative z-10 flex items-center justify-center min-h-dvh p-4">
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-dvh p-4">
+        
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px]"
-        styles={{ body: { padding: 24 } }}
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[10px] p-6 z-4"
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -344,6 +339,8 @@ export default function SignupMain({ setStep }: { setStep: (step: number) => voi
           </Space>
         </div>
       </Card>
+      <div className="h-4 relative bottom-1 z-2 bg-[#D9D9D9B2] rounded-b-xl w-[492px] max-w-[432px]" />
+      <div className="h-5 relative bottom-4 z-1 bg-[#D9D9D9B2] rounded-b-2xl w-[492px] max-w-[426px]" />
 
       {/* OTP dashed underline styling */}
       <style jsx global>{`

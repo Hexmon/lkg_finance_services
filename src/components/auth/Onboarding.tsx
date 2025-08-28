@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { Card, Typography, Form, Input, Button, Space } from "antd";
 import { UserOutlined, IdcardOutlined, CheckOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMessage } from "@/hooks/useMessage";
 import Link from "next/link";
+import { useAadhaarOtpGenerateMutation, useAadhaarOtpVerifyMutation } from "@/features/auth";
 
 const { Title, Text } = Typography;
 
@@ -16,9 +17,25 @@ type FormValues = {
   otpPan?: string;
 };
 
-export default function OnboardingMain({ setStep }: { setStep: (step: number) => void }) {
+export default function OnboardingMain({
+  setStep,
+  urn,
+}: {
+  setStep: (step: number) => void;
+  urn: string;
+}) {
   const [form] = Form.useForm<FormValues>();
-  const { success } = useMessage();
+  const { success, error } = useMessage();
+
+  const {
+    mutateAsync: sendAadhaarOtp,
+    isPending: isSendingAadhaarOtp,
+  } = useAadhaarOtpGenerateMutation();
+
+  const {
+  mutateAsync: verifyAadhaarOtp,
+  isPending: isVerifyingAadhaarOtp,
+} = useAadhaarOtpVerifyMutation();
 
   // track per-field state
   const [sent, setSent] = useState<{ aadhar: boolean; pan: boolean }>({
@@ -38,32 +55,80 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
     pan: false,
   });
 
+  // (Optional) store ref_id returned by Aadhaar OTP generate; often needed for verification
+  const [aadhaarRefId, setAadhaarRefId] = useState<string | number | null>(null);
+
+  // Helper: sanitize Aadhaar to digits before submit
+  const getAadhaarDigits = () => {
+    const raw = form.getFieldValue("aadhar") || "";
+    return (raw as string).replace(/\D/g, "");
+  };
+
   const sendOtp = async (target: "aadhar" | "pan") => {
     try {
       await form.validateFields([target]);
-      // TODO: call Send OTP API with field value
+
+      if (target === "aadhar") {
+        const aadhaar_number = getAadhaarDigits();
+        // Safety: re-validate length after sanitization
+        if (!/^\d{12}$/.test(aadhaar_number)) {
+          throw new Error("Please enter a valid 12-digit Aadhaar number.");
+        }
+
+        // Call your provided hook + API
+        const res = await sendAadhaarOtp({ urn, aadhaar_number });
+        setAadhaarRefId(res?.ref_id ?? null);
+      } else {
+        // PAN OTP flow not provided yet — keep the UI consistent for now.
+        // TODO: integrate PAN OTP generate API when available.
+      }
+
       setSent((s) => ({ ...s, [target]: true }));
       setOtpVisible((v) => ({ ...v, [target]: true }));
       success(`OTP sent to verify ${target === "aadhar" ? "Aadhaar" : "PAN"}`);
-    } catch {
-      /* validation errors show automatically */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      // antd Form validation errors surface automatically; only toast API/errors
+      if (!(e?.errorFields?.length > 0)) {
+        error(e?.message || "Failed to send OTP. Please try again.");
+      }
     }
   };
 
-  const verifyOtp = async (target: "aadhar" | "pan") => {
-    const otpField = target === "aadhar" ? "otpAadhar" : "otpPan";
-    try {
-      await form.validateFields([otpField]);
-      setOtpLoading((l) => ({ ...l, [target]: true }));
-      // TODO: call Verify OTP API with { channel: target, value, otp }
-      setVerified((v) => ({ ...v, [target]: true }));
-      setOtpVisible((vis) => ({ ...vis, [target]: false }));
-      form.resetFields([otpField]);
-      success(`${target === "aadhar" ? "Aadhaar" : "PAN"} verified`);
-    } finally {
-      setOtpLoading((l) => ({ ...l, [target]: false }));
+const verifyOtp = async (target: "aadhar" | "pan") => {
+  const otpField = target === "aadhar" ? "otpAadhar" : "otpPan";
+  try {
+    await form.validateFields([otpField]);
+    setOtpLoading((l) => ({ ...l, [target]: true }));
+
+    if (target === "aadhar") {
+      if (!aadhaarRefId) throw new Error("Missing ref_id. Please resend OTP.");
+
+      const otp = form.getFieldValue("otpAadhar");
+      const res = await verifyAadhaarOtp({
+        ref_id: String(aadhaarRefId),
+        otp,
+      });
+
+      // success UI
+      setVerified((v) => ({ ...v, aadhar: true }));
+      setOtpVisible((vis) => ({ ...vis, aadhar: false }));
+      form.resetFields(["otpAadhar"]);
+      success(res?.message || "Aadhaar verified");
+    } else {
+      // TODO: integrate PAN verify API here
+      setVerified((v) => ({ ...v, pan: true }));
+      setOtpVisible((vis) => ({ ...vis, pan: false }));
+      form.resetFields(["otpPan"]);
+      success("PAN verified");
     }
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    if (!(e?.errorFields?.length > 0)) error(e?.message || "OTP verification failed");
+  } finally {
+    setOtpLoading((l) => ({ ...l, [target]: false }));
+  }
+};
 
   const CheckPill = () => (
     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#FFC107]">
@@ -72,10 +137,9 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
   );
 
   return (
-    <div className="relative z-10 flex items-center justify-center min-h-dvh p-4">
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-dvh p-4">
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px]"
-        styles={{ body: { padding: 24 } }}
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md  border-[10px] p-6 z-4"
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -96,9 +160,10 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
           <Form.Item
             label={<span className="text-[#9A9595]">Aadhaar No.</span>}
             name="aadhar"
+            normalize={(v) => (v || "").replace(/\D/g, "")} // keep only digits in model
             rules={[
               { required: true, message: "Please enter Aadhaar number" },
-              { pattern: /^[0-9]{12}$/, message: "Enter a valid 12-digit Aadhaar" },
+              { pattern: /^\d{12}$/, message: "Enter a valid 12-digit Aadhaar" },
             ]}
           >
             <Input
@@ -106,6 +171,8 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
               placeholder="1234 5678 9012"
               prefix={<UserOutlined />}
               disabled={verified.aadhar}
+              inputMode="numeric"
+              maxLength={12}
               className="!rounded-[16px] !bg-[#F6F6F6] !border-0 !h-12 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
               suffix={
                 verified.aadhar ? (
@@ -114,6 +181,8 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
                   <Button
                     type="text"
                     onClick={() => sendOtp("aadhar")}
+                    loading={isSendingAadhaarOtp}
+                    disabled={isSendingAadhaarOtp}
                     className="!text-[14px] !font-medium !text-[#FFC107] !hover:opacity-80"
                   >
                     {sent.aadhar ? "Resend OTP" : "Send OTP"}
@@ -142,11 +211,7 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
                   { len: 6, message: "OTP must be 6 digits" },
                 ]}
               >
-                <Input.OTP
-                  length={6}
-                  className="otp-dashed w-full"
-                  formatter={(str) => str.replace(/\D/g, "")}
-                />
+                <Input.OTP length={6} className="otp-dashed w-full" formatter={(str) => str.replace(/\D/g, "")} />
               </Form.Item>
               <Button
                 type="default"
@@ -209,11 +274,7 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
                   { len: 6, message: "OTP must be 6 digits" },
                 ]}
               >
-                <Input.OTP
-                  length={6}
-                  className="otp-dashed w-full"
-                  formatter={(str) => str.replace(/\D/g, "")}
-                />
+                <Input.OTP length={6} className="otp-dashed w-full" formatter={(str) => str.replace(/\D/g, "")} />
               </Form.Item>
               <Button
                 type="default"
@@ -243,7 +304,7 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
           </Form.Item>
         </Form>
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <Space size={6}>
             <Text type="secondary" className="text-xs !text-[#232323]">
               Already have an account?
@@ -252,8 +313,10 @@ export default function OnboardingMain({ setStep }: { setStep: (step: number) =>
               <span className="text-xs text-[#FFC107] font-bold">Sign Up</span>
             </Link>
           </Space>
-        </div>
+        </div> */}
       </Card>
+      <div className="h-4 relative bottom-1 z-2 bg-[#D9D9D9B2] rounded-b-xl w-[492px] max-w-[432px]" />
+      <div className="h-5 relative bottom-4 z-1 bg-[#D9D9D9B2] rounded-b-2xl w-[492px] max-w-[426px]" />
 
       {/* OTP styling */}
       <style jsx global>{`
