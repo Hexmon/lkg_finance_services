@@ -238,7 +238,7 @@ export default function OnboardingMain({
                     onClick={() => sendOtp("pan")}
                     className="!text-[14px] !font-medium !text-[#FFC107] !hover:opacity-80"
                   >
-                    {sent.pan ? "Resend OTP" : "Send OTP"}
+                    {sent.pan ? "Retry" : "Verify PAN"}
                   </Button>
                 )
               }
