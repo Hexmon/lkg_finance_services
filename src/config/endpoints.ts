@@ -1,3 +1,14 @@
+export const BASE_URLS = {
+    AUTH_BASE_URL: 'https://auth-uat.bhugtan.in',
+    ADMIN_BASE_URL: 'https://admin-uat.bhugtan.in',
+    RETAILER_BASE_URL: 'https://retailer-uat.bhugtan.in',
+    DISTRIBUTOR_BASE_URL: 'https://distributor-uat.bhugtan.in',
+    PAYMENT_GATWEAY_BASE_URL: 'https://payment-uat.bhugtan.in',
+    PAYPOINT_BASE_URL: 'https://paypoint-uat.bhugtan.in',
+    BBPS_BASE_URL: 'https://bbps-uat.bhugtan.in',
+    FASTTAG_BASE_URL: 'https://fastag-uat.bhugtan.in'
+}
+
 export const RETAILER_ENDPOINTS = {
     RETAILER_BBPS: {
         BBPS_ONLINE: {

@@ -1,6 +1,9 @@
+// src\features\auth\data\client.ts
+
+import { BASE_URLS } from '@/config/endpoints';
 import { store } from '@/lib/store';
 
-const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_BASE_URL ?? '';
+const AUTH_BASE = BASE_URLS.AUTH_BASE_URL;
 const AUTH_API_KEY = process.env.NEXT_PUBLIC_AUTH_API_KEY || '';
 
 export class ApiError extends Error {

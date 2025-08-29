@@ -1,15 +1,17 @@
 "use client"
 
+import DashboardLayout from "@/lib/layouts/DashboardLayout"
+
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 export default function Home() {
   const router = useRouter()
   useEffect(() => {
-    router.replace('/signin')
+    router.replace('/bbps')
   }, [])
   return (
-    <div>
-      <h1 className="text-center mt-20">LKD Dashboard</h1>
-    </div>
+    <DashboardLayout>
+      .
+    </DashboardLayout>
   )
 }
