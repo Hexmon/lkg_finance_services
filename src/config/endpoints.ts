@@ -52,7 +52,7 @@ export const AUTHERIZATION_ENDPOINT = {
     AUTH_GENERATE_EMAIL_OTP_PATH: '/secure/generate-email-otp',
     AUTH_REGISTER_PATH: '/secure/register',
     AUTH_AADHAAR_OTP_GENERATE_PATH: '/secure/aadhar-otp-generate',
-    AUTH_AADHAAR_OTP_VERIFY_PATH: '/secure/otp-verify',
+    AUTH_AADHAAR_OTP_VERIFY_PATH: '/secure/aadhar-otp-verify',
     AUTH_PAN_VERIFY_PATH: '/secure/pan-verify',
     PROFILE_GET_PATH: '/secure/profile',
     USER_PERMISSIONS_PATH: '/secure/get-user-permissions',

@@ -7,7 +7,7 @@ import { useEffect } from "react"
 export default function Home() {
   const router = useRouter()
   useEffect(() => {
-    router.replace('/bbps')
+    router.replace('/signin')
   }, [])
   return (
     <DashboardLayout>

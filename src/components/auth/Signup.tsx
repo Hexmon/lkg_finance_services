@@ -158,7 +158,7 @@ export default function SignupMain({ setStep, urn, setURN }: { setStep: (step: n
   return (
     <>
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[15px] p-6 z-4"
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -262,7 +262,9 @@ export default function SignupMain({ setStep, urn, setURN }: { setStep: (step: n
               className="!rounded-[16px] !bg-[#F6F6F6] !border-0 !h-12 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
               suffix={
                 verified.email ? (
-                  <CheckPill />
+                  <div className="text-white font-bold">
+                    <CheckPill />
+                  </div>
                 ) : (
                   <Button
                     type="text"
@@ -329,14 +331,14 @@ export default function SignupMain({ setStep, urn, setURN }: { setStep: (step: n
             </Button>
           </Form.Item>
         </Form>
-        <div className="text-center">
+        {/* <div className="text-center">
           <Space size={6}>
             <Text type="secondary" className="text-xs !text-[#232323]">
               Don&apos;t have an account?
             </Text>
             <Link href="/signin"><span className="text-xs text-[#FFC107] font-bold">Sign In</span></Link>
           </Space>
-        </div>
+        </div> */}
       </Card>
 
       {/* OTP dashed underline styling */}

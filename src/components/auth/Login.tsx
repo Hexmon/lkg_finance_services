@@ -5,7 +5,7 @@ import { Card, Typography, Form, Input, Button, Space } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useLoginMutation } from "@/features/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/hooks/useMessage";
 
 const { Text, Link, Title } = Typography;
@@ -18,6 +18,8 @@ type LoginFormValues = {
 export const LoginMain = () => {
     const [form] = Form.useForm<LoginFormValues>();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const username = searchParams.get("username") || "";
 
     const { success, error, warning } = useMessage();
     const { mutateAsync: login } = useLoginMutation();
@@ -48,7 +50,7 @@ export const LoginMain = () => {
 
     return (
         <Card
-            className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md  border-[15px] p-6 z-4"
+            className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
         >
             {/* Logo */}
             <div className="flex justify-center mb-3">
@@ -79,7 +81,7 @@ export const LoginMain = () => {
                 onFinish={onFinish}
                 onFinishFailed={onFinishFailed}
                 requiredMark={false}
-                initialValues={{ username: "" }}
+                initialValues={{ username }}
             >
                 {/* Username */}
                 <Form.Item
@@ -140,7 +142,7 @@ export const LoginMain = () => {
                         <Text type="secondary" className="text-xs !text-[#232323]">
                             Don&apos;t have an account?
                         </Text>
-                        <Link href="/signup"><span className="text-xs text-[#FFC107] font-bold">Sign Up</span></Link>
+                        <Link href="/signup"><span className="text-xs text-[#FFC107] font-semibold underline">Sign Up</span></Link>
                     </Space>
                 </div>
             </Form>

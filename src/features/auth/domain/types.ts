@@ -157,6 +157,7 @@ export type AadhaarOtpGenerateResponse = z.infer<typeof AadhaarOtpGenerateRespon
 
 /** ---------- Aadhaar OTP: Verify (API Key) ---------- */
 export const AadhaarOtpVerifyRequestSchema = z.object({
+  urn: z.string(),
   otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
   ref_id: z.coerce.string().min(1),
 });
@@ -207,17 +208,14 @@ export type PanVerifyResponse = z.infer<typeof PanVerifyResponseSchema>;
 /** ---------- Registration (Bearer) ---------- */
 export const RegisterRequestSchema = z.object({
   urn: z.string().min(1),
-  // must be true per spec
   accepted_terms: z.literal(true),
-  // sample payload showed email; treat as optional
-  email: z.string().email().optional(),
 });
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 
 export const RegisterResponseSchema = z.object({
-  status: z.union([z.string(), z.number()]), // 201 in example
-  user_id: z.string(),
   message: z.string(),
+  user_id: z.string(),
+  username: z.string(),
 }).passthrough();
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 

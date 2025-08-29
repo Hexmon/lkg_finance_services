@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { Card, Typography, Form, Input, Button, Space } from "antd";
+import { Card, Typography, Form, Input, Button } from "antd";
 import { UserOutlined, IdcardOutlined, CheckOutlined } from "@ant-design/icons";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMessage } from "@/hooks/useMessage";
-import Link from "next/link";
-import { useAadhaarOtpGenerateMutation, useAadhaarOtpVerifyMutation } from "@/features/auth";
+import { useAadhaarOtpGenerateMutation, useAadhaarOtpVerifyMutation, usePanVerifyMutation } from "@/features/auth";
+import { UserdataProps } from "@/app/(auth)/signup/page";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 type FormValues = {
   aadhar?: string;
@@ -20,22 +20,19 @@ type FormValues = {
 export default function OnboardingMain({
   setStep,
   urn,
+  setUserdata
 }: {
   setStep: (step: number) => void;
   urn: string;
+  setUserdata: React.Dispatch<React.SetStateAction<UserdataProps | undefined>>;
 }) {
   const [form] = Form.useForm<FormValues>();
   const { success, error } = useMessage();
 
-  const {
-    mutateAsync: sendAadhaarOtp,
-    isPending: isSendingAadhaarOtp,
-  } = useAadhaarOtpGenerateMutation();
+  const { mutateAsync: sendAadhaarOtp, isPending: isSendingAadhaarOtp, } = useAadhaarOtpGenerateMutation();
+  const { mutateAsync: verifyAadhaarOtp } = useAadhaarOtpVerifyMutation();
+  const { mutateAsync: verifyPan } = usePanVerifyMutation();
 
-  const {
-  mutateAsync: verifyAadhaarOtp,
-  isPending: isVerifyingAadhaarOtp,
-} = useAadhaarOtpVerifyMutation();
 
   // track per-field state
   const [sent, setSent] = useState<{ aadhar: boolean; pan: boolean }>({
@@ -55,7 +52,6 @@ export default function OnboardingMain({
     pan: false,
   });
 
-  // (Optional) store ref_id returned by Aadhaar OTP generate; often needed for verification
   const [aadhaarRefId, setAadhaarRefId] = useState<string | number | null>(null);
 
   // Helper: sanitize Aadhaar to digits before submit
@@ -78,34 +74,35 @@ export default function OnboardingMain({
         // Call your provided hook + API
         const res = await sendAadhaarOtp({ urn, aadhaar_number });
         setAadhaarRefId(res?.ref_id ?? null);
+        setOtpVisible((v) => ({ ...v, [target]: true }));
       } else {
-        // PAN OTP flow not provided yet — keep the UI consistent for now.
-        // TODO: integrate PAN OTP generate API when available.
+        const pan_number = form.getFieldValue("pan");
+        const res = await verifyPan({ urn, pan_number });
+        const preview = res?.preview_data as UserdataProps | undefined;
+        if (preview) setUserdata(preview);
+        setVerified((v) => ({ ...v, pan: true }));
+        success(res?.message || "PAN verified successfully");
       }
 
       setSent((s) => ({ ...s, [target]: true }));
-      setOtpVisible((v) => ({ ...v, [target]: true }));
       success(`OTP sent to verify ${target === "aadhar" ? "Aadhaar" : "PAN"}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      // antd Form validation errors surface automatically; only toast API/errors
-      if (!(e?.errorFields?.length > 0)) {
-        error(e?.message || "Failed to send OTP. Please try again.");
-      }
+        error(e?.data?.error?.message  || "Failed to send OTP. Please try again.");
     }
   };
 
-const verifyOtp = async (target: "aadhar" | "pan") => {
-  const otpField = target === "aadhar" ? "otpAadhar" : "otpPan";
-  try {
-    await form.validateFields([otpField]);
-    setOtpLoading((l) => ({ ...l, [target]: true }));
+  const verifyOtp = async (target: "aadhar") => {
+    const otpField = target === "aadhar" ? "otpAadhar" : "otpPan";
+    try {
+      await form.validateFields([otpField]);
+      setOtpLoading((l) => ({ ...l, [target]: true }));
 
-    if (target === "aadhar") {
       if (!aadhaarRefId) throw new Error("Missing ref_id. Please resend OTP.");
 
       const otp = form.getFieldValue("otpAadhar");
       const res = await verifyAadhaarOtp({
+        urn,
         ref_id: String(aadhaarRefId),
         otp,
       });
@@ -115,20 +112,13 @@ const verifyOtp = async (target: "aadhar" | "pan") => {
       setOtpVisible((vis) => ({ ...vis, aadhar: false }));
       form.resetFields(["otpAadhar"]);
       success(res?.message || "Aadhaar verified");
-    } else {
-      // TODO: integrate PAN verify API here
-      setVerified((v) => ({ ...v, pan: true }));
-      setOtpVisible((vis) => ({ ...vis, pan: false }));
-      form.resetFields(["otpPan"]);
-      success("PAN verified");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      if (!(e?.errorFields?.length > 0)) error(e?.message || "OTP verification failed");
+    } finally {
+      setOtpLoading((l) => ({ ...l, [target]: false }));
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (e: any) {
-    if (!(e?.errorFields?.length > 0)) error(e?.message || "OTP verification failed");
-  } finally {
-    setOtpLoading((l) => ({ ...l, [target]: false }));
-  }
-};
+  };
 
   const CheckPill = () => (
     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#FFC107]">
@@ -139,7 +129,7 @@ const verifyOtp = async (target: "aadhar" | "pan") => {
   return (
     <>
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md  border-[15px] p-6 z-4"
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
       >
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -255,38 +245,6 @@ const verifyOtp = async (target: "aadhar" | "pan") => {
             />
           </Form.Item>
 
-          {/* OTP PAN */}
-          <div
-            className={[
-              "overflow-hidden transition-all duration-300 ease-out mb-2",
-              otpVisible.pan && !verified.pan
-                ? "opacity-100 translate-y-0 max-h-24"
-                : "opacity-0 -translate-y-1 max-h-0 pointer-events-none",
-            ].join(" ")}
-          >
-            <div className="flex items-center gap-3 justify-between">
-              <label className="text-[#232323] text-[14px] whitespace-nowrap">Verify OTP:</label>
-              <Form.Item
-                name="otpPan"
-                className="!mb-0 flex-1"
-                rules={[
-                  { required: true, message: "Enter the 6-digit OTP" },
-                  { len: 6, message: "OTP must be 6 digits" },
-                ]}
-              >
-                <Input.OTP length={6} className="otp-dashed w-full" formatter={(str) => str.replace(/\D/g, "")} />
-              </Form.Item>
-              <Button
-                type="default"
-                onClick={() => verifyOtp("pan")}
-                loading={otpLoading.pan}
-                className="!rounded-full !bg-[#FFC107] !text-black !border-none px-4 h-9"
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-
           {/* Next */}
           <Form.Item className="mt-2">
             <Button
@@ -294,7 +252,7 @@ const verifyOtp = async (target: "aadhar" | "pan") => {
               block
               onClick={() => {
                 if (verified.aadhar && verified.pan) {
-                  setStep(1);
+                  setStep(2);
                 }
               }}
               className="!h-12 !rounded-[16px] !bg-[#FFC107] !text-black !text-[16px] !font-semibold"

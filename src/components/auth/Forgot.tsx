@@ -1,16 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Card, Typography, Form, Input, Button, Radio, Space } from "antd";
+import { Card, Typography, Form, Input, Button, Radio } from "antd";
 import { UserOutlined, PhoneOutlined } from "@ant-design/icons";
 import { useState } from "react";
-import Link from "next/link";
 import { useMessage } from "@/hooks/useMessage";
-
-// ---- Forgot Password: hooks & utils (from your provided hooks file) ----
 import { useLoginMutation, useResetPasswordMutation, extractUserIdFromApiError } from "@/features/auth";
-
-// ---- Forgot Username: hooks & utils (already correct) ----
 import {
   useForgotUsernameInitiateMutation,
   useVerifyOtpForgotUsernameMutation,
@@ -20,9 +15,6 @@ import {
 
 const { Text, Title } = Typography;
 
-/* ================================
- * FORGOT PASSWORD (initiate OTP)
- * ================================ */
 type LoginFormValues = {
   username: string;
   password: string;
@@ -32,13 +24,8 @@ type LoginFormValues = {
 export const ForgotPasswordMain = () => {
   const [form] = Form.useForm<LoginFormValues>();
   const { success, error, warning } = useMessage();
-
-  // probe login to extract user_id from ApiError
   const { mutateAsync: login } = useLoginMutation();
-
-  // ✅ correct hook name from your code: useResetPasswordMutation
-  const { mutateAsync: resetPassword, isPending: isResetLoading } =
-    useResetPasswordMutation();
+  const { mutateAsync: resetPassword, isPending: isResetLoading } = useResetPasswordMutation();
 
   const [loading, setLoading] = useState(false);
 
@@ -98,7 +85,7 @@ export const ForgotPasswordMain = () => {
 
   return (
       <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md border-[10px] p-6 z-4"
+        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
         styles={{ body: { padding: 24 } }}
       >
         {/* Logo */}
@@ -173,7 +160,7 @@ export const ForgotPasswordMain = () => {
             </Button>
           </Form.Item>
 
-          <div className="text-center">
+          {/* <div className="text-center">
             <Space size={6}>
               <Text type="secondary" className="text-xs !text-[#232323]">
                 Don&apos;t have an account?
@@ -182,7 +169,7 @@ export const ForgotPasswordMain = () => {
                 <span className="text-xs text-[#FFC107] font-bold">Sign Up</span>
               </Link>
             </Space>
-          </div>
+          </div> */}
         </Form>
       </Card>
   );
@@ -405,7 +392,7 @@ export const ForgotUsernameMain = () => {
           </Form.Item>
 
           {/* Footer link */}
-          <div className="text-center mt-2">
+          {/* <div className="text-center mt-2">
             <Space size={6}>
               <Text type="secondary" className="text-xs !text-[#232323]">
                 Don&apos;t have an account?
@@ -414,7 +401,7 @@ export const ForgotUsernameMain = () => {
                 <span className="text-xs text-[#FFC107] font-bold">Sign Up</span>
               </Link>
             </Space>
-          </div>
+          </div> */}
         </Form>
       </Card>
 
