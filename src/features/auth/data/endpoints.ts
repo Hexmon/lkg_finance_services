@@ -51,6 +51,10 @@ import {
   VerifyAccountOtpRequestSchema,
   VerifyAccountOtpResponse,
   VerifyAccountOtpResponseSchema,
+  ForgotPasswordInitiateRequest,
+  ForgotPasswordInitiateRequestSchema,
+  ForgotPasswordInitiateResponse,
+  ForgotPasswordInitiateResponseSchema,
 } from '../domain/types';
 import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 
@@ -60,6 +64,7 @@ const CHANGE_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_CHANGE_PASSWORD_PATH;
 const RESET_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_RESET_PASSWORD_PATH;
 const VERIFY_OTP_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_OTP_PASSWORD_PATH;
 const FORGOT_USERNAME_PATH = AUTHERIZATION_ENDPOINT.AUTH_FORGOT_USERNAME_PATH;
+const FORGOT_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_FORGOT_PASSWORD_PATH;
 const VERIFY_OTP_USERNAME_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_OTP_USERNAME_PATH;
 const SEND_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_SEND_OTP_PATH;
 const GENERATE_EMAIL_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_GENERATE_EMAIL_OTP_PATH;
@@ -149,6 +154,21 @@ export async function apiForgotUsernameInitiate(
     { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
   );
   return ForgotUsernameInitiateResponseSchema.parse(data);
+}
+
+/** ---------- Forgot Password: Initiate (API Key only) ---------- */
+export async function apiForgotPasswordInitiate(
+  payload: ForgotPasswordInitiateRequest
+): Promise<ForgotPasswordInitiateResponse> {
+  const body = ForgotPasswordInitiateRequestSchema.parse(payload);
+  const data = await authRequest<ForgotPasswordInitiateResponse>(
+    FORGOT_PASSWORD_PATH,
+    'POST',
+    body,
+    undefined,
+    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
+  );
+  return ForgotPasswordInitiateResponseSchema.parse(data);
 }
 
 /** ---------- Email OTP: Generate (Bearer; API Key optional) ---------- */

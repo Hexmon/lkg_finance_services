@@ -5,7 +5,7 @@ import { Card, Typography, Form, Input, Button, Radio } from "antd";
 import { UserOutlined, PhoneOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useMessage } from "@/hooks/useMessage";
-import { useLoginMutation, useResetPasswordMutation, extractUserIdFromApiError } from "@/features/auth";
+import { useForgotPasswordInitiateMutation } from "@/features/auth";
 import {
   useForgotUsernameInitiateMutation,
   useVerifyOtpForgotUsernameMutation,
@@ -24,55 +24,21 @@ type LoginFormValues = {
 export const ForgotPasswordMain = () => {
   const [form] = Form.useForm<LoginFormValues>();
   const { success, error, warning } = useMessage();
-  const { mutateAsync: login } = useLoginMutation();
-  const { mutateAsync: resetPassword, isPending: isResetLoading } = useResetPasswordMutation();
+  const { mutateAsync: forgotpass, isPending: isForgotPassLoading } = useForgotPasswordInitiateMutation();
 
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: LoginFormValues) => {
     try {
       setLoading(true);
-
-      // UI requires both fields; backend only needs user_id for reset
-      await form.validateFields(["username", "notificationMethod"]);
-
-      // 1) Resolve user_id via intentional login failure (ApiError carries user_id)
-      let userId: string | null = null;
-      try {
-        await login({
-          username: values.username ?? "",
-          password: "__wrong_password_probe__", // guaranteed fail
-        });
-        error("Unexpected sign-in success. Please retry the forgot password flow.");
-        return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (probeErr: any) {
-        userId = extractUserIdFromApiError(probeErr);
-      }
-
-      if (!userId) {
-        error("We couldn’t find this username. Please check and try again.");
-        return;
-      }
-
-      // 2) Initiate reset password (API expects { user_id, purpose: 'password_reset' })
-      await resetPassword({
-        user_id: userId,
-        purpose: "password_reset",
-      });
-
-      success("OTP sent to your registered contact.");
-      // Optionally store / route for verify screen
-      // sessionStorage.setItem("reset_ref_id", String(resp.ref_id));
-      // sessionStorage.setItem("reset_user_id", userId);
-      // router.push("/auth/reset-password/verify");
+      const formRes = await form.validateFields(["username", "notificationMethod"]);
+      const res = await forgotpass({ username: formRes.username, type: formRes.notificationMethod ?? 'both', purpose: 'FORGOT_PASSWORD' });
+      console.log({res});
+      success(res.message ?? "Password has been successfully sent")
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      const fallback =
-        err?.data?.message ||
-        err?.data?.error?.message ||
-        err?.message ||
-        "Failed to start password reset. Please try again.";
+      const fallback = err?.data?.error?.message || "Failed to start password reset. Please try again.";
       error(fallback);
     } finally {
       setLoading(false);
@@ -84,83 +50,83 @@ export const ForgotPasswordMain = () => {
   };
 
   return (
-      <Card
-        className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
-        styles={{ body: { padding: 24 } }}
-      >
-        {/* Logo */}
-        <div className="flex justify-center mb-3">
-          <Image src="/logo.png" alt="LKG Infosolution" width={240} height={45} priority />
-        </div>
+    <Card
+      className="w-[492px] max-w-[440px] shadow-card backdrop-blur-md p-6 z-4"
+      styles={{ body: { padding: 24 } }}
+    >
+      {/* Logo */}
+      <div className="flex justify-center mb-3">
+        <Image src="/logo.png" alt="LKG Infosolution" width={240} height={45} priority />
+      </div>
 
-        {/* Title + subtitle */}
-        <div className="text-center mb-6">
-          <Title
-            level={4}
-            className="!mb-1 text-[#4E4E4E] font-semibold text-[22px] leading-[141%] tracking-normal text-center"
-          >
-            Welcome,
-          </Title>
-          <Text type="secondary" className="text-[#4E4E4E] text-[16px] tracking-normal text-center">
-            Sign in to continue!
-          </Text>
-        </div>
-
-        <h1 className="text-[#232323] font-semibold text-[16px] mb-5">Forget Password</h1>
-
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          requiredMark={false}
+      {/* Title + subtitle */}
+      <div className="text-center mb-6">
+        <Title
+          level={4}
+          className="!mb-1 text-[#4E4E4E] font-semibold text-[22px] leading-[141%] tracking-normal text-center"
         >
-          {/* Username */}
-          <Form.Item
-            label={<span className="text-gray-500">Username</span>}
-            name="username"
-            rules={[{ required: true, message: "Please enter username" }]}
+          Welcome,
+        </Title>
+        <Text type="secondary" className="text-[#4E4E4E] text-[16px] tracking-normal text-center">
+          Sign in to continue!
+        </Text>
+      </div>
+
+      <h1 className="text-[#232323] font-semibold text-[16px] mb-5">Forget Password</h1>
+
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        onFinishFailed={onFinishFailed}
+        requiredMark={false}
+      >
+        {/* Username */}
+        <Form.Item
+          label={<span className="text-gray-500">Username</span>}
+          name="username"
+          rules={[{ required: true, message: "Please enter username" }]}
+        >
+          <Input
+            size="large"
+            placeholder="Enter Username"
+            prefix={<UserOutlined />}
+            className="!rounded-xl"
+            autoComplete="username"
+          />
+        </Form.Item>
+
+        {/* REQUIRED Radio group with no default selection */}
+        <Form.Item
+          name="notificationMethod"
+          rules={[{ required: true, message: "Please select a notification method" }]}
+          validateTrigger={["onChange", "onBlur"]}
+          className="text-center !mb-1"
+        >
+          <Radio.Group className="flex gap-6">
+            <Radio value="sms" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">SMS</Radio>
+            <Radio value="email" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">Email</Radio>
+            <Radio value="both" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">Both</Radio>
+          </Radio.Group>
+        </Form.Item>
+        <span className="text-[#9A9595] flex justify-center mb-8">
+          Please select your password retrieve option
+        </span>
+
+        {/* Submit */}
+        <Form.Item>
+          <Button
+            htmlType="submit"
+            type="primary"
+            block
+            loading={loading || isForgotPassLoading}
+            className="!h-11 !rounded-xl !bg-[#FFC107] !font-semibold !text-black"
           >
-            <Input
-              size="large"
-              placeholder="Enter Username"
-              prefix={<UserOutlined />}
-              className="!rounded-xl"
-              autoComplete="username"
-            />
-          </Form.Item>
+            Send
+          </Button>
+        </Form.Item>
 
-          {/* REQUIRED Radio group with no default selection */}
-          <Form.Item
-            name="notificationMethod"
-            rules={[{ required: true, message: "Please select a notification method" }]}
-            validateTrigger={["onChange", "onBlur"]}
-            className="text-center !mb-1"
-          >
-            <Radio.Group className="flex gap-6">
-              <Radio value="sms" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">SMS</Radio>
-              <Radio value="email" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">Email</Radio>
-              <Radio value="both" className="!m-0 !p-0 text-[14px] text-[#4E4E4E]">Both</Radio>
-            </Radio.Group>
-          </Form.Item>
-          <span className="text-[#9A9595] flex justify-center mb-8">
-            Please select your password retrieve option
-          </span>
-
-          {/* Submit */}
-          <Form.Item>
-            <Button
-              htmlType="submit"
-              type="primary"
-              block
-              loading={loading || isResetLoading}
-              className="!h-11 !rounded-xl !bg-[#FFC107] !font-semibold !text-black"
-            >
-              Send
-            </Button>
-          </Form.Item>
-
-          {/* <div className="text-center">
+        {/* <div className="text-center">
             <Space size={6}>
               <Text type="secondary" className="text-xs !text-[#232323]">
                 Don&apos;t have an account?
@@ -170,8 +136,8 @@ export const ForgotPasswordMain = () => {
               </Link>
             </Space>
           </div> */}
-        </Form>
-      </Card>
+      </Form>
+    </Card>
   );
 };
 

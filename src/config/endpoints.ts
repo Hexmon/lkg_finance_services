@@ -1,3 +1,4 @@
+// src\config\endpoints.ts
 export const BASE_URLS = {
     AUTH_BASE_URL: 'https://auth-uat.bhugtan.in',
     ADMIN_BASE_URL: 'https://admin-uat.bhugtan.in',

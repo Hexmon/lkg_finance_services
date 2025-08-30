@@ -18,6 +18,7 @@ import {
   apiRegister,
   apiSendDeviceOtp,
   apiVerifyAccountOtp,
+  apiForgotPasswordInitiate,
 } from './endpoints';
 
 import type {
@@ -49,6 +50,8 @@ import type {
   SendDeviceOtpResponse,
   VerifyAccountOtpRequest,
   VerifyAccountOtpResponse,
+  ForgotPasswordInitiateResponse,
+  ForgotPasswordInitiateRequest,
 } from '../domain/types';
 
 import { useAppDispatch } from '@/lib/store';
@@ -79,7 +82,7 @@ export function useLogoutMutation() {
     mutationFn: apiLogout,
     onSettled: () => {
       dispatch(clearAuth());
-      document.cookie = `auth=; Max-Age=0; Path=/; SameSite=Lax`;
+      // document.cookie = `auth=; Max-Age=0; Path=/; SameSite=Lax`;
       qc.clear();
     },
   });
@@ -114,6 +117,13 @@ export function useVerifyOtpPasswordMutation() {
 export function useForgotUsernameInitiateMutation() {
   return useMutation<ForgotUsernameInitiateResponse, unknown, ForgotUsernameInitiateRequest>({
     mutationFn: (payload) => apiForgotUsernameInitiate(payload),
+  });
+}
+
+/** ---------- Forgot Username: initiate (API Key) ---------- */
+export function useForgotPasswordInitiateMutation() {
+  return useMutation<ForgotPasswordInitiateResponse, unknown, ForgotPasswordInitiateRequest>({
+    mutationFn: (payload) => apiForgotPasswordInitiate(payload),
   });
 }
 

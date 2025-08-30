@@ -1,3 +1,4 @@
+// src\lib\store\slices\uiSlice.ts
 import { createSlice } from '@reduxjs/toolkit';
 
 interface UiState { sidebarOpen: boolean; }

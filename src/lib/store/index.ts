@@ -1,3 +1,4 @@
+// src\lib\store\index.ts
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import {
@@ -19,8 +20,14 @@ function createNoopStorage(): PersistStorage {
     removeItem: async () => {},
   };
 }
-const storage: PersistStorage =
-  typeof window !== 'undefined' ? createWebStorage('local') : createNoopStorage();
+const storage: PersistStorage = typeof window !== 'undefined' ? createWebStorage('local') : createNoopStorage();
+
+// ---------- Persist only auth.token ----------
+const authPersistConfig = {
+  key: 'auth',
+  storage,
+  whitelist: ['token'], // persist ONLY the token
+};
 
 const rootReducer = combineReducers({
   auth: authReducer,

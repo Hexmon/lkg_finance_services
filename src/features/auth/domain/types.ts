@@ -1,3 +1,4 @@
+// src\features\auth\domain\types.ts
 import { z } from 'zod';
 
 /** ---------- Login (API Key) ---------- */
@@ -91,6 +92,21 @@ export const ForgotUsernameInitiateResponseSchema = z.object({
   status: z.union([z.string(), z.number()]),
 });
 export type ForgotUsernameInitiateResponse = z.infer<typeof ForgotUsernameInitiateResponseSchema>;
+
+/** ---------- Forgot Password: Initiate (API Key) ---------- */
+export const ForgotPasswordInitiateRequestSchema = z.object({
+  username: z.string(),
+  type: z.string(),
+  purpose: z.string(),
+});
+export type ForgotPasswordInitiateRequest = z.infer<typeof ForgotPasswordInitiateRequestSchema>;
+
+export const ForgotPasswordInitiateResponseSchema = z.object({
+  message: z.string(),
+  temp_password: z.string(),
+  status: z.union([z.string(), z.number()]),
+});
+export type ForgotPasswordInitiateResponse = z.infer<typeof ForgotPasswordInitiateResponseSchema>;
 
 /** ---------- Email OTP: Generate (Bearer + API Key optional) ---------- */
 export const GenerateEmailOtpRequestSchema = z.object({
