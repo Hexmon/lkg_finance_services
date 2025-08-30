@@ -75,6 +75,7 @@ export default function OnboardingMain({
         const res = await sendAadhaarOtp({ urn, aadhaar_number });
         setAadhaarRefId(res?.ref_id ?? null);
         setOtpVisible((v) => ({ ...v, [target]: true }));
+        success('OTP sent to verify Aadhaar');
       } else {
         const pan_number = form.getFieldValue("pan");
         const res = await verifyPan({ urn, pan_number });
@@ -85,7 +86,6 @@ export default function OnboardingMain({
       }
 
       setSent((s) => ({ ...s, [target]: true }));
-      success(`OTP sent to verify ${target === "aadhar" ? "Aadhaar" : "PAN"}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         error(e?.data?.error?.message  || "Failed to send OTP. Please try again.");

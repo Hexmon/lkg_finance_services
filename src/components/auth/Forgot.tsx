@@ -12,6 +12,8 @@ import {
   extractRefIdFromForgotUsernameInit,
   extractUsernamesFromVerifyResponse,
 } from "@/features/auth";
+import { useRouter } from "next/navigation";
+
 
 const { Text, Title } = Typography;
 
@@ -25,6 +27,7 @@ export const ForgotPasswordMain = () => {
   const [form] = Form.useForm<LoginFormValues>();
   const { success, error, warning } = useMessage();
   const { mutateAsync: forgotpass, isPending: isForgotPassLoading } = useForgotPasswordInitiateMutation();
+  const router = useRouter()
 
   const [loading, setLoading] = useState(false);
 
@@ -33,9 +36,8 @@ export const ForgotPasswordMain = () => {
       setLoading(true);
       const formRes = await form.validateFields(["username", "notificationMethod"]);
       const res = await forgotpass({ username: formRes.username, type: formRes.notificationMethod ?? 'both', purpose: 'FORGOT_PASSWORD' });
-      console.log({res});
       success(res.message ?? "Password has been successfully sent")
-      
+      router.replace('/signin')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       const fallback = err?.data?.error?.message || "Failed to start password reset. Please try again.";

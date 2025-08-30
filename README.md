@@ -3,3 +3,5 @@
 <li>figma : https://www.figma.com/design/g2NgZiendKReQq5FbL7w7l/LKG-PROJECT?node-id=553-10327&t=w0aGcG5oZAyg23MA-0</li>
 <li>notion proejct managament : https://www.notion.so/invite/1570b4b9aec01da4682bc2dc469a8698bbf24f8c</li>
 </ul>
+RA215564173
+Asdf@1234

@@ -4,9 +4,6 @@ import React from "react";
 import { Card, Typography, Button, Tag } from "antd";
 import {
   LeftOutlined,
-  FileTextOutlined,
-  CloudSyncOutlined,
-  CreditCardOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";

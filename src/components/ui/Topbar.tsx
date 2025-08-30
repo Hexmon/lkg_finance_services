@@ -48,7 +48,7 @@ const Topbar: React.FC<TopbarProps> = ({
 }) => {
   return (
     <div
-      className={`w-full rounded-2xl bg-white/90 shadow-sm border border-slate-100 px-4 sm:px-6 py-3 flex items-center justify-between ${className}`}
+      className={`w-full rounded-2xl bg-white/90 shadow-md border border-slate-100 px-4 sm:px-6 py-3 flex items-center justify-between ${className}`}
     >
       {/* Left: Title */}
       <div className="text-sky-600 text-lg sm:text-xl font-semibold">{title}</div>
@@ -56,16 +56,16 @@ const Topbar: React.FC<TopbarProps> = ({
       {/* Center: Balance + actions */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Balance pill */}
-        <div className="px-3 sm:px-4 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs sm:text-sm font-semibold">
+        <div className="px-3 sm:px-4 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs sm:text-sm font-semibold">
           {formatINR(balance)}
         </div>
 
         {/* Add Funds */}
         <Button
           type="primary"
-          icon={<PlusOutlined />}
+          icon={<PlusOutlined className='!border-1 !border-white rounded-full '/>}
           onClick={onAddFunds}
-          className="!bg-emerald-500 hover:!bg-emerald-600 !border-none !text-white !rounded-full !h-8 sm:!h-9 !px-3 sm:!px-4"
+          className="!bg-emerald-500 hover:!bg-emerald-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
         >
           Add Funds
         </Button>
@@ -73,9 +73,9 @@ const Topbar: React.FC<TopbarProps> = ({
         {/* Debit Funds */}
         <Button
           danger
-          icon={<MinusOutlined />}
+          icon={<MinusOutlined className='!border-1 !border-white rounded-full' />}
           onClick={onDebitFunds}
-          className="!bg-red-500 hover:!bg-red-600 !border-none !text-white !rounded-full !h-8 sm:!h-9 !px-3 sm:!px-4"
+          className="!bg-red-500 hover:!bg-red-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
         >
           Debit Funds
         </Button>
@@ -84,7 +84,7 @@ const Topbar: React.FC<TopbarProps> = ({
       {/* Right: bell + user + verified */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Notifications */}
-        <Tooltip title="Notifications">
+        {/* <Tooltip title="Notifications">
           <Badge count={notifications} size="small">
             <button
               aria-label="Notifications"
@@ -93,7 +93,7 @@ const Topbar: React.FC<TopbarProps> = ({
               <BellOutlined className="text-slate-700" />
             </button>
           </Badge>
-        </Tooltip>
+        </Tooltip> */}
 
         {/* User */}
         <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ const Topbar: React.FC<TopbarProps> = ({
         {user.verified && (
           <Tooltip title="Verified">
             {/* <div className="w-8 h-8 rounded-full bg-sky-500 grid place-items-center shadow-sm"> */}
-              <CrownOutlined className="text-white text-base" />
+            <CrownOutlined className="text-white text-base" />
             {/* </div> */}
           </Tooltip>
         )}
