@@ -14,6 +14,25 @@ export const LoginResponseSchema = z.object({
 }).passthrough();
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 
+export const LoginSuccessRawSchema = z.object({
+  status: z.number().optional(),      // backend sends 200 in body sometimes
+  message: z.string().optional(),
+  token: z.string().optional(),
+  access_token: z.string().optional(),
+}).refine(d => !!(d.token ?? d.access_token), {
+  message: 'Token missing in response',
+}).transform(d => ({
+  ...d,
+  token: d.token ?? d.access_token!,  // normalize → token
+}));
+
+export const PasswordResetRequiredSchema = z.object({
+  status: z.literal(1001),
+  message: z.string(),
+  user_id: z.string(),
+});
+export type PasswordResetRequired = z.infer<typeof PasswordResetRequiredSchema>;
+
 /** ---------- Change Password (Bearer) ---------- */
 export const ChangePasswordRequestSchema = z.object({
   oldpassword: z.string().min(1),

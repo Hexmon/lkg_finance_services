@@ -55,6 +55,8 @@ import {
   ForgotPasswordInitiateRequestSchema,
   ForgotPasswordInitiateResponse,
   ForgotPasswordInitiateResponseSchema,
+  LoginSuccessRawSchema,
+  PasswordResetRequiredSchema,
 } from '../domain/types';
 import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 
@@ -77,13 +79,36 @@ const SEND_DEVICE_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_SEND_DEVICE_OTP_PATH;
 const VERIFY_ACCOUNT_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_ACCOUNT_OTP_PATH;
 
 /** ---------- Login ---------- */
+// export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
+//   const body = LoginRequestSchema.parse(payload);
+//   const data = await authRequest<LoginResponse>(LOGIN_PATH, 'POST', body, undefined, {
+//     includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
+//     includeAuth: false,
+//   });
+//   return LoginResponseSchema.parse(data);
+// }
 export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
   const body = LoginRequestSchema.parse(payload);
-  const data = await authRequest<LoginResponse>(LOGIN_PATH, 'POST', body, undefined, {
+
+  // Use a broad type for raw, we’ll validate/branch below.
+  const raw = await authRequest<any>(LOGIN_PATH, 'POST', body, undefined, {
     includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
     includeAuth: false,
   });
-  return LoginResponseSchema.parse(data);
+
+  // Case 1: password reset required → throw a typed error so UI can branch
+  const resetCheck = PasswordResetRequiredSchema.safeParse(raw);
+  if (resetCheck.success) {
+    const { message, user_id } = resetCheck.data;
+    const err = new Error(message) as Error & { code: string; user_id: string };
+    err.code = 'PASSWORD_RESET_REQUIRED';
+    err.user_id = user_id;
+    throw err;
+  }
+
+  // Case 2: success → normalize access_token → token, then validate final shape
+  const normalized = LoginSuccessRawSchema.parse(raw);
+  return LoginResponseSchema.parse(normalized);
 }
 
 /** ---------- Logout (Bearer) ---------- */
