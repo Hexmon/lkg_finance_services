@@ -65,9 +65,7 @@ export function useLoginMutation() {
   return useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (payload) => apiLogin(payload),
     onSuccess: (data) => {
-      // Save token only; fetch profile/permissions via Profile feature hooks
-      dispatch(setToken(data.token));
-      // Invalidate any cached queries that depend on auth (e.g., profile/permissions)
+      dispatch(setToken(data.token)); // guaranteed by normalization
       qc.invalidateQueries();
     },
   });
