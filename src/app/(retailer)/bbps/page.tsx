@@ -96,7 +96,9 @@ export default function BillPaymentServicePage() {
             rounded="rounded-2xl"
             className="rounded-2xl"
             // header={<div className="flex justify-end"><Badge count={"Active"} showZero color="#0BA82F" className="!rounded-md" size="default" /></div>}
-            header={<div className="flex justify-end"><span className="!bg-[#0BA82F] !rounded-md !text-white px-4 py-1">Active</span></div>}
+            header={<div className="flex justify-end">
+              <span className="!bg-[#0BA82F] !rounded-md !text-white px-4 py-1">Active</span>
+            </div>}
             body={
               <div className="w-full flex flex-col items-center text-center space-y-3">
                 <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-100">
