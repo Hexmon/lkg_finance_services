@@ -2,54 +2,15 @@
 
 import React from 'react';
 import { Layout } from 'antd';
-import {
-  BarChartOutlined,
-  CarOutlined,
-  CreditCardOutlined,
-  FileTextOutlined,
-  HomeOutlined,
-  IdcardOutlined,
-  LogoutOutlined,
-  QuestionCircleOutlined,
-  SwapOutlined,
-} from '@ant-design/icons';
 
 import Sidebar, { SidebarSection } from '@/components/ui/Sidebar';
 import Topbar from '@/components/ui/Topbar';
 
 const { Content } = Layout;
 
-const sections: SidebarSection[] = [
-  {
-    title: 'Retailer',
-    items: [{ label: 'Dashboard', icon: <HomeOutlined />, path: '/bbps' }],
-  },
-  {
-    title: 'Services',
-    items: [
-      { label: 'Money Transfer', icon: <SwapOutlined />, path: '/money-transfer' },
-      { label: 'Cash Withdrawal', icon: <CreditCardOutlined />, path: '/cash-withdrawal' },
-      { label: 'Bill Payment', icon: <FileTextOutlined />, path: '/bill-payment' },
-      { label: 'Fastag', icon: <CarOutlined />, path: '/fastag' },
-      { label: 'Pan card', icon: <IdcardOutlined />, path: '/pancard' },
-    ],
-  },
-  {
-    title: 'Reports',
-    items: [{ label: 'Report & Analytics', icon: <BarChartOutlined />, path: '/reports' }],
-  },
-  {
-    title: '',
-    items: [
-      { label: 'FAQ', icon: <QuestionCircleOutlined />, path: '/faq' },
-      { label: 'Logout', icon: <LogoutOutlined />, path: '/logout' },
-    ],
-  },
-];
+type Props = { children: React.ReactNode; activePath?: string, sections: SidebarSection[], pageTitle: string };
 
-type Props = { children: React.ReactNode; activePath?: string };
-
-export default function DashboardLayout({ children, activePath = '/dashboard' }: Props) {
+export default function DashboardLayout({ children, activePath = '/dashboard', sections, pageTitle }: Props) {
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
@@ -69,7 +30,7 @@ export default function DashboardLayout({ children, activePath = '/dashboard' }:
         {/* Sticky top bar */}
         <div className="sticky top-0 z-20 backdrop-blur m-1">
           <Topbar
-            title="Dashboards"
+            title={pageTitle ?? ""}
             balance={25000}
             onAddFunds={() => console.log('Add Funds')}
             onDebitFunds={() => console.log('Debit Funds')}
@@ -85,7 +46,7 @@ export default function DashboardLayout({ children, activePath = '/dashboard' }:
         </div>
 
         {/* Scrollable content */}
-        <Content className="overflow-y-auto p-4 sm:p-6">
+        <Content className="overflow-y-auto p-4 !bg-[#ececec] sm:p-6">
           {children}
         </Content>
       </Layout>

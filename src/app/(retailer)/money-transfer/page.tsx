@@ -13,7 +13,7 @@ export default function BillPaymentServicePage() {
         titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"
         arrowClassName="!text-[#3386FF]"
       />
-      dashbaord main page
+      dashbaord money transfer
       <div className="bg-transparent"></div>
     </DashboardLayout>
   );

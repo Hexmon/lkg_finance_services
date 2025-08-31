@@ -1,11 +1,12 @@
 "use client";
 
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import Image from "next/image";
 
 export default function PaymentSuccessPage() {
   return (
-    <DashboardLayout>
+      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <div className="p-6 min-h-screen bg-[#f9f6ef]">
         {/* Header outside */}
         <div className="flex items-center gap-2 mb-6">

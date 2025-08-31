@@ -5,6 +5,7 @@ import { Card, Typography, Select, Input, Button } from "antd";
 import { LeftOutlined, WifiOutlined } from "@ant-design/icons";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 
 const { Title, Text } = Typography;
 
@@ -22,7 +23,7 @@ export default function BroadbandPrepaidPage() {
   ];
 
   return (
-    <DashboardLayout>
+      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <div className="p-6 bg-[#f9f6ef] min-h-screen w-full">
         {/* Header with Back + Title + Logo */}
         <div className="flex justify-between items-center mb-2">
