@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Card, Typography, Button, Alert } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 
 const { Title, Text } = Typography;
 
@@ -20,7 +21,7 @@ export default function BillDetailsPage() {
   };
 
   return (
-    <DashboardLayout>
+      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <div className="p-6 bg-gray-50 min-h-screen w-full">
         {/* Header with Back + Title + Logo */}
         <div className="flex justify-between items-center mb-6">
