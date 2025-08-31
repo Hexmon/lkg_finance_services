@@ -20,13 +20,14 @@ import {
   MedicineBoxOutlined,
   ExperimentOutlined,
   IdcardOutlined,
-  ShopOutlined,
   FireOutlined,
   CloudOutlined,
   AppstoreAddOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
+import { CardLayout } from "@/lib/layouts/CardLayout";
 
 const { Title, Text } = Typography;
 
@@ -89,8 +90,8 @@ export default function ChooseServicePage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6 bg-[#f9f6ef] min-h-screen w-full">
+    <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
+      <div className="p-6 min-h-screen w-full">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div
@@ -117,8 +118,7 @@ export default function ChooseServicePage() {
           placeholder="Search for bill payment services..."
           className="rounded-xl shadow-sm mb-6"
         />
-
-        {/* Available Services */}
+        
         <Card className="rounded-2xl shadow-md w-full mb-6">
           <Text strong className="block mb-3">Available Services</Text>
           <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
@@ -128,7 +128,7 @@ export default function ChooseServicePage() {
                 className="cursor-pointer rounded-xl text-center py-6 bg-[#faf5e9] hover:border-blue-400 hover:shadow-md transition"
               >
                 <div className="text-2xl mb-2">{service.icon}</div>
-                <Text className="text-sm">{service.name}</Text>
+                <Text className="text-[10px]">{service.name}</Text>
               </Card>
             ))}
           </div>

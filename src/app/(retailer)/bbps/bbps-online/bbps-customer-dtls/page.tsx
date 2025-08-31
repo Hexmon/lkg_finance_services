@@ -4,13 +4,14 @@ import React from "react";
 import { Card, Typography, Form, Input, Button } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 
 const { Title, Text } = Typography;
 
 export default function CustomerDetailsForm() {
   return (
 
-    <DashboardLayout>
+    <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <div className="p-8 bg-gray-50 min-h-screen">
         {/* Back + Title */}
         <div className="flex items-center gap-2 mb-6 text-blue-700">

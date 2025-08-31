@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Card, Typography } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 
 const { Title, Text } = Typography;
 
@@ -62,7 +63,7 @@ const plans = [
 
 export default function BroadbandPrepaid() {
   return (
-    <DashboardLayout>
+      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <div className="p-6 bg-[#e9e1d1] min-h-screen w-full">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
