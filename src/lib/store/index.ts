@@ -1,3 +1,4 @@
+// src\lib\store\index.ts
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import {
@@ -26,7 +27,7 @@ const storage: PersistStorage =
 const authPersistConfig = {
   key: 'auth',
   storage,
-  whitelist: ['token'], // <— this is the important part
+  whitelist: ['token', 'userId'], // <— this is the important part
 };
 
 // Combine reducers with persisted auth
@@ -61,3 +62,6 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const selectToken = (s: RootState) => s.auth.token;
+export const selectUserId = (s: RootState) => s.auth.userId;
+export const selectIsAuthenticated = (s: RootState) => !!s.auth.token;
