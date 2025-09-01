@@ -20,24 +20,30 @@ function createNoopStorage(): PersistStorage {
     removeItem: async () => {},
   };
 }
-const storage: PersistStorage = typeof window !== 'undefined' ? createWebStorage('local') : createNoopStorage();
+const storage: PersistStorage =
+  typeof window !== 'undefined' ? createWebStorage('local') : createNoopStorage();
 
-// ---------- Persist only auth.token ----------
+// --- Persist ONLY token in auth slice ---
 const authPersistConfig = {
   key: 'auth',
   storage,
-  whitelist: ['token'], // persist ONLY the token
+  whitelist: ['token', 'userId'], // <— this is the important part
 };
 
+// Combine reducers with persisted auth
 const rootReducer = combineReducers({
-  auth: authReducer,
+  auth: persistReducer(authPersistConfig, authReducer),
   ui: uiReducer,
 });
 
-const persistedReducer = persistReducer(
-  { key: 'root', storage, whitelist: ['ui'] },
-  rootReducer
-);
+// Optionally persist other top-level slices (ui) at root
+const rootPersistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['ui'],
+};
+
+const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
@@ -56,3 +62,6 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const selectToken = (s: RootState) => s.auth.token;
+export const selectUserId = (s: RootState) => s.auth.userId;
+export const selectIsAuthenticated = (s: RootState) => !!s.auth.token;

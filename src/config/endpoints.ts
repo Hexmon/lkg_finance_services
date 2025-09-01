@@ -35,8 +35,22 @@ export const RETAILER_ENDPOINTS = {
                 BILL_VALIDATION: "/secure/bbps/billavenue/bill-validation",
                 ALL_PLANS: "/secure/bbps/bills/all-plans",
             },
-        }
-    }
+        },
+    },
+    SERVICE: {
+        SERVICE_LIST: "secure/retailer/service-list",
+        SERVICE_SUBSCRIPTION_LIST: "secure/retailer/service-subscription-list",
+        SUBSCRIPTIONS: "secure/retailer/subscriptions",
+        SERVICE_CHARGES: "/secure/retailer/service-charges",
+        SUBSCRIBE: "/secure/retailer/subscribe",
+    },
+    WALLET: {
+        WALLET_BALANCE_BY_ID: "/secure/retailer/wallet-balance", // + /:walletId
+        GET_WALLET_BALANCE: "/secure/retailer/get-wallet-balance/",
+        GET_WALLET_STATEMENT: "/secure/retailer/get-wallet-statement",
+        TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
+        PAYOUT: "/secure/retailer/payout",
+    },
 }
 
 export const AUTHERIZATION_ENDPOINT = {
