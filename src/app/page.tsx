@@ -7,71 +7,13 @@ import { Card, Typography, Button } from "antd";
 import WalletOutlined from "@ant-design/icons/lib/icons/WalletOutlined";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import Image from "next/image";
+import { featureConfig, quickService } from "@/config/app.config";
+import { useRouter } from "next/navigation";
 const { Title, Text } = Typography;
 
-const featureConfig = [
-  {
-    id: 1,
-    title: "Total Transaction",
-    icon: '/icons/total-transation.svg',
-    quantity: "2,000",
-    footer: "▲ 3.2% Since last month"
-  },
-  {
-    id: 2,
-    title: "Success Rate",
-    icon: '/icons/success-rate.svg',
-    quantity: "95.3%",
-    footer: "▲ 3.2% Since last month"
-  },
-  {
-    id: 3,
-    title: "Customers",
-    icon: '/icons/customer.svg',
-    quantity: "1500",
-    footer: "▲ 3.2% Since last month"
-  },
-  {
-    id: 4,
-    title: "Commissions",
-    icon: '/icons/commission.svg',
-    quantity: "1467",
-    footer: "▲ 3.2% Since last month"
-  },
-]
+export default function Dashboard() {
+  const router = useRouter();
 
-const quickService = [
-  {
-    id: 1,
-    icon: "/icons/money-transfer.png",
-    title: "Money Transfer",
-    subtitle: "Send Money Instantly",
-    navigationURL: "/money-transfer"
-  },
-  {
-    id: 2,
-    icon: "/icons/cash-withdraw.svg",
-    title: "Cash Withdrawal",
-    subtitle: "AEPS transactions",
-    navigationURL: ""
-  },
-  {
-    id: 3,
-    icon: "/icons/bill-payment.svg",
-    title: "Bill Payment",
-    subtitle: "Pay all bills",
-    navigationURL: "/bbps"
-  },
-  {
-    id: 4,
-    icon: "/icons/cashfree-payment.svg",
-    title: "Cashfree Payout",
-    subtitle: "Bank transfers",
-    navigationURL: ""
-  },
-]
-
-export default function BillPaymentServicePage() {
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/" pageTitle="Dashboards">
       {/* Header Section */}
@@ -184,30 +126,6 @@ export default function BillPaymentServicePage() {
             )
           })
         }
-        {/* <CardLayout
-          elevation={1}                       // ~ shadow-sm
-          rounded="rounded-2xl"
-          padding="p-4"
-          height="h-auto"
-          bgColor="bg-white"
-          body={
-            <div className="flex flex-col space-y-1">
-              <Text strong>Success Rate</Text>
-              <Title level={3}>95.3%</Title>
-              <Text type="success">▲ 2.1% Since last month</Text>
-            </div>
-          }
-        />
-        <Card className="rounded-2xl shadow-sm">
-          <Text strong>Customers</Text>
-          <Title level={3}>1,500</Title>
-          <Text type="success">▲ 3.2% Since last month</Text>
-        </Card>
-        <Card className="rounded-2xl shadow-sm">
-          <Text strong>Commissions</Text>
-          <Title level={3}>₹1467</Title>
-          <Text type="success">▲ 3.2% Since last month</Text>
-        </Card> */}
       </div>
 
       {/* Quick Services */}
@@ -232,7 +150,7 @@ export default function BillPaymentServicePage() {
                       </div>
                       <Text className="!text-[#232323] !font-medium !text-[14px] mt-2">{data.title}</Text>
                       <Text className="!text-[12px] !font-medium !text-[#787878] mb-4">{data.subtitle}</Text>
-                      <Button size="middle" type="primary" className="!bg-[#3386FF] w-[80%] !rounded-xl">Get Started <Image src="/icons/Arrow.svg" width={12} height={12} alt="" /> </Button>
+                      <Button size="middle" onClick={() => router.push(data.navigationURL)} type="primary" className="!bg-[#3386FF] w-[80%] !rounded-xl">Get Started <Image src="/icons/Arrow.svg" width={12} height={12} alt="" /> </Button>
                     </div>
                   }
                 />
@@ -243,7 +161,7 @@ export default function BillPaymentServicePage() {
       </Card>
 
       {/* Wallet Overview & Recent Activity */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         <Card className="rounded-2xl shadow-sm">
           <Text strong className="mb-3 !font-semibold !text-[20px]">Wallet Overview</Text>
           <div className="grid grid-cols-3 gap-4">
@@ -283,6 +201,7 @@ export default function BillPaymentServicePage() {
           </div>
         </Card>
       </div>
+
       <div className="bg-transparent"></div>
     </DashboardLayout>
   );
