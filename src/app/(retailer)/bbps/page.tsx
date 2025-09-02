@@ -30,6 +30,7 @@ export default function BillPaymentServicePage() {
         onDropdownSelect={(key) => console.log("selected:", key)}
         dropdownTriggerClassName="text-blue-500"
         dropdownClassName="!min-w-[220px]"
+        imgSrc=""
       />
       <div className="p-8 bg-gray-50">
         {/* Options */}

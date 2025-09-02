@@ -3,6 +3,7 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { ArrowLeftOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Button } from "antd";
+import Image from "next/image";
 
 export default function CashWithdraw() {
     return (
@@ -27,25 +28,51 @@ export default function CashWithdraw() {
                             Verification session timed out. Please start again.
                         </span>
                         <div className="!text-center h-6 flex items-center !mx-auto shadow mt-1 w-fit bg-white rounded-xl">
-                            <span className="mx-4 !text-sm py-2"><SafetyCertificateOutlined /> 20 sec remaining</span> </div>
+                            <Image
+                                src="/remaining.svg"
+                                alt="time remaining"
+                                width={122}
+                                height={24}
+                                className="object-contain"
+                                /> </div>
                     </div>
                 }
                 body={
-                    <div className="grid place-items-center gap-3 py-6">
+                    <div className="grid place-items-center gap-3 py-6 !mb-0">
+
                         <div className="h-24 w-24 rounded-full bg-white shadow-inner grid place-items-center">
-                            <div className="h-12 w-12 rounded-full border-4 border-blue-500" />
+                            <Image
+                                src="/biometric.svg"
+                                alt="Biometric Verification"
+                                width={100}   // same as h-12
+                                height={100}  // same as w-12
+                                className="object-contain"
+                            />
                         </div>
-                        <div className="text-sm text-blue-700/80">Processing Data</div>
-                        <div className="text-sm">Verifying: <strong>Rajesh Kumar</strong></div>
-                        <Button size="large" className="w-[75%] !bg-[#3386FF] !text-white !rounded-xl">Start Verification</Button>
+                        <div className="flex items-center gap-2 bg-[#E6F0FF] text-[#3386FF] font-medium text-sm rounded-full px-4 py-2 w-[164px] h-[24]">
+                            <Image
+                                src="/person.svg"
+                                alt="person logo"
+                                height={16}
+                                width={16}
+                            />
+                            <span className="text-[10px]">Ready for Verification</span>
+                        </div>
+
+                        <div className="text-[12px] text-[#9A9595]">
+                            Verifying: <strong className="text-[#232323]">Rajesh Kumar</strong>
+                        </div>
+                        <div >
+                            <Button className="!bg-[#3386FF] !text-white !w-[355px] !h-[38px] !rounded-[12px]">Start Verification</Button>
+                        </div>
                     </div>
                 }
                 footer={
-                        <ul className="text-center text-[#9A9595] text-[12px] font-medium">
-                            <li>• Ensure your finger is clean and dry</li>
-                            <li>• Place finger firmly on the scanner</li>
-                            <li>• Hold still during scanning process</li>
-                        </ul>
+                    <ul className="text-center text-[#9A9595] text-[12px] font-medium">
+                        <li>• Ensure your finger is clean and dry</li>
+                        <li>• Place finger firmly on the scanner</li>
+                        <li>• Hold still during scanning process</li>
+                    </ul>
                 }
             />
             <div className="!text-center h-8 flex items-center !mx-auto mt-4 shadow-xl w-fit bg-white rounded-xl">
