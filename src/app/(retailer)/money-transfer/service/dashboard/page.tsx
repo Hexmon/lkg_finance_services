@@ -26,7 +26,7 @@ export default function MoneyTransferPage() {
                 {/* Stats Section */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="rounded-xl shadow-md text-center">
-                        <Text type="secondary">Today's Transfer</Text>
+                        <Text type="secondary">Todays Transfer</Text>
                         <Title level={3}>₹2,45,000</Title>
                     </Card>
                     <Card className="rounded-xl shadow-md text-center">

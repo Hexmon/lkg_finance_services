@@ -11,6 +11,7 @@ export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 /** Backend guarantees a token on success; allow extra fields via passthrough */
 export const LoginResponseSchema = z.object({
   token: z.string(),
+  userId: z.string().nullable().optional(),
 }).passthrough();
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 
@@ -19,11 +20,13 @@ export const LoginSuccessRawSchema = z.object({
   message: z.string().optional(),
   token: z.string().optional(),
   access_token: z.string().optional(),
+  user_id: z.string().optional(),  
 }).refine(d => !!(d.token ?? d.access_token), {
   message: 'Token missing in response',
 }).transform(d => ({
   ...d,
-  token: d.token ?? d.access_token!,  // normalize → token
+  token: d.token ?? d.access_token!,
+    userId: d.user_id ?? null,
 }));
 
 export const PasswordResetRequiredSchema = z.object({

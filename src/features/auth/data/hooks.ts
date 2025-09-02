@@ -54,9 +54,10 @@ import type {
   ForgotPasswordInitiateRequest,
 } from '../domain/types';
 
-import { useAppDispatch } from '@/lib/store';
-import { setToken, clearAuth } from '@/lib/store/slices/authSlice';
+import { persistor, RootState, useAppDispatch } from '@/lib/store';
+import { setToken, clearAuth, setUserId } from '@/lib/store/slices/authSlice';
 
+export const selectUserId = (s: RootState) => s.auth.userId;
 /** ---------- Login (API Key) ---------- */
 export function useLoginMutation() {
   const dispatch = useAppDispatch();
@@ -65,7 +66,8 @@ export function useLoginMutation() {
   return useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (payload) => apiLogin(payload),
     onSuccess: (data) => {
-      dispatch(setToken(data.token)); // guaranteed by normalization
+      dispatch(setToken(data.token));
+      if (data.userId) dispatch(setUserId(data.userId));
       qc.invalidateQueries();
     },
   });
@@ -78,10 +80,14 @@ export function useLogoutMutation() {
 
   return useMutation<{ success: true }>({
     mutationFn: apiLogout,
-    onSettled: () => {
+    onSettled: async () => {
       dispatch(clearAuth());
-      // document.cookie = `auth=; Max-Age=0; Path=/; SameSite=Lax`;
       qc.clear();
+
+      // Optional: ensure persisted state is flushed after clearing
+      await persistor.flush();
+      // Or, for a total reset (rarely needed):
+      // await persistor.purge();
     },
   });
 }
@@ -194,3 +200,4 @@ export function useVerifyAccountOtpMutation() {
     mutationFn: (payload) => apiVerifyAccountOtp(payload),
   });
 }
+

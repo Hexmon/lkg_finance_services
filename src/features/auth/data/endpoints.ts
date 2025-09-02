@@ -99,7 +99,7 @@ export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
   // Case 1: password reset required → throw a typed error so UI can branch
   const resetCheck = PasswordResetRequiredSchema.safeParse(raw);
   if (resetCheck.success) {
-    const { message, user_id } = resetCheck.data;
+    const { message, user_id } = resetCheck?.data ?? {};
     const err = new Error(message) as Error & { code: string; user_id: string };
     err.code = 'PASSWORD_RESET_REQUIRED';
     err.user_id = user_id;
