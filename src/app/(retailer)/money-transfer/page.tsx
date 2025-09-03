@@ -5,10 +5,14 @@ import { Card, Typography } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
+import { useServiceListQuery } from "@/features/retailer/services";
 
 const { Title, Text } = Typography;
 
 export default function MoneyTransferServicePage() {
+    const {data, error , isLoading} = useServiceListQuery()
+    console.log({data, error , isLoading});
+    
     return (
         <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money-transfer" pageTitle="Money Transfer">
             <DashboardSectionHeader

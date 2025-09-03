@@ -3,6 +3,7 @@ import {
   useMutation,
   useQueryClient,
   type UseQueryOptions,
+  type QueryKey,
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 import {
@@ -28,14 +29,14 @@ export function useBbpsCircleListQuery(
   _opt?: {
     token?: string | null; // reserved for future per-call override
     query?: Omit<
-      UseQueryOptions<CircleListResponse, unknown, CircleListResponse, unknown[]>,
+      UseQueryOptions<CircleListResponse, Error, CircleListResponse, QueryKey>,
       "queryKey" | "queryFn"
     >;
   },
 ) {
   return useQuery({
     queryKey: ["bbps", "circle-list", params.mode, params.search ?? ""],
-    queryFn: () => apiGetCircleList(params),
+    queryFn: ({ signal }) => apiGetCircleList(params, { signal }),
     enabled: (_opt?.query?.enabled ?? true) && !!params.mode,
     ...(_opt?.query ?? {}),
   });
@@ -47,14 +48,14 @@ export function useBbpsCategoryListQuery(
   _opt?: {
     token?: string | null;
     query?: Omit<
-      UseQueryOptions<CategoryListResponse, unknown, CategoryListResponse, unknown[]>,
+      UseQueryOptions<CategoryListResponse, Error, CategoryListResponse, QueryKey>,
       "queryKey" | "queryFn"
     >;
   },
 ) {
   return useQuery({
     queryKey: ["bbps", "category-list", params.mode],
-    queryFn: () => apiGetCategoryList(params),
+    queryFn: ({ signal }) => apiGetCategoryList(params, { signal }),
     enabled: _opt?.query?.enabled ?? true,
     ...(_opt?.query ?? {}),
   });
@@ -66,7 +67,7 @@ export function useBbpsBillerListQuery(
   _opt?: {
     token?: string | null;
     query?: Omit<
-      UseQueryOptions<BillerListResponse, unknown, BillerListResponse, unknown[]>,
+      UseQueryOptions<BillerListResponse, Error, BillerListResponse, QueryKey>,
       "queryKey" | "queryFn"
     >;
   },
@@ -79,7 +80,7 @@ export function useBbpsBillerListQuery(
       params.mode,
       params.is_offline ? "offline" : "online",
     ],
-    queryFn: () => apiGetBillerList(params),
+    queryFn: ({ signal }) => apiGetBillerList(params, { signal }),
     enabled: (_opt?.query?.enabled ?? true) && params.bbps_category_id.length > 0,
     ...(_opt?.query ?? {}),
   });
@@ -87,21 +88,20 @@ export function useBbpsBillerListQuery(
 
 /** -------- Bill Fetch (mutation) -------- */
 export function useBbpsBillFetchMutation(_opt?: { token?: string | null }) {
-  const qc = useQueryClient();
-
-  return useMutation<BillFetchResponse, unknown, BillFetchRequest>({
+  return useMutation<BillFetchResponse, Error, BillFetchRequest>({
     mutationKey: ["bbps", "bill-fetch"],
     mutationFn: (body) => apiBillFetch(body),
-    onSuccess: () => {
-      // Add invalidations if you maintain any derived lists
-      // qc.invalidateQueries({ queryKey: ["bbps", "recent-bills"] });
-    },
+    // onSuccess: () => {
+    //   // If you add cache invalidation later, reintroduce:
+    //   // const qc = useQueryClient();
+    //   // qc.invalidateQueries({ queryKey: ["bbps", "recent-bills"] });
+    // },
   });
 }
 
 /** -------- Biller Info (mutation) -------- */
 export function useBbpsBillerInfoMutation() {
-  return useMutation<BillerInfoResponse, unknown, BillerInfoRequest>({
+  return useMutation<BillerInfoResponse, Error, BillerInfoRequest>({
     mutationKey: ["bbps", "biller-info"],
     mutationFn: (body) => apiGetBillerInfo(body),
   });
@@ -123,7 +123,7 @@ export function useBbpsApi() {
     (params: { search?: string; mode: "ONLINE" | "OFFLINE" }) =>
       qc.fetchQuery({
         queryKey: ["bbps", "circle-list", params.mode, params.search ?? ""],
-        queryFn: () => apiGetCircleList(params),
+        queryFn: ({ signal }) => apiGetCircleList(params, { signal }),
       }),
     [qc],
   );
@@ -132,7 +132,7 @@ export function useBbpsApi() {
     (params: { mode: "ONLINE" | "OFFLINE" }) =>
       qc.fetchQuery({
         queryKey: ["bbps", "category-list", params.mode],
-        queryFn: () => apiGetCategoryList(params),
+        queryFn: ({ signal }) => apiGetCategoryList(params, { signal }),
       }),
     [qc],
   );
@@ -147,18 +147,18 @@ export function useBbpsApi() {
           params.mode,
           params.is_offline ? "offline" : "online",
         ],
-        queryFn: () => apiGetBillerList(params),
+        queryFn: ({ signal }) => apiGetBillerList(params, { signal }),
       }),
     [qc],
   );
 
   // Mutations (expose async functions for clean destructuring)
-  const billFetchMut = useMutation<BillFetchResponse, unknown, BillFetchRequest>({
+  const billFetchMut = useMutation<BillFetchResponse, Error, BillFetchRequest>({
     mutationKey: ["bbps", "bill-fetch"],
     mutationFn: apiBillFetch,
   });
 
-  const billerInfoMut = useMutation<BillerInfoResponse, unknown, BillerInfoRequest>({
+  const billerInfoMut = useMutation<BillerInfoResponse, Error, BillerInfoRequest>({
     mutationKey: ["bbps", "biller-info"],
     mutationFn: apiGetBillerInfo,
   });

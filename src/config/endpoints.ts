@@ -11,6 +11,10 @@ export const BASE_URLS = {
 }
 
 export const RETAILER_ENDPOINTS = {
+    GENERAL: {
+        DASHBOARD_DETAILS: "/secure/retailer/getDashboard",
+        Transaction_SUMMARY: "/secure/retailer/transaction_summary",
+    },
     RETAILER_BBPS: {
         BBPS_ONLINE: {
             BILL_FETCH: {
