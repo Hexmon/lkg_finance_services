@@ -26,9 +26,9 @@ export default function FastTagCustomerRegistrationPage() {
                 imgClassName="!w-[98px] !h-[36px] !mr-8"
             />
 
-            <div className="p-6 min-h-screen w-full">
+            <div className="p-6 min-h-screen w-full ">
                 {/* Content Card */}
-                <Card className="rounded-xl shadow-sm bg-[#FFF7EC] p-6 mx-auto w-full">
+                <Card className="rounded-xl shadow-sm bg-[#FFF7EC] p-6 mx-auto w-full ">
                     {/* Customer Onboarding Title */}
                     <div className="flex items-center gap-2 mb-2 mt-6 ml-4">
                         <Image
