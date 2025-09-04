@@ -61,25 +61,25 @@ export const quickService = [
 ]
 
 export const walletData = [
-    {
-      label: "Main Wallet",
-      amount: "₹ 25,000",
-      icon: "/wallet.svg",
-      growthIcon: "/thirteen.svg",
-    },
-    {
-      label: "APES Wallet",
-      amount: "₹ 8,500",
-      icon: "/wallet.svg",
-      growthIcon: "/thirteen.svg",
-    },
-    {
-      label: "Commission",
-      amount: "₹ 3,200",
-      icon: "/wallet.svg",
-      growthIcon: "/thirteen.svg",
-    },
-  ]
+  {
+    label: "Main Wallet",
+    amount: "₹ 25,000",
+    icon: "/wallet.svg",
+    growthIcon: "/thirteen.svg",
+  },
+  {
+    label: "APES Wallet",
+    amount: "₹ 8,500",
+    icon: "/wallet.svg",
+    growthIcon: "/thirteen.svg",
+  },
+  {
+    label: "Commission",
+    amount: "₹ 3,200",
+    icon: "/wallet.svg",
+    growthIcon: "/thirteen.svg",
+  },
+]
 
 export const transactions = [
   { amount: 5000, name: "Rahul Sharma", type: "DMT", time: "2 min ago", status: "success" },
@@ -93,7 +93,7 @@ export const walletStats = [
     label: "Today's Transfer",
     amount: "₹2,45,000",
     icon: "/heart-line.svg",
-    growthIcon: "/icons/growth.svg", 
+    growthIcon: "/icons/growth.svg",
   },
   {
     label: "Success Rate",
@@ -110,7 +110,58 @@ export const walletStats = [
   {
     label: "Commission Earned",
     amount: "₹1,240",
-    icon: "/star.svg",
+    icon: "/stars.svg",
     growthIcon: "/icons/growth.svg",
   },
 ]
+
+export const BeneficiariesData = [
+  { name: "Rajesh Kumar", bank: "SBI", account: "1234", moblie: "+91 854" },
+  { name: "Priya Sharma", bank: "HDFC", account: "1235", moblie: "+91 954" },
+  { name: "Amit Singh", bank: "ICICI", account: "1236", moblie: "+91 664" },
+  { name: "Neha Gupta", bank: "Axis", account: "1238", moblie: "+91 784" },
+  { name: "Rajesh Kumar", bank: "SBI", account: "1239", moblie: "+91 934" },
+]
+
+export const TransactionsData = [
+  {
+    name: "Rajesh Kumar",
+    txnId: "TXN123456789",
+    amount: 5000,
+    mode: "IMPS",
+    status: "Success",
+    time: "2 min ago",
+  },
+  {
+    name: "Rajesh Kumar",
+    txnId: "TXN123456789",
+    amount: 5000,
+    mode: "IMPS",
+    status: "Processing",
+    time: "2 min ago",
+  },
+  {
+    name: "Rajesh Kumar",
+    txnId: "TXN123456789",
+    amount: 5000,
+    mode: "IMPS",
+    status: "Success",
+    time: "2 min ago",
+  },
+  {
+    name: "Rajesh Kumar",
+    txnId: "TXN123456789",
+    amount: 5000,
+    mode: "IMPS",
+    status: "Success",
+    time: "2 min ago",
+  },
+  {
+    name: "Rajesh Kumar",
+    txnId: "TXN123456789",
+    amount: 5000,
+    mode: "IMPS",
+    status: "Success",
+    time: "2 min ago",
+  },
+];

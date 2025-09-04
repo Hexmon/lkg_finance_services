@@ -233,7 +233,7 @@ export default function Dashboard() {
 
                 <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
                   <Image
-                    src="/eye.svg"
+                    src="/eyes.svg"
                     alt="eye icon"
                     width={15}
                     height={15}

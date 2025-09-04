@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, Typography, Button } from "antd";
 import {
     UserOutlined,
@@ -11,14 +11,51 @@ import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { walletStats } from "@/config/app.config";
 import Image from "next/image";
+import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
+import Beneficiaries from "@/components/money-transfer/Beneficiary";
+import NewTransfer from "@/components/money-transfer/NewTransfer";
+import Transaction from "@/components/money-transfer/Transaction";
 
 const { Title, Text } = Typography;
 
 export default function MoneyTransferPage() {
+    const tabItems: TabItem[] = [
+        {
+            key: "transfer",
+            label: (
+                <div className="flex items-center justify-center gap-2">
+                    <Image src="/rocket-black.svg" width={24} height={24} alt="Send" className="bg-"/>
+                    <span className="font-medium text-black">New Transfer</span>
+                </div>
+            ),
+            content: <NewTransfer/>,
+        },
+        {
+            key: "beneficiaries",
+            label: (
+                <div className="flex items-center justify-center gap-2 bg-blue-500 rounded-[10px]">
+                    <Image src="/beneficiary.svg" width={24} height={24} alt="Beneficiaries" />
+                    <span className="font-medium text-black">Beneficiaries</span>
+                </div>
+            ),
+            content: <Beneficiaries/>,
+        },
+        {
+            key: "transactions",
+            label: (
+                <div className="flex items-center justify-center gap-2">
+                    <Image src="/line-blk.svg" width={24} height={24} alt="Transactions" />
+                    <span className="font-medium text-black">Transactions</span>
+                </div>
+            ),
+            content: <Transaction/>,
+        },
+    ];
+
     return (
         <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/" pageTitle="Dashboards">
             <CardLayout
-            width="w-full"
+                width="w-full"
                 header={
                     <DashboardSectionHeader
                         title="Money Transfer Service"
@@ -68,19 +105,26 @@ export default function MoneyTransferPage() {
 
                 }
             />
-            <div className="p-6 min-h-screen w-full">
+            <div className="!min-h-screen !w-full !mt-4">
 
                 {/* Tabs (New Transfer, Beneficiaries, Transactions) */}
-                <div className="flex gap-3 mb-6">
-                    <Button className="rounded-md px-6 py-2 shadow-sm">New Transfer</Button>
-                    <Button className="rounded-md px-6 py-2 shadow-sm bg-blue-600 text-white">
-                        Beneficiaries
-                    </Button>
-                    <Button className="rounded-md px-6 py-2 shadow-sm">Transactions</Button>
+                <div className="!rounded-[20px] !bg-white !px-2 !py-1 !w-full">
+                    <SmartTabs
+                        items={tabItems}
+                        fitted={true}
+                        keepAlive={true}
+                        durationMs={260}
+                        easing="cubic-bezier(.22,1,.36,1)"
+                        className="bg-white p-1 rounded-[15px] w-full"
+                        tablistClassName="flex gap-0"
+                        panelsClassName="mt-6"
+                    />
+
                 </div>
 
+
                 {/* Beneficiary Management */}
-                <Card className="rounded-2xl shadow-md mb-6">
+                {/* <Card className="rounded-2xl shadow-md mb-6">
                     <div className="flex justify-between items-center mb-3">
                         <div>
                             <Title level={4} className="!mb-0">
@@ -119,10 +163,10 @@ export default function MoneyTransferPage() {
                             </div>
                             <Button className="!bg-blue-600 text-white">Change Sender</Button>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Beneficiary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {[
                             { name: "Rajesh Kumar", bank: "SBI", account: "1234" },
                             { name: "Priya Sharma", bank: "HDFC", account: "1235" },
@@ -150,7 +194,7 @@ export default function MoneyTransferPage() {
                             </Card>
                         ))}
                     </div>
-                </Card>
+                </Card> */}
             </div>
             <div className="bg-transparent"></div>
         </DashboardLayout>
