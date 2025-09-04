@@ -7,7 +7,7 @@ import { Card, Typography, Button } from "antd";
 import WalletOutlined from "@ant-design/icons/lib/icons/WalletOutlined";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import Image from "next/image";
-import { featureConfig, quickService } from "@/config/app.config";
+import { featureConfig, quickService, walletData, transactions } from "@/config/app.config";
 import { useRouter } from "next/navigation";
 const { Title, Text } = Typography;
 
@@ -161,45 +161,129 @@ export default function Dashboard() {
       </Card>
 
       {/* Wallet Overview & Recent Activity */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <Card className="rounded-2xl shadow-sm">
-          <Text strong className="mb-3 !font-semibold !text-[20px]">Wallet Overview</Text>
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="bg-[#faf5e9] rounded-xl text-center p-4">
-              <Text type="secondary">Main Wallet</Text>
-              <Title level={4}>₹25,000</Title>
-            </Card>
-            <Card className="bg-[#faf5e9] rounded-xl text-center p-4">
-              <Text type="secondary">APES Wallet</Text>
-              <Title level={4}>₹8,500</Title>
-            </Card>
-            <Card className="bg-[#faf5e9] rounded-xl text-center p-4">
-              <Text type="secondary">Commission</Text>
-              <Title level={4}>₹3,200</Title>
-            </Card>
-          </div>
-        </Card>
+      <div className="flex flex-col md:flex-row gap-6 mt-4 w-full">
+        <Card className="!rounded-2xl !shadow-sm !w-full !mb-10">
+          <div className="flex justify-between items-start w-full mb-4">
+            <div>
+              <Text strong className="block !font-semibold !text-[20px] mb-0">Wallet Overview</Text>
+              <Text className="!font-light !text-sm !text-[13px]">Manage Your Financial Account</Text>
+            </div>
 
-        <Card className="rounded-2xl shadow-sm">
-          <Text strong className="block mb-3">Recent Activity</Text>
-          <div className="flex flex-col gap-3">
-            {[5000, 6000, 4500].map((amt, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center bg-[#faf5e9] rounded-xl px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <WalletOutlined className="text-xl text-blue-500" />
-                  <div>
-                    <Text strong>DMT</Text>
-                    <div className="text-xs text-gray-500">Nehaul Sharma</div>
+            <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
+              <Image
+                src="/upload.svg"
+                alt="eye icon"
+                width={15}
+                height={15}
+              />
+              <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {walletData.map((wallet) => (
+              <CardLayout
+                key={wallet.label}
+                className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
+                header={
+                  <div className="flex justify-between items-start w-full">
+                    {/* Wallet Icon (left) */}
+                    <div className="bg-blue-500 p-2 rounded-full w-12 h-12 flex items-center justify-center">
+                      <Image
+                        src={wallet.icon}
+                        alt={wallet.label}
+                        width={35}
+                        height={35}
+                      />
+                    </div>
+
+                    {/* Growth Icon (right) */}
+                    <Image
+                      src={wallet.growthIcon}
+                      alt="growth"
+                      width={30}
+                      height={13}
+                      className="mt-3"
+                    />
                   </div>
-                </div>
-                <Text strong className="text-green-600">₹{amt}</Text>
-              </div>
+                }
+                body={
+                  <div>
+                    <p className="text-[24px] font-bold text-black mt-2">
+                      {wallet.amount}
+                    </p>
+                    <p className="text-gray-500 text-[14px] font-medium mt-1">
+                      {wallet.label}
+                    </p>
+                  </div>
+                }
+              />
             ))}
           </div>
         </Card>
+
+        <CardLayout
+          className="!rounded-2xl !shadow-sm !w-full !mb-10"
+          body={
+            <div>
+              <div className="flex justify-between items-start w-full mb-4">
+                <div>
+                  <Text strong className="block !font-semibold !text-[20px] mb-0">Recent Activity</Text>
+                  <Text className="!font-light !text-sm !text-[13px]">Manage Your Financial Account</Text>
+                </div>
+
+                <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
+                  <Image
+                    src="/eyes.svg"
+                    alt="eye icon"
+                    width={15}
+                    height={15}
+                  />
+                  <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {transactions.map((tx, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center bg-[#FFFFFF] rounded-xl px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-500 p-3 rounded-full flex items-center justify-center w-[55px] h-[55px]">
+                        <Image
+                          src="/heart-line.svg"
+                          alt="heart line"
+                          width={26}
+                          height={30}
+                        />
+                      </div>
+
+                      <div>
+                        <Text strong className="block">{tx.type}</Text>
+                        <div className="text-sm text-gray-500">{tx.name}</div>
+                        <div className="text-[10px] text-gray-400">{tx.time}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-[6px]">
+                      <Text strong className="text-[#000000]">₹{tx.amount.toLocaleString()}</Text>
+
+                      <div className={`
+                            text-[5px] px-2 py-[2px] rounded-full text-[#0BA82F] font-medium capitalize w-[35px] h-[11px]
+                            ${tx.status === "success" ? "bg-[#0BA82F36] text-[#0BA82F]" : ""}
+                            ${tx.status === "failed" ? "bg-[#F9071854] text-[#FA0004]" : ""}
+                            ${tx.status === "processing" ? "bg-[#FFC10769] text-[#FFC107]" : ""}
+                  `}>
+                        {tx.status}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          }
+        />
       </div>
 
       <div className="bg-transparent"></div>
