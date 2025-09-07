@@ -1,6 +1,7 @@
-// src\lib\query\client.ts
+// src/lib/query/client.ts
+// keep: react-query singleton (unchanged API), cookies handle auth now.
+
 import { QueryClient } from '@tanstack/react-query';
-import { getAuth } from '@/lib/store/authAccess';
 
 let client: QueryClient | null = null;
 
@@ -15,14 +16,3 @@ export const getQueryClient = () => {
   }
   return client;
 };
-
-/** Build headers with token/userId */
-export function authHeaders(extra?: Record<string, string>) {
-  const { token, userId } = getAuth();
-
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(userId ? { 'X-User-Id': userId } : {}), // <-- optional custom header
-    ...extra,
-  };
-}

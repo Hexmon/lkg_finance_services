@@ -9,10 +9,15 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 import Image from "next/image";
 import { featureConfig, quickService, walletData, transactions } from "@/config/app.config";
 import { useRouter } from "next/navigation";
+import { useTransactionSummaryQuery } from "@/features/retailer/general";
+// import { useDashboardDetailsQuery, useTransactionSummaryQuery } from "@/features/retailer/general";
 const { Title, Text } = Typography;
 
 export default function Dashboard() {
   const router = useRouter();
+  // const { data, error, isLoading } = useDashboardDetailsQuery();
+//   const {data, isLoading, error} = useTransactionSummaryQuery()
+// console.log({data, isLoading, error});
 
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/" pageTitle="Dashboards">

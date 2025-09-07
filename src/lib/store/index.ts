@@ -9,6 +9,7 @@ import {
 } from 'redux-persist';
 import createWebStorage from 'redux-persist/lib/storage/createWebStorage';
 
+import customerReducer from './slices/customerSlice';
 import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
 
@@ -34,13 +35,14 @@ const authPersistConfig = {
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   ui: uiReducer,
+  customer: customerReducer,
 });
 
 // Optionally persist other top-level slices (ui) at root
 const rootPersistConfig = {
   key: 'root',
   storage,
-  whitelist: ['ui'],
+  whitelist: ['ui', 'customer'],
 };
 
 const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
@@ -56,7 +58,7 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
-
+export const selectCustomer = (s: RootState) => s.customer.details;
 // Typed hooks
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

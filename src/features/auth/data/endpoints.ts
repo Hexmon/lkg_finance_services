@@ -1,371 +1,211 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { authRequest } from './client';
+// src/features/auth/data/endpoints.ts
+// client-side calls to Next API (/api/v1/auth/*) via the universal client
+
+import { postJSON } from '@/lib/api/client';
 import {
-  LoginRequest, LoginRequestSchema,
+  LoginRequest, LoginRequestSchema, LoginResponse, LoginResponseSchema,
   ChangePasswordRequest, ChangePasswordRequestSchema,
   ResetPasswordRequest, ResetPasswordRequestSchema, ResetPasswordResponse, ResetPasswordResponseSchema,
   VerifyOtpPasswordRequest, VerifyOtpPasswordRequestSchema, VerifyOtpPasswordResponse, VerifyOtpPasswordResponseSchema,
-  VerifyOtpUsernameRequest,
-  VerifyOtpUsernameRequestSchema,
-  VerifyOtpUsernameResponse,
-  VerifyOtpUsernameResponseSchema,
-  ForgotUsernameInitiateRequest,
-  ForgotUsernameInitiateRequestSchema,
-  ForgotUsernameInitiateResponse,
-  ForgotUsernameInitiateResponseSchema,
-  VerifyEmailOtpResponseSchema,
-  VerifyEmailOtpResponse,
-  VerifyEmailOtpRequestSchema,
-  GenerateEmailOtpRequest,
-  GenerateEmailOtpRequestSchema,
-  GenerateEmailOtpResponse,
-  GenerateEmailOtpResponseSchema,
-  VerifyEmailOtpRequest,
-  SendOtpRequest,
-  SendOtpRequestSchema,
-  SendOtpResponse,
-  SendOtpResponseSchema,
-  AadhaarOtpGenerateRequest,
-  AadhaarOtpGenerateRequestSchema,
-  AadhaarOtpGenerateResponse,
-  AadhaarOtpGenerateResponseSchema,
-  AadhaarOtpVerifyRequest,
-  AadhaarOtpVerifyRequestSchema,
-  AadhaarOtpVerifyResponse,
-  AadhaarOtpVerifyResponseSchema,
-  PanVerifyRequest,
-  PanVerifyRequestSchema,
-  PanVerifyResponse,
-  PanVerifyResponseSchema,
-  LoginResponse,
-  LoginResponseSchema,
-  RegisterRequest,
-  RegisterRequestSchema,
-  RegisterResponse,
-  RegisterResponseSchema,
-  SendDeviceOtpRequest,
-  SendDeviceOtpRequestSchema,
-  SendDeviceOtpResponse,
-  SendDeviceOtpResponseSchema,
-  VerifyAccountOtpRequest,
-  VerifyAccountOtpRequestSchema,
-  VerifyAccountOtpResponse,
-  VerifyAccountOtpResponseSchema,
-  ForgotPasswordInitiateRequest,
-  ForgotPasswordInitiateRequestSchema,
-  ForgotPasswordInitiateResponse,
-  ForgotPasswordInitiateResponseSchema,
-  LoginSuccessRawSchema,
-  PasswordResetRequiredSchema,
+  VerifyOtpUsernameRequest, VerifyOtpUsernameRequestSchema, VerifyOtpUsernameResponse, VerifyOtpUsernameResponseSchema,
+  ForgotUsernameInitiateRequest, ForgotUsernameInitiateRequestSchema, ForgotUsernameInitiateResponse, ForgotUsernameInitiateResponseSchema,
+  VerifyEmailOtpRequest, VerifyEmailOtpRequestSchema, VerifyEmailOtpResponse, VerifyEmailOtpResponseSchema,
+  GenerateEmailOtpRequest, GenerateEmailOtpRequestSchema, GenerateEmailOtpResponse, GenerateEmailOtpResponseSchema,
+  SendOtpRequest, SendOtpRequestSchema, SendOtpResponse, SendOtpResponseSchema,
+  AadhaarOtpGenerateRequest, AadhaarOtpGenerateRequestSchema, AadhaarOtpGenerateResponse, AadhaarOtpGenerateResponseSchema,
+  AadhaarOtpVerifyRequest, AadhaarOtpVerifyRequestSchema, AadhaarOtpVerifyResponse, AadhaarOtpVerifyResponseSchema,
+  PanVerifyRequest, PanVerifyRequestSchema, PanVerifyResponse, PanVerifyResponseSchema,
+  RegisterRequest, RegisterRequestSchema, RegisterResponse, RegisterResponseSchema,
+  SendDeviceOtpRequest, SendDeviceOtpRequestSchema, SendDeviceOtpResponse, SendDeviceOtpResponseSchema,
+  VerifyAccountOtpRequest, VerifyAccountOtpRequestSchema, VerifyAccountOtpResponse, VerifyAccountOtpResponseSchema,
+  ForgotPasswordInitiateRequest, ForgotPasswordInitiateRequestSchema, ForgotPasswordInitiateResponse,
 } from '../domain/types';
-import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 
-const LOGIN_PATH = AUTHERIZATION_ENDPOINT.AUTH_LOGIN_PATH;
-const LOGOUT_PATH = AUTHERIZATION_ENDPOINT.AUTH_LOGOUT_PATH;
-const CHANGE_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_CHANGE_PASSWORD_PATH;
-const RESET_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_RESET_PASSWORD_PATH;
-const VERIFY_OTP_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_OTP_PASSWORD_PATH;
-const FORGOT_USERNAME_PATH = AUTHERIZATION_ENDPOINT.AUTH_FORGOT_USERNAME_PATH;
-const FORGOT_PASSWORD_PATH = AUTHERIZATION_ENDPOINT.AUTH_FORGOT_PASSWORD_PATH;
-const VERIFY_OTP_USERNAME_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_OTP_USERNAME_PATH;
-const SEND_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_SEND_OTP_PATH;
-const GENERATE_EMAIL_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_GENERATE_EMAIL_OTP_PATH;
-const VERIFY_EMAIL_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_EMAIL_OTP_PATH;
-const AADHAAR_OTP_GENERATE_PATH = AUTHERIZATION_ENDPOINT.AUTH_AADHAAR_OTP_GENERATE_PATH;
-const AADHAAR_OTP_VERIFY_PATH = AUTHERIZATION_ENDPOINT.AUTH_AADHAAR_OTP_VERIFY_PATH;
-const PAN_VERIFY_PATH = AUTHERIZATION_ENDPOINT.AUTH_PAN_VERIFY_PATH;
-const REGISTER_PATH = AUTHERIZATION_ENDPOINT.AUTH_REGISTER_PATH;
-const SEND_DEVICE_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_SEND_DEVICE_OTP_PATH;
-const VERIFY_ACCOUNT_OTP_PATH = AUTHERIZATION_ENDPOINT.AUTH_VERIFY_ACCOUNT_OTP_PATH;
+const p = {
+  login: 'auth/login/signin',
+  logout: 'auth/login/signout',
+  changePassword: 'auth/change-password',
+  resetPasswordInit: 'auth/reset-password/initiate',
+  resetPasswordVerify: 'auth/reset-password/verify',
+  forgotUsernameInit: 'auth/forgot-username/initiate',
+  forgotUsernameVerify: 'auth/forgot-username/verify',
+  forgotPasswordInit: 'auth/forgot-password/initiate',
+  sendOtp: 'auth/send-otp',
+  emailOtpGenerate: 'auth/email-otp/generate',
+  emailOtpVerify: 'auth/email-otp/verify',
+  aadhaarOtpGenerate: 'auth/aadhaar/otp-generate',
+  aadhaarOtpVerify: 'auth/aadhaar/otp-verify',
+  panVerify: 'auth/pan/verify',
+  register: 'auth/register',
+  deviceSendOtp: 'auth/device/send-otp',
+  accountVerifyOtp: 'auth/account/verify-otp',
+} as const;
 
 /** ---------- Login ---------- */
-// export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
-//   const body = LoginRequestSchema.parse(payload);
-//   const data = await authRequest<LoginResponse>(LOGIN_PATH, 'POST', body, undefined, {
-//     includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-//     includeAuth: false,
-//   });
-//   return LoginResponseSchema.parse(data);
-// }
 export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
   const body = LoginRequestSchema.parse(payload);
-
-  // Use a broad type for raw, we’ll validate/branch below.
-  const raw = await authRequest<any>(LOGIN_PATH, 'POST', body, undefined, {
-    includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-    includeAuth: false,
-  });
-
-  // Case 1: password reset required → throw a typed error so UI can branch
-  const resetCheck = PasswordResetRequiredSchema.safeParse(raw);
-  if (resetCheck.success) {
-    const { message, user_id } = resetCheck?.data ?? {};
-    const err = new Error(message) as Error & { code: string; user_id: string };
-    err.code = 'PASSWORD_RESET_REQUIRED';
-    err.user_id = user_id;
-    throw err;
-  }
-
-  // Case 2: success → normalize access_token → token, then validate final shape
-  const normalized = LoginSuccessRawSchema.parse(raw);
-  return LoginResponseSchema.parse(normalized);
+  const data = await postJSON<LoginResponse>(p.login, body);
+  return LoginResponseSchema.parse(data);
 }
 
-/** ---------- Logout (Bearer) ---------- */
+/** ---------- Logout ---------- */
 export async function apiLogout(): Promise<{ success: true }> {
-  await authRequest(LOGOUT_PATH, 'POST', undefined, undefined, {
-    includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-    includeAuth: true,
-  });
-  return { success: true };
+  return postJSON<{ success: true }>(p.logout);
 }
 
-/** ---------- Change Password (requires Bearer) ---------- */
+/** ---------- Change Password ---------- */
 export async function apiChangePassword(payload: ChangePasswordRequest): Promise<{ success: true }> {
   const body = ChangePasswordRequestSchema.parse(payload);
-  await authRequest(CHANGE_PASSWORD_PATH, 'POST', body, undefined, {
-    includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-    includeAuth: true,
-  });
+  await postJSON(p.changePassword, body);
   return { success: true };
 }
 
-/** ---------- Reset Password (initiate) ---------- */
-/** Uses API Key; no bearer required (per doc). */
+/** ---------- Reset Password: initiate ---------- */
 export async function apiResetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse> {
   const body = ResetPasswordRequestSchema.parse(payload);
-  const data = await authRequest<ResetPasswordResponse>(RESET_PASSWORD_PATH, 'POST', body, undefined, {
-    includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-    includeAuth: false,
-  });
+  const data = await postJSON<ResetPasswordResponse>(p.resetPasswordInit, body);
   return ResetPasswordResponseSchema.parse(data);
 }
 
 /** ---------- Verify OTP & set new password ---------- */
-/** Uses API Key; no bearer required (per doc). */
 export async function apiVerifyOtpPassword(payload: VerifyOtpPasswordRequest): Promise<VerifyOtpPasswordResponse> {
   const body = VerifyOtpPasswordRequestSchema.parse(payload);
-  const data = await authRequest<VerifyOtpPasswordResponse>(VERIFY_OTP_PASSWORD_PATH, 'POST', body, undefined, {
-    includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-    includeAuth: false,
-  });
+  const data = await postJSON<VerifyOtpPasswordResponse>(p.resetPasswordVerify, body);
   return VerifyOtpPasswordResponseSchema.parse(data);
 }
 
-export async function apiVerifyOtpForgotUsername(
-  payload: VerifyOtpUsernameRequest
-): Promise<VerifyOtpUsernameResponse> {
-  const body = VerifyOtpUsernameRequestSchema.parse(payload);
-  const data = await authRequest<VerifyOtpUsernameResponse>(
-    VERIFY_OTP_USERNAME_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
-  );
-  return VerifyOtpUsernameResponseSchema.parse(data);
-}
-
-/** ---------- Forgot Username: Initiate (API Key only) ---------- */
+/** ---------- Forgot Username: Initiate ---------- */
 export async function apiForgotUsernameInitiate(
   payload: ForgotUsernameInitiateRequest
 ): Promise<ForgotUsernameInitiateResponse> {
   const body = ForgotUsernameInitiateRequestSchema.parse(payload);
-  const data = await authRequest<ForgotUsernameInitiateResponse>(
-    FORGOT_USERNAME_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
-  );
+  const data = await postJSON<ForgotUsernameInitiateResponse>(p.forgotUsernameInit, body);
   return ForgotUsernameInitiateResponseSchema.parse(data);
 }
 
-/** ---------- Forgot Password: Initiate (API Key only) ---------- */
+/** ---------- Forgot Username: Verify OTP ---------- */
+export async function apiVerifyOtpForgotUsername(
+  payload: VerifyOtpUsernameRequest
+): Promise<VerifyOtpUsernameResponse> {
+  const body = VerifyOtpUsernameRequestSchema.parse(payload);
+  const data = await postJSON<VerifyOtpUsernameResponse>(p.forgotUsernameVerify, body);
+  return VerifyOtpUsernameResponseSchema.parse(data);
+}
+
+/** ---------- Forgot Password: Initiate ---------- */
 export async function apiForgotPasswordInitiate(
   payload: ForgotPasswordInitiateRequest
 ): Promise<ForgotPasswordInitiateResponse> {
   const body = ForgotPasswordInitiateRequestSchema.parse(payload);
-  const data = await authRequest<ForgotPasswordInitiateResponse>(
-    FORGOT_PASSWORD_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
-  );
-  return ForgotPasswordInitiateResponseSchema.parse(data);
+  return postJSON<ForgotPasswordInitiateResponse>(p.forgotPasswordInit, body);
 }
 
-/** ---------- Email OTP: Generate (Bearer; API Key optional) ---------- */
-export async function apiGenerateEmailOtp(
-  payload: GenerateEmailOtpRequest
-): Promise<GenerateEmailOtpResponse> {
-  const body = GenerateEmailOtpRequestSchema.parse(payload);
-  const data = await authRequest<GenerateEmailOtpResponse>(
-    GENERATE_EMAIL_OTP_PATH,
-    'POST',
-    body,
-    undefined,
-    {
-      includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-      includeAuth: true, // per spec/sample this is a secure, logged-in action
-    }
-  );
-  return GenerateEmailOtpResponseSchema.parse(data);
-}
-
-/** ---------- Email OTP: Verify (Bearer; API Key optional) ---------- */
-export async function apiVerifyEmailOtp(
-  payload: VerifyEmailOtpRequest
-): Promise<VerifyEmailOtpResponse> {
-  const body = VerifyEmailOtpRequestSchema.parse(payload);
-  const data = await authRequest<VerifyEmailOtpResponse>(
-    VERIFY_EMAIL_OTP_PATH,
-    'POST',
-    body,
-    undefined,
-    {
-      includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-      includeAuth: true, // spec indicates Bearer token
-    }
-  );
-  return VerifyEmailOtpResponseSchema.parse(data);
-}
-
-/** ---------- Generic OTP: Send (API Key only) ---------- */
+/** ---------- Generic Mobile OTP: Send ---------- */
 export async function apiSendOtp(payload: SendOtpRequest): Promise<SendOtpResponse> {
   const body = SendOtpRequestSchema.parse(payload);
-  const data = await authRequest<SendOtpResponse>(
-    SEND_OTP_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
-  );
+  const data = await postJSON<SendOtpResponse>(p.sendOtp, body);
   return SendOtpResponseSchema.parse(data);
 }
 
-/** ---------- Aadhaar OTP: Generate (API Key only) ---------- */
+/** ---------- Email OTP: Generate (Bearer) ---------- */
+export async function apiGenerateEmailOtp(payload: GenerateEmailOtpRequest): Promise<GenerateEmailOtpResponse> {
+  const body = GenerateEmailOtpRequestSchema.parse(payload);
+  const data = await postJSON<GenerateEmailOtpResponse>(p.emailOtpGenerate, body);
+  return GenerateEmailOtpResponseSchema.parse(data);
+}
+
+/** ---------- Email OTP: Verify (Bearer) ---------- */
+export async function apiVerifyEmailOtp(payload: VerifyEmailOtpRequest): Promise<VerifyEmailOtpResponse> {
+  const body = VerifyEmailOtpRequestSchema.parse(payload);
+  const data = await postJSON<VerifyEmailOtpResponse>(p.emailOtpVerify, body);
+  return VerifyEmailOtpResponseSchema.parse(data);
+}
+
+/** ---------- Aadhaar OTP: Generate ---------- */
 export async function apiAadhaarOtpGenerate(
   payload: AadhaarOtpGenerateRequest
 ): Promise<AadhaarOtpGenerateResponse> {
   const body = AadhaarOtpGenerateRequestSchema.parse(payload);
-
-  const data = await authRequest<unknown>(
-    AADHAAR_OTP_GENERATE_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: true, includeAuth: false } // this endpoint is API-key only
-  );
+  const data = await postJSON<unknown>(p.aadhaarOtpGenerate, body);
 
   const parsed = AadhaarOtpGenerateResponseSchema.safeParse(data);
   if (parsed.success) return parsed.data;
 
-  // Fallback for bare { ref_id, status } shapes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ref_id = (data as any)?.ref_id;
+  const ref_id = readStringOrNumber(data, 'ref_id');
   if (ref_id !== undefined) {
     return {
       ref_id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      status: (data as any)?.status,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      message: (data as any)?.message,
+      status: readStringOrNumber(data, 'status'),
+      message: readOptionalString(data, 'message'),
     };
   }
   throw new Error('Unexpected response from Aadhaar OTP Generate');
 }
 
-/** ---------- Aadhaar OTP: Verify (API Key only) ---------- */
+/** ---------- Aadhaar OTP: Verify ---------- */
 export async function apiAadhaarOtpVerify(
   payload: AadhaarOtpVerifyRequest
 ): Promise<AadhaarOtpVerifyResponse> {
   const body = AadhaarOtpVerifyRequestSchema.parse(payload);
-
-  const data = await authRequest<unknown>(
-    AADHAAR_OTP_VERIFY_PATH, // '/secure/verify-otp'
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: true, includeAuth: false }
-  );
+  const data = await postJSON<unknown>(p.aadhaarOtpVerify, body);
 
   const parsed = AadhaarOtpVerifyResponseSchema.safeParse(data);
   if (parsed.success) return parsed.data;
 
-  // Minimal fallback if server only returns {status/message}
+  // Fallback when upstream returns a minimal/non-standard body
   return {
-    status: (data as any)?.status,
-    message: (data as any)?.message,
-    urn: (data as any)?.urn,
-    purpose: (data as any)?.purpose,
+    status: readStringOrNumberRequired(data, 'status'), // <-- ensure string | number
+    message: readOptionalString(data, 'message') ?? '',
+    urn: readOptionalString(data, 'urn'),
+    purpose: readOptionalString(data, 'purpose'),
   };
 }
 
-/** ---------- PAN Verify (API Key only) ---------- */
-export async function apiPanVerify(
-  payload: PanVerifyRequest
-): Promise<PanVerifyResponse> {
+/** ---------- PAN Verify ---------- */
+export async function apiPanVerify(payload: PanVerifyRequest): Promise<PanVerifyResponse> {
   const body = PanVerifyRequestSchema.parse(payload);
-  const data = await authRequest<PanVerifyResponse>(
-    PAN_VERIFY_PATH,
-    'POST',
-    body,
-    undefined,
-    { includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY, includeAuth: false }
-  );
+  const data = await postJSON<PanVerifyResponse>(p.panVerify, body);
   return PanVerifyResponseSchema.parse(data);
 }
 
-/** ---------- Registration (Bearer; API Key optional) ---------- */
+/** ---------- Registration (Bearer) ---------- */
 export async function apiRegister(payload: RegisterRequest): Promise<RegisterResponse> {
   const body = RegisterRequestSchema.parse(payload);
-  const data = await authRequest<RegisterResponse>(
-    REGISTER_PATH,
-    'POST',
-    body,
-    undefined,
-    {
-      includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-      includeAuth: true, // requires Bearer per spec
-    }
-  );
+  const data = await postJSON<RegisterResponse>(p.register, body);
   return RegisterResponseSchema.parse(data);
 }
 
-/** ---------- Device Verification: Send OTP (Bearer; API Key optional) ---------- */
-export async function apiSendDeviceOtp(
-  payload: SendDeviceOtpRequest
-): Promise<SendDeviceOtpResponse> {
+/** ---------- Device Verification: Send OTP (Bearer) ---------- */
+export async function apiSendDeviceOtp(payload: SendDeviceOtpRequest): Promise<SendDeviceOtpResponse> {
   const body = SendDeviceOtpRequestSchema.parse(payload);
-  const data = await authRequest<SendDeviceOtpResponse>(
-    SEND_DEVICE_OTP_PATH,
-    'POST',
-    body,
-    undefined,
-    {
-      includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-      includeAuth: true, // requires Bearer per spec block
-    }
-  );
+  const data = await postJSON<SendDeviceOtpResponse>(p.deviceSendOtp, body);
   return SendDeviceOtpResponseSchema.parse(data);
 }
 
-/** ---------- Account OTP: Verify (API Key; no Bearer) ---------- */
-export async function apiVerifyAccountOtp(
-  payload: VerifyAccountOtpRequest
-): Promise<VerifyAccountOtpResponse> {
+/** ---------- Account OTP: Verify (proxied) ---------- */
+export async function apiVerifyAccountOtp(payload: VerifyAccountOtpRequest): Promise<VerifyAccountOtpResponse> {
   const body = VerifyAccountOtpRequestSchema.parse(payload);
-  const data = await authRequest<VerifyAccountOtpResponse>(
-    VERIFY_ACCOUNT_OTP_PATH,
-    'POST',
-    body,
-    undefined,
-    {
-      includeApiKey: !!process.env.NEXT_PUBLIC_AUTH_API_KEY,
-      includeAuth: false, // spec shows API Key for this one
-    }
-  );
+  const data = await postJSON<VerifyAccountOtpResponse>(p.accountVerifyOtp, body);
   return VerifyAccountOtpResponseSchema.parse(data);
+}
+/* ---- helpers (no `any`) ---- */
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null;
+}
+function readOptionalString(x: unknown, key: string): string | undefined {
+  if (!isRecord(x)) return undefined;
+  const v = x[key];
+  return typeof v === 'string' ? v : undefined;
+}
+function readStringOrNumber(x: unknown, key: string): string | number | undefined {
+  if (!isRecord(x)) return undefined;
+  const v = x[key];
+  if (typeof v === 'string' || typeof v === 'number') return v;
+  return undefined;
+}
+// NEW: required variant to satisfy strict type of AadhaarOtpVerifyResponse.status
+function readStringOrNumberRequired(x: unknown, key: string): string | number {
+  const v = readStringOrNumber(x, key);
+  // choose a sensible default if missing; 0 keeps the type and is easy to check in UI
+  return v ?? 0;
 }

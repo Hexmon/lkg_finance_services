@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Layout } from 'antd';
+import { Layout, Spin } from 'antd';
 
 import Sidebar, { SidebarSection } from '@/components/ui/Sidebar';
 import Topbar from '@/components/ui/Topbar';
 
 const { Content } = Layout;
 
-type Props = { children: React.ReactNode; activePath?: string, sections: SidebarSection[], pageTitle: string };
+type Props = { children: React.ReactNode; activePath?: string, sections: SidebarSection[], pageTitle: string, isLoading?: boolean };
 
-export default function DashboardLayout({ children, activePath = '/dashboard', sections, pageTitle }: Props) {
+export default function DashboardLayout({ children, activePath = '/dashboard', sections, pageTitle, isLoading }: Props) {
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
@@ -44,10 +44,16 @@ export default function DashboardLayout({ children, activePath = '/dashboard', s
             }}
           />
         </div>
-
-        {/* Scrollable content */}
         <Content className="overflow-y-auto p-4 !bg-[#ececec] sm:p-6">
-          {children}
+          {
+            isLoading ? (
+              <div className="flex justify-center items-center h-[70vh]">
+                <Spin size="large" tip="Loading..." />
+              </div>
+            ) : (
+              children
+            )
+          }
         </Content>
       </Layout>
     </Layout>
