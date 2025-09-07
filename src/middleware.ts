@@ -5,7 +5,14 @@ const PROTECTED = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 // Exempt POST login bootstrap routes (no CSRF yet)
 const EXEMPT_POST_PATTERNS: RegExp[] = [
-  /^\/api\/v1\/auth\/login(?:\/.*)?$/i,   // covers /api/v1/auth/login and /api/v1/auth/login/signin
+  /^\/api\/v1\/auth\/login(?:\/.*)?$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/mobile-email-verification\/send-otp$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/mobile-email-verification\/verify-mobile-email-otp$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/mobile-email-verification\/generate-email-otp$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/kyc\/aadhaar-otp-generate$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/kyc\/aadhaar-otp-verify$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/kyc\/pan-verify$/i,
+  /^\/api\/v1\/auth\/user-onboarding\/register$/i,
 ];
 
 export async function middleware(req: NextRequest) {

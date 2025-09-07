@@ -23,9 +23,11 @@ export async function POST(req: Request) {
     // 2) Pull Bearer from HttpOnly cookie
     const jar = await cookies();
     const token = jar.get(AUTH_COOKIE_NAME)?.value;
-    if (!token) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // if (!token) {
+    //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
+    const headers: HeadersInit = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
 
     // 3) Forward to upstream
     try {
