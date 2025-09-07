@@ -1,27 +1,20 @@
-"use client";
+// app/(protected)/layout.tsx
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 
-import { ReactNode, useEffect, useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useAppSelector } from "@/lib/store";
+export default async function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const jar = await cookies(); // Next.js 15: async cookies()
+  const jwt = jar.get(AUTH_COOKIE_NAME)?.value;
 
-export default function ProtectedLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const token = useAppSelector((s) => s.auth.token);
-
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (!token) {
-      router.replace('/signin');
-    }
-  }, [hydrated, token, router, pathname, searchParams]);
-
-  // while hydrating or if not authed (we just redirected), render nothing to avoid flicker
-  if (!hydrated || !token) return null;
+  if (!jwt) {
+    // Not authenticated -> send to signin BEFORE rendering any UI
+    redirect('/signin');
+  }
 
   return <>{children}</>;
 }

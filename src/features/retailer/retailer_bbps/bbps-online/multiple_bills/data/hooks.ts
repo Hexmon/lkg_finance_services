@@ -1,177 +1,147 @@
+// src/features/retailer/retailer_bbps/bbps-online/multiple-bills/hooks.ts
+
 import {
   useQuery,
-  useMutation,
-  useQueryClient,
   type UseQueryOptions,
+  type QueryKey,
+  useMutation,
+  type UseMutationOptions,
 } from "@tanstack/react-query";
-import { useCallback } from "react";
+
 import {
-  apiAddOnlineBiller,
   apiGetOnlineBillerList,
-  apiUpdateOnlineBiller,
-  apiRemoveOnlineBiller,
   apiOnlineBillProceed,
+  apiRemoveOnlineBiller,
 } from "./endpoints";
-import {
-  type AddOnlineBillerRequest,
-  type AddOnlineBillerResponse,
-  type OnlineBillerListQuery,
-  type OnlineBillerListResponse,
-  type UpdateOnlineBillerRequest,
-  type UpdateOnlineBillerResponse,
-  type RemoveOnlineBillerResponse,
-  type OnlineBillProceedRequest,
-  type OnlineBillProceedResponse,
+
+import type {
+  OnlineBillerListQuery,
+  OnlineBillerListResponse,
+  OnlineBillProceedRequest,
+  OnlineBillProceedResponse,
+  RemoveOnlineBillerResponse,
 } from "../domain/types";
 
-/** -------- Add Online Biller (mutation) -------- */
-export function useAddOnlineBillerMutation() {
-  const qc = useQueryClient();
-  return useMutation<AddOnlineBillerResponse, unknown, AddOnlineBillerRequest>({
-    mutationKey: ["bbps", "multiple-bills", "add-online-biller"],
-    mutationFn: (body) => apiAddOnlineBiller(body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] });
-    },
-  });
-}
-
-/** -------- Online Biller List (query) -------- */
+/* ---------------------------------------------
+ * Online Biller List (GET)
+ * --------------------------------------------- */
 export function useOnlineBillerListQuery(
-  params: OnlineBillerListQuery,
-  opt?: {
+  params: { service_id: string } & Partial<OnlineBillerListQuery>,
+  _opt?: {
     query?: Omit<
-      UseQueryOptions<OnlineBillerListResponse, unknown, OnlineBillerListResponse, unknown[]>,
+      UseQueryOptions<OnlineBillerListResponse, Error, OnlineBillerListResponse, QueryKey>,
       "queryKey" | "queryFn"
     >;
-  },
+  }
 ) {
+  const baseEnabled = !!params?.service_id && params.service_id.length > 0;
+  const userEnabled = _opt?.query?.enabled ?? true;
+  const enabled = baseEnabled && userEnabled;
+
   return useQuery({
     queryKey: [
       "bbps",
       "multiple-bills",
       "online-biller-list",
-      params.per_page ?? 10,
-      params.page ?? 1,
-      params.order ?? "desc",
-      params.sort_by ?? "created_at",
-      params.status ?? "INITIATED",
-      params.is_active ?? true,
-      params.is_direct ?? false,
+      params.service_id,
+      params.per_page,
+      params.page,
+      params.order,
+      params.sort_by,
+      params.status,
+      params.is_active,
+      params.is_direct,
     ],
-    queryFn: () => apiGetOnlineBillerList(params),
-    enabled: opt?.query?.enabled ?? true,
-    ...(opt?.query ?? {}),
+    queryFn: ({ signal }) => apiGetOnlineBillerList(params, { signal }),
+    // spread first, then enforce our final enabled
+    ...(_opt?.query ?? {}),
+    enabled,
   });
 }
 
-/** -------- Update Online Biller (mutation) -------- */
-export function useUpdateOnlineBillerMutation() {
-  const qc = useQueryClient();
-  return useMutation<
-    UpdateOnlineBillerResponse,
-    unknown,
-    { biller_batch_id: string; body: UpdateOnlineBillerRequest }
-  >({
-    mutationKey: ["bbps", "multiple-bills", "update-online-biller"],
-    mutationFn: ({ biller_batch_id, body }) => apiUpdateOnlineBiller(biller_batch_id, body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] });
-    },
-  });
-}
+/* ---------------------------------------------
+ * Online Bill Proceed (POST) - low-level mutation
+ * --------------------------------------------- */
+type ProceedVarsFull = { service_id: string } & OnlineBillProceedRequest;
 
-/** -------- Remove Online Biller (mutation) -------- */
-export function useRemoveOnlineBillerMutation() {
-  const qc = useQueryClient();
-  return useMutation<RemoveOnlineBillerResponse, unknown, { biller_batch_id: string }>({
-    mutationKey: ["bbps", "multiple-bills", "remove-online-biller"],
-    mutationFn: ({ biller_batch_id }) => apiRemoveOnlineBiller(biller_batch_id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] });
-    },
-  });
-}
-
-/** -------- Online Bill Proceed (mutation) -------- */
-export function useOnlineBillProceedMutation() {
-  const qc = useQueryClient();
-  return useMutation<OnlineBillProceedResponse, unknown, OnlineBillProceedRequest>({
+export function useOnlineBillProceedMutation(
+  options?: UseMutationOptions<OnlineBillProceedResponse, Error, ProceedVarsFull>
+) {
+  return useMutation<OnlineBillProceedResponse, Error, ProceedVarsFull>({
     mutationKey: ["bbps", "multiple-bills", "online-bill-proceed"],
-    mutationFn: (body) => apiOnlineBillProceed(body),
-    onSuccess: () => {
-      // If proceeding affects list status, refresh it
-      qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] });
-    },
+    mutationFn: (vars) => apiOnlineBillProceed(vars),
+    ...options,
   });
 }
 
-/** -------- Aggregator: function-call style -------- */
-export function useMultipleBillsApi() {
-  const qc = useQueryClient();
+/* ---------------------------------------------
+ * Online Bill Proceed (POST) - convenience hook
+ * Usage:
+ *   const { proceed, data, isLoading, error } = useOnlineBillProceed(serviceId);
+ *   await proceed({ batch_id });
+ * --------------------------------------------- */
+type ProceedVars = Pick<OnlineBillProceedRequest, "batch_id">;
 
-  const getOnlineBillerList = useCallback(
-    (params: OnlineBillerListQuery) =>
-      qc.fetchQuery({
-        queryKey: [
-          "bbps",
-          "multiple-bills",
-          "online-biller-list",
-          params.per_page ?? 10,
-          params.page ?? 1,
-          params.order ?? "desc",
-          params.sort_by ?? "created_at",
-          params.status ?? "INITIATED",
-          params.is_active ?? true,
-          params.is_direct ?? false,
-        ],
-        queryFn: () => apiGetOnlineBillerList(params),
-      }),
-    [qc],
-  );
-
-  const addOnlineBillerMut = useMutation<AddOnlineBillerResponse, unknown, AddOnlineBillerRequest>({
-    mutationKey: ["bbps", "multiple-bills", "add-online-biller"],
-    mutationFn: apiAddOnlineBiller,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] }),
-  });
-
-  const updateOnlineBillerMut = useMutation<
-    UpdateOnlineBillerResponse,
-    unknown,
-    { biller_batch_id: string; body: UpdateOnlineBillerRequest }
-  >({
-    mutationKey: ["bbps", "multiple-bills", "update-online-biller"],
-    mutationFn: ({ biller_batch_id, body }) => apiUpdateOnlineBiller(biller_batch_id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] }),
-  });
-
-  const removeOnlineBillerMut = useMutation<RemoveOnlineBillerResponse, unknown, { biller_batch_id: string }>({
-    mutationKey: ["bbps", "multiple-bills", "remove-online-biller"],
-    mutationFn: ({ biller_batch_id }) => apiRemoveOnlineBiller(biller_batch_id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] }),
-  });
-
-  const onlineBillProceedMut = useMutation<OnlineBillProceedResponse, unknown, OnlineBillProceedRequest>({
-    mutationKey: ["bbps", "multiple-bills", "online-bill-proceed"],
-    mutationFn: apiOnlineBillProceed,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bbps", "multiple-bills", "online-biller-list"] }),
+export function useOnlineBillProceed(
+  service_id: string,
+  options?: UseMutationOptions<OnlineBillProceedResponse, Error, ProceedVars>
+) {
+  const mutation = useMutation<OnlineBillProceedResponse, Error, ProceedVars>({
+    mutationKey: ["bbps", "multiple-bills", "online-bill-proceed", service_id],
+    mutationFn: ({ batch_id }) => apiOnlineBillProceed({ service_id, batch_id }),
+    ...options,
   });
 
   return {
-    // Queries
-    getOnlineBillerList,
+    proceed: mutation.mutateAsync, // function to call
+    data: mutation.data,           // response payload
+    isLoading: mutation.isPending, // loading flag
+    error: mutation.error,         // Error | null
+    // optional extras
+    reset: mutation.reset,
+    isSuccess: mutation.isSuccess,
+    status: mutation.status,
+  };
+}
 
-    // Mutations as async functions
-    addOnlineBiller: addOnlineBillerMut.mutateAsync,
-    updateOnlineBiller: updateOnlineBillerMut.mutateAsync,
-    removeOnlineBiller: removeOnlineBillerMut.mutateAsync,
-    onlineBillProceed: onlineBillProceedMut.mutateAsync,
+/* ---------------------------------------------
+ * Remove Online Biller (DELETE) - low-level mutation
+ * --------------------------------------------- */
+type RemoveVars = { biller_batch_id: string };
 
-    // Optional status objects
-    addOnlineBillerStatus: addOnlineBillerMut,
-    updateOnlineBillerStatus: updateOnlineBillerMut,
-    removeOnlineBillerStatus: removeOnlineBillerMut,
-    onlineBillProceedStatus: onlineBillProceedMut,
+export function useRemoveOnlineBillerMutation(
+  options?: UseMutationOptions<RemoveOnlineBillerResponse, Error, RemoveVars>
+) {
+  return useMutation<RemoveOnlineBillerResponse, Error, RemoveVars>({
+    mutationKey: ["bbps", "multiple-bills", "remove-online-biller"],
+    mutationFn: (vars) => apiRemoveOnlineBiller(vars),
+    ...options,
+  });
+}
+
+/* ---------------------------------------------
+ * Remove Online Biller (DELETE) - convenience hook
+ * Usage:
+ *   const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
+ *   await removeBiller({ biller_batch_id });
+ * --------------------------------------------- */
+export function useRemoveOnlineBiller(
+  options?: UseMutationOptions<RemoveOnlineBillerResponse, Error, RemoveVars>
+) {
+  const mutation = useMutation<RemoveOnlineBillerResponse, Error, RemoveVars>({
+    mutationKey: ["bbps", "multiple-bills", "remove-online-biller"],
+    mutationFn: (vars) => apiRemoveOnlineBiller(vars),
+    ...options,
+  });
+
+  return {
+    removeBiller: mutation.mutateAsync, // function to call
+    data: mutation.data,                // response payload
+    isLoading: mutation.isPending,      // loading flag
+    error: mutation.error,              // Error | null
+    // optional extras
+    reset: mutation.reset,
+    isSuccess: mutation.isSuccess,
+    status: mutation.status,
   };
 }

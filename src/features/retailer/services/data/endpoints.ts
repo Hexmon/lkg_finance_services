@@ -1,55 +1,143 @@
+// src\features\retailer\services\data\endpoints.ts
+import { RETAILER_ENDPOINTS } from "@/config/endpoints";
 
-import { BASE_URLS, RETAILER_ENDPOINTS } from '@/config/endpoints';
-import { ServiceListResponseSchema, type ServiceListParams, type ServiceListResponse } from '../domain/types';
-import { authHeaders } from '@/lib/query/client';
+import {
+  ServiceListQuerySchema,
+  ServiceListQuery,
+  ServiceListResponseSchema,
+  ServiceListResponse,
+  ServiceSubscriptionListQuerySchema,
+  ServiceSubscriptionListQuery,
+  ServiceSubscriptionListResponseSchema,
+  ServiceSubscriptionListResponse,
+  SubscriptionsListQuerySchema,
+  SubscriptionsListQuery,
+  SubscriptionsListResponseSchema,
+  SubscriptionsListResponse,
+  ServiceSubscribeBodySchema,
+  ServiceSubscribeBody,
+  ServiceSubscribeResponseSchema,
+  ServiceSubscribeResponse,
+  ServiceChargesBodySchema,
+  ServiceChargesBody,
+  ServiceChargesResponseSchema,
+  ServiceChargesResponse,
+} from "../domain/types";
+import { retailerRequest } from "../../client";
+import { getJSON } from "@/lib/api/client";
 
-const RETAILER_BASE = BASE_URLS.RETAILER_BASE_URL;
-const PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_LIST; // "/secure/retailer/service-list"
-const TIMEOUT_MS = 20_000;
+/** Paths (const string paths only) */
+const SERVICE_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_LIST;
+const SERVICE_SUBSCRIPTION_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_SUBSCRIPTION_LIST;
+const SUBSCRIPTIONS_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SUBSCRIPTIONS;
+const SERVICE_SUBSCRIBE_PATH = RETAILER_ENDPOINTS.SERVICE.SUBSCRIBE;
+const SERVICE_CHARGES_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_CHARGES;
 
-function buildQuery(params?: ServiceListParams): string {
-  if (!params) return '';
-  const usp = new URLSearchParams();
-  if (params.category) usp.set('category', params.category);
-  if (params.status) usp.set('status', params.status);
-  if (typeof params.per_page === 'number') usp.set('per_page', String(params.per_page));
-  if (typeof params.page === 'number') usp.set('page', String(params.page));
-  const qs = usp.toString();
-  return qs ? `?${qs}` : '';
+/**
+ * GET /secure/retailer/service-list
+ */
+export async function apiServiceList(
+  input: ServiceListQuery = {},
+  opts?: { signal?: AbortSignal }
+): Promise<ServiceListResponse> {
+  const params = ServiceListQuerySchema.parse(input);
+
+  const res = await retailerRequest<ServiceListResponse>({
+    method: "GET",
+    path: SERVICE_LIST_PATH,
+    query: params,
+    headers: {},
+    auth: true,
+    apiKey: false,
+    signal: opts?.signal,
+  });
+
+  return ServiceListResponseSchema.parse(res);
 }
 
-export async function fetchServiceList(params?: ServiceListParams, signal?: AbortSignal): Promise<ServiceListResponse> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+export async function apiServiceSubscriptionList(
+  input: ServiceSubscriptionListQuery,
+  opts?: { signal?: AbortSignal }
+): Promise<ServiceSubscriptionListResponse> {
+  const params = ServiceSubscriptionListQuerySchema.parse(input);
+  const qs = new URLSearchParams({ service_name: params.service_name }).toString();
 
-  try {
-    const url = `${RETAILER_BASE}${PATH}${buildQuery(params)}`;
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        ...authHeaders({
-          'Content-Type': 'application/json',
-        }),
-      },
-      signal: signal ?? controller.signal,
-      cache: 'no-store',
-    });
+  // ✅ correct BFF path + real query string
+  const raw = await getJSON<ServiceSubscriptionListResponse>(
+    `retailer/service/service-subscription-list?${qs}`,
+    { signal: opts?.signal }
+  );
 
-    // Non-2xx → throw with best-effort body
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      const err = new Error(`Service list request failed: ${res.status} ${res.statusText} ${text}`);
-      // @ts-expect-error attach extra info for consumers/logging
-      err.status = res.status;
-      // @ts-expect-error attach raw body
-      err.body = text;
-      throw err;
-    }
+  return ServiceSubscriptionListResponseSchema.parse(raw);
+}
 
-    const json = (await res.json()) as unknown;
-    const parsed = ServiceListResponseSchema.parse(json);
-    return parsed;
-  } finally {
-    clearTimeout(timeout);
-  }
+
+/**
+ * GET /secure/retailer/subscriptions
+ * Paginated list of retailer subscriptions.
+ */
+export async function apiServiceSubscriptionsList(
+  input: SubscriptionsListQuery = {},
+  opts?: { signal?: AbortSignal }
+): Promise<SubscriptionsListResponse> {
+  const params = SubscriptionsListQuerySchema.parse(input);
+
+  const res = await retailerRequest<SubscriptionsListResponse>({
+    method: "GET",
+    path: SUBSCRIPTIONS_LIST_PATH,
+    query: params,
+    headers: {},
+    auth: true,
+    apiKey: false,
+    signal: opts?.signal,
+  });
+
+  return SubscriptionsListResponseSchema.parse(res);
+}
+
+/**
+ * POST /secure/retailer/subscribe
+ * Creates/updates retailer subscription for a service.
+ * Note: If already subscribed, server responds 409; the shared client throws ApiError.
+ */
+export async function apiServiceSubscribe(
+  body: ServiceSubscribeBody,
+  opts?: { signal?: AbortSignal }
+): Promise<ServiceSubscribeResponse> {
+  const payload = ServiceSubscribeBodySchema.parse(body);
+
+  const res = await retailerRequest<ServiceSubscribeResponse>({
+    method: "POST",
+    path: SERVICE_SUBSCRIBE_PATH,
+    body: payload,
+    headers: {}, // JSON content-type is auto-set by client
+    auth: true,
+    apiKey: false,
+    signal: opts?.signal,
+  });
+
+  return ServiceSubscribeResponseSchema.parse(res);
+}
+
+/**
+ * POST /secure/retailer/service-charges
+ * Calculation-only endpoint (does not mutate server state)
+ */
+export async function apiServiceCharges(
+  body: ServiceChargesBody,
+  opts?: { signal?: AbortSignal }
+): Promise<ServiceChargesResponse> {
+  const payload = ServiceChargesBodySchema.parse(body);
+
+  const res = await retailerRequest<ServiceChargesResponse>({
+    method: "POST",
+    path: SERVICE_CHARGES_PATH,
+    body: payload,
+    headers: {}, // JSON content-type is auto-set by client
+    auth: true,
+    apiKey: false,
+    signal: opts?.signal,
+  });
+
+  return ServiceChargesResponseSchema.parse(res);
 }
