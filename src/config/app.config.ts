@@ -59,3 +59,58 @@ export const quickService = [
     navigationURL: ""
   },
 ]
+
+export const walletData = [
+    {
+      label: "Main Wallet",
+      amount: "₹ 25,000",
+      icon: "/wallet.svg",
+      growthIcon: "/thirteen.svg",
+    },
+    {
+      label: "APES Wallet",
+      amount: "₹ 8,500",
+      icon: "/wallet.svg",
+      growthIcon: "/thirteen.svg",
+    },
+    {
+      label: "Commission",
+      amount: "₹ 3,200",
+      icon: "/wallet.svg",
+      growthIcon: "/thirteen.svg",
+    },
+  ]
+
+export const transactions = [
+  { amount: 5000, name: "Rahul Sharma", type: "DMT", time: "2 min ago", status: "success" },
+  { amount: 5000, name: "Rahul Sharma", type: "DMT", time: "2 min ago", status: "success" },
+  { amount: 5000, name: "Rahul Sharma", type: "DMT", time: "2 min ago", status: "failed" },
+  { amount: 5000, name: "Rahul Sharma", type: "DMT", time: "2 min ago", status: "processing" },
+]
+
+export const walletStats = [
+  {
+    label: "Today's Transfer",
+    amount: "₹2,45,000",
+    icon: "/heart-line.svg",
+    growthIcon: "/icons/growth.svg", 
+  },
+  {
+    label: "Success Rate",
+    amount: "99.5%",
+    icon: "/circle.svg",
+    growthIcon: "/icons/growth.svg",
+  },
+  {
+    label: "Total Beneficiaries",
+    amount: "156",
+    icon: "/users.svg",
+    growthIcon: "/icons/growth.svg",
+  },
+  {
+    label: "Commission Earned",
+    amount: "₹1,240",
+    icon: "/star.svg",
+    growthIcon: "/icons/growth.svg",
+  },
+]
