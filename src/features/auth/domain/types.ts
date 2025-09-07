@@ -1,32 +1,49 @@
-// src\features\auth\domain\types.ts
+// src/features/auth/domain/types.ts
 import { z } from 'zod';
 
-/** ---------- Login (API Key) ---------- */
+/** ---------- Login ---------- */
 export const LoginRequestSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
-/** Backend guarantees a token on success; allow extra fields via passthrough */
-export const LoginResponseSchema = z.object({
-  token: z.string(),
-  userId: z.string().nullable().optional(),
+const LoginOkSchema = z.object({
+  status: z.literal(200),
+  message: z.string(),
+  userId: z.string(), // server always provides user_id -> mapped to userId
+  lastLoginTime: z.string().nullable().optional(),
+  csrf: z.string().optional(),
+}).passthrough(); // allow extra fields without failing
+
+const LoginPwdResetSchema = z.object({
+  status: z.literal(1001),
+  message: z.string(),
+  userId: z.string(),
 }).passthrough();
+
+// Use a discriminated union on the "status" field
+export const LoginResponseSchema = z.discriminatedUnion('status', [
+  LoginOkSchema,
+  LoginPwdResetSchema,
+]);
+
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+// -------------------------------------------------------------
 
 export const LoginSuccessRawSchema = z.object({
   status: z.number().optional(),      // backend sends 200 in body sometimes
   message: z.string().optional(),
   token: z.string().optional(),
   access_token: z.string().optional(),
-  user_id: z.string().optional(),  
+  user_id: z.string().optional(),
 }).refine(d => !!(d.token ?? d.access_token), {
   message: 'Token missing in response',
 }).transform(d => ({
   ...d,
   token: d.token ?? d.access_token!,
-    userId: d.user_id ?? null,
+  userId: d.user_id ?? null,
 }));
 
 export const PasswordResetRequiredSchema = z.object({

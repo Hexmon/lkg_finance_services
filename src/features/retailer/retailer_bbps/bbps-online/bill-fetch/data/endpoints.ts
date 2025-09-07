@@ -1,3 +1,4 @@
+// src\features\retailer\retailer_bbps\bbps-online\bill-fetch\data\endpoints.ts
 import { RETAILER_ENDPOINTS } from "@/config/endpoints";
 
 import {
@@ -17,6 +18,7 @@ import {
   type BillerInfoResponse,
 } from "../domain/types";
 import { getTenantId, retailerRequest } from "@/features/retailer/client";
+import { getJSON } from "@/lib/api/client";
 
 /** Build paths that require tenant segment */
 function pathWithTenant(basePath: string, extra?: string) {
@@ -49,44 +51,55 @@ export async function apiGetCircleList(
 
 /** GET /secure/bbps/bbps-category-list/{tenantId}?mode= */
 export async function apiGetCategoryList(
-  params: { mode: "ONLINE" | "OFFLINE" },
+  params: { service_id: string; mode: 'ONLINE' | 'OFFLINE' },
   opts?: { signal?: AbortSignal }
 ): Promise<CategoryListResponse> {
-  const path = pathWithTenant(
-    RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_FETCH.CATEGORY_LIST
-  );
+  if (!params?.service_id) {
+    throw new Error('service_id is required');
+  }
+  const qs = new URLSearchParams({ mode: params.mode }).toString();
 
-  const raw = await retailerRequest<unknown>({
-    method: "GET",
-    path,
-    query: { mode: params.mode },
-    headers: {},
-    auth: true,
-    apiKey: true,
-    signal: opts?.signal,
-  });
+  // Call your BFF route (server reads bt_auth cookie and forwards upstream)
+  const raw = await getJSON<CategoryListResponse>(
+    `retailer/bbps/bbps-online/bill-fetch/category-list/${encodeURIComponent(params.service_id)}?${qs}`,
+    { signal: opts?.signal }
+  );
 
   return CategoryListResponseSchema.parse(raw);
 }
 
-/** GET /secure/bbps/biller-list/{tenantId}/{bbps_category_id}?is_offline=&mode= */
+/**
+ * GET /secure/bbps/biller-list/{service_id}/{bbps_category_id}?is_offline=&mode=&opr_id=&is_active=  (via BFF)
+ * NOTE: This matches your server route:
+ *   /api/v1/retailer/bbps/bbps-online/bill-fetch/biller-list/[service_id]/[bbps_category_id]
+ */
 export async function apiGetBillerList(
-  params: { bbps_category_id: string; is_offline: boolean; mode: "ONLINE" | "OFFLINE" },
+  params: {
+    service_id: string;
+    bbps_category_id: string;
+    is_offline: boolean;
+    mode: "ONLINE" | "OFFLINE";
+    opr_id?: string;
+    is_active?: string; // keep string to mirror upstream flexibility
+  },
   opts?: { signal?: AbortSignal }
 ): Promise<BillerListResponse> {
-  const base = RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_FETCH.BILLER_LIST;
-  const path = pathWithTenant(base, params.bbps_category_id);
+  if (!params?.service_id) throw new Error("service_id is required");
+  if (!params?.bbps_category_id) throw new Error("bbps_category_id is required");
 
-  const raw = await retailerRequest<unknown>({
-    method: "GET",
-    path,
-    query: { is_offline: params.is_offline, mode: params.mode },
-    headers: {},
-    auth: true,
-    apiKey: true,
-    signal: opts?.signal,
-  });
+  const qs = new URLSearchParams({
+    is_offline: String(params.is_offline ?? false),
+    mode: params.mode,
+    ...(params.opr_id ? { opr_id: params.opr_id } : {}),
+    ...(params.is_active ? { is_active: params.is_active } : {}),
+  }).toString();
 
+  // Hit the BFF route; server will read bt_auth and forward to BBPS base
+  const path = `retailer/bbps/bbps-online/bill-fetch/biller-list/${encodeURIComponent(
+    params.service_id
+  )}/${encodeURIComponent(params.bbps_category_id)}?${qs}`;
+
+  const raw = await getJSON<BillerListResponse>(path, { signal: opts?.signal });
   return BillerListResponseSchema.parse(raw);
 }
 

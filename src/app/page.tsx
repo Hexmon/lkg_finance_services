@@ -16,8 +16,8 @@ const { Title, Text } = Typography;
 export default function Dashboard() {
   const router = useRouter();
   // const { data, error, isLoading } = useDashboardDetailsQuery();
-  const {data, isLoading, error} = useTransactionSummaryQuery()
-console.log({data, isLoading, error});
+//   const {data, isLoading, error} = useTransactionSummaryQuery()
+// console.log({data, isLoading, error});
 
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/" pageTitle="Dashboards">

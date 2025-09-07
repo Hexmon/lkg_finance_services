@@ -24,6 +24,7 @@ import {
   ServiceChargesResponse,
 } from "../domain/types";
 import { retailerRequest } from "../../client";
+import { getJSON } from "@/lib/api/client";
 
 /** Paths (const string paths only) */
 const SERVICE_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_LIST;
@@ -54,27 +55,22 @@ export async function apiServiceList(
   return ServiceListResponseSchema.parse(res);
 }
 
-/**
- * GET /secure/retailer/service-subscription-list
- */
 export async function apiServiceSubscriptionList(
   input: ServiceSubscriptionListQuery,
   opts?: { signal?: AbortSignal }
 ): Promise<ServiceSubscriptionListResponse> {
   const params = ServiceSubscriptionListQuerySchema.parse(input);
+  const qs = new URLSearchParams({ service_name: params.service_name }).toString();
 
-  const res = await retailerRequest<ServiceSubscriptionListResponse>({
-    method: "GET",
-    path: SERVICE_SUBSCRIPTION_LIST_PATH,
-    query: params,
-    headers: {},
-    auth: true,
-    apiKey: false,
-    signal: opts?.signal,
-  });
+  // ✅ correct BFF path + real query string
+  const raw = await getJSON<ServiceSubscriptionListResponse>(
+    `retailer/service/service-subscription-list?${qs}`,
+    { signal: opts?.signal }
+  );
 
-  return ServiceSubscriptionListResponseSchema.parse(res);
+  return ServiceSubscriptionListResponseSchema.parse(raw);
 }
+
 
 /**
  * GET /secure/retailer/subscriptions

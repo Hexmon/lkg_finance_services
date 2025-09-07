@@ -1,3 +1,4 @@
+// src/features/auth/data/hooks.ts
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -55,25 +56,27 @@ import type {
 } from '../domain/types';
 
 import { persistor, RootState, useAppDispatch } from '@/lib/store';
-import { setToken, clearAuth, setUserId } from '@/lib/store/slices/authSlice';
+import { clearAuth, setUserId } from '@/lib/store/slices/authSlice'; // ← removed setToken
 
 export const selectUserId = (s: RootState) => s.auth.userId;
-/** ---------- Login (API Key) ---------- */
+
+/** ---------- Login (token is set via HTTP-only cookie by server) ---------- */
 export function useLoginMutation() {
   const dispatch = useAppDispatch();
   const qc = useQueryClient();
 
   return useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (payload) => apiLogin(payload),
-    onSuccess: (data) => {
-      dispatch(setToken(data.token));
+    onSuccess: async (data) => {
+      // Do NOT store token client-side anymore.
       if (data.userId) dispatch(setUserId(data.userId));
-      qc.invalidateQueries();
+      // Invalidate cached queries that depend on auth (e.g., /me)
+      await qc.invalidateQueries();
     },
   });
 }
 
-/** ---------- Logout (server + local clear; Bearer) ---------- */
+/** ---------- Logout (server clears cookies; we clear local state) ---------- */
 export function useLogoutMutation() {
   const dispatch = useAppDispatch();
   const qc = useQueryClient();
@@ -83,16 +86,12 @@ export function useLogoutMutation() {
     onSettled: async () => {
       dispatch(clearAuth());
       qc.clear();
-
-      // Optional: ensure persisted state is flushed after clearing
       await persistor.flush();
-      // Or, for a total reset (rarely needed):
-      // await persistor.purge();
     },
   });
 }
 
-/** ---------- Change Password (Bearer) ---------- */
+/** ---------- Change Password ---------- */
 export function useChangePasswordMutation() {
   const qc = useQueryClient();
   return useMutation<{ success: true }, unknown, { oldpassword: string; password: string }>({
@@ -103,77 +102,77 @@ export function useChangePasswordMutation() {
   });
 }
 
-/** ---------- Reset Password: initiate (API Key) ---------- */
+/** ---------- Reset Password: initiate ---------- */
 export function useResetPasswordMutation() {
   return useMutation<ResetPasswordResponse, unknown, ResetPasswordRequest>({
     mutationFn: (payload) => apiResetPassword(payload),
   });
 }
 
-/** ---------- Verify OTP + set new password (API Key) ---------- */
+/** ---------- Verify OTP + set new password ---------- */
 export function useVerifyOtpPasswordMutation() {
   return useMutation<VerifyOtpPasswordResponse, unknown, VerifyOtpPasswordRequest>({
     mutationFn: (payload) => apiVerifyOtpPassword(payload),
   });
 }
 
-/** ---------- Forgot Username: initiate (API Key) ---------- */
+/** ---------- Forgot Username: initiate ---------- */
 export function useForgotUsernameInitiateMutation() {
   return useMutation<ForgotUsernameInitiateResponse, unknown, ForgotUsernameInitiateRequest>({
     mutationFn: (payload) => apiForgotUsernameInitiate(payload),
   });
 }
 
-/** ---------- Forgot Username: initiate (API Key) ---------- */
+/** ---------- Forgot Password: initiate ---------- */
 export function useForgotPasswordInitiateMutation() {
   return useMutation<ForgotPasswordInitiateResponse, unknown, ForgotPasswordInitiateRequest>({
     mutationFn: (payload) => apiForgotPasswordInitiate(payload),
   });
 }
 
-/** ---------- Forgot Username: verify OTP (API Key) ---------- */
+/** ---------- Forgot Username: verify OTP ---------- */
 export function useVerifyOtpForgotUsernameMutation() {
   return useMutation<VerifyOtpUsernameResponse, unknown, VerifyOtpUsernameRequest>({
     mutationFn: (payload) => apiVerifyOtpForgotUsername(payload),
   });
 }
 
-/** ---------- Generic Mobile OTP: send (API Key) ---------- */
+/** ---------- Generic Mobile OTP: send ---------- */
 export function useSendOtpMutation() {
   return useMutation<SendOtpResponse, unknown, SendOtpRequest>({
     mutationFn: (payload) => apiSendOtp(payload),
   });
 }
 
-/** ---------- Email OTP: generate (Bearer) ---------- */
+/** ---------- Email OTP: generate ---------- */
 export function useGenerateEmailOtpMutation() {
   return useMutation<GenerateEmailOtpResponse, unknown, GenerateEmailOtpRequest>({
     mutationFn: (payload) => apiGenerateEmailOtp(payload),
   });
 }
 
-/** ---------- Email OTP: verify (Bearer) ---------- */
+/** ---------- Email OTP: verify ---------- */
 export function useVerifyEmailOtpMutation() {
   return useMutation<VerifyEmailOtpResponse, unknown, VerifyEmailOtpRequest>({
     mutationFn: (payload) => apiVerifyEmailOtp(payload),
   });
 }
 
-/** ---------- Aadhaar OTP: generate (API Key) ---------- */
+/** ---------- Aadhaar OTP: generate ---------- */
 export function useAadhaarOtpGenerateMutation() {
   return useMutation<AadhaarOtpGenerateResponse, unknown, AadhaarOtpGenerateRequest>({
     mutationFn: (payload) => apiAadhaarOtpGenerate(payload),
   });
 }
 
-/** ---------- Aadhaar OTP: verify (API Key) ---------- */
+/** ---------- Aadhaar OTP: verify ---------- */
 export function useAadhaarOtpVerifyMutation() {
   return useMutation<AadhaarOtpVerifyResponse, unknown, AadhaarOtpVerifyRequest>({
     mutationFn: (payload) => apiAadhaarOtpVerify(payload),
   });
 }
 
-/** ---------- PAN verify (API Key) ---------- */
+/** ---------- PAN verify ---------- */
 export function usePanVerifyMutation() {
   return useMutation<PanVerifyResponse, unknown, PanVerifyRequest>({
     mutationFn: (payload) => apiPanVerify(payload),
@@ -200,4 +199,3 @@ export function useVerifyAccountOtpMutation() {
     mutationFn: (payload) => apiVerifyAccountOtp(payload),
   });
 }
-

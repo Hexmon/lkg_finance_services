@@ -1,4 +1,5 @@
 /**
+ * src\features\retailer\services\domain\types.ts
  * Zod schemas & types for Retailer Service APIs
  *
  * Endpoints covered:

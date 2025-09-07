@@ -1,5 +1,5 @@
+import { ApiError } from '@/lib/api/client';
 import { AadhaarOtpGenerateResponse, ForgotUsernameInitiateResponse, GenerateEmailOtpResponse, PanVerifyResponse, SendDeviceOtpResponse, SendOtpResponse, VerifyAccountOtpResponse, VerifyOtpUsernameResponse } from '../domain/types';
-import { ApiError } from './client';
 
 export function extractUserIdFromApiError(err: unknown): string | null {
   if (!(err instanceof ApiError)) return null;

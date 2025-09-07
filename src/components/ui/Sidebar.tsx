@@ -1,3 +1,4 @@
+// src/components/ui/Sidebar.tsx
 'use client';
 
 import React from 'react';
@@ -6,6 +7,7 @@ import type { MenuProps } from 'antd';
 import { LogoutOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useLogoutMutation } from '@/features/auth/data/hooks'; // ← import hook
 
 const { Sider } = Layout;
 
@@ -29,8 +31,7 @@ export type SidebarProps = {
   sections: SidebarSection[];
   collapsed: boolean;
   onToggle: () => void;
-  onNavigate?: (path: string) => void; // optional external navigation
-  /** activePath is now optional; if omitted, we use usePathname() */
+  onNavigate?: (path: string) => void;
   activePath?: string;
   width?: number;
   collapsedWidth?: number;
@@ -58,12 +59,11 @@ function flattenItemPaths(sections: SidebarSection[]): string[] {
   sections.forEach((sec) =>
     sec.items.forEach((it) => {
       if (it.path) paths.push(it.path);
-    })
+    }),
   );
   return paths;
 }
 
-/** Find the item whose path is the longest prefix of currentPath */
 function getBestMatchKey(allPaths: string[], currentPath: string): string | undefined {
   if (!currentPath) return undefined;
   let best: string | undefined;
@@ -76,7 +76,6 @@ function getBestMatchKey(allPaths: string[], currentPath: string): string | unde
       }
     }
   }
-  // also handle exact root matches like "/bbps"
   if (!best && allPaths.includes(currentPath)) return currentPath;
   return best;
 }
@@ -96,12 +95,12 @@ function toMenuItems(sections: SidebarSection[]): MenuProps['items'] {
       });
     }
     sec.items.forEach((it, iIdx) => {
-      const key = it.path ?? `noop-${sIdx}-${iIdx}`; // non-path key for items without path
+      const key = it.path ?? `noop-${sIdx}-${iIdx}`;
       items.push({
         key,
         icon: renderIcon(it.icon),
         label: it.label,
-        disabled: !it.path, // prevent clicks when path missing
+        disabled: !it.path,
       });
     });
   });
@@ -112,29 +111,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   logo,
   sections,
   collapsed,
-  // onToggle,
   onNavigate,
-  activePath, // optional now
+  activePath,
   width = 224,
   collapsedWidth = 64,
 }) => {
   const router = useRouter();
-  const pathname = usePathname(); // current URL
-  const items = React.useMemo(() => toMenuItems(sections), [sections]);
+  const pathname = usePathname();
+  const { mutateAsync: logout, isPending } = useLogoutMutation(); // hook
 
-  // compute selected key robustly:
+  const items = React.useMemo(() => toMenuItems(sections), [sections]);
   const allPaths = React.useMemo(() => flattenItemPaths(sections), [sections]);
   const currentPath = activePath ?? pathname ?? '';
   const selectedKey = React.useMemo(
     () => getBestMatchKey(allPaths, currentPath) ?? '',
-    [allPaths, currentPath]
+    [allPaths, currentPath],
   );
 
-  // normalize logo prop
   const fullLogo = typeof logo === 'string' ? logo : logo?.full ?? '/logo.png';
   const compactLogo = typeof logo === 'string' ? logo : logo?.compact ?? fullLogo;
   const altText = typeof logo === 'string' ? 'Logo' : logo?.alt ?? 'Logo';
   const blurDataURL = typeof logo === 'string' ? undefined : logo?.blurDataURL;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/signin');
+      router.refresh();
+    } finally {
+      router.replace('/signin'); // navigate after logout
+    }
+  };
 
   return (
     <Sider
@@ -184,16 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         selectedKeys={selectedKey ? [selectedKey] : []}
         onClick={(info) => {
           const key = String(info.key);
-
-          // 1) Always navigate if it's a URL-like key
-          if (key.startsWith('/')) {
-            router.push(key);
-          } else {
-            // Optional: helpful during dev
-            // console.warn('Clicked non-route menu item:', key);
-          }
-
-          // 2) Still notify parent if provided
+          if (key.startsWith('/')) router.push(key);
           if (onNavigate) onNavigate(key);
         }}
         className="!bg-transparent !text-white
@@ -203,7 +201,6 @@ const Sidebar: React.FC<SidebarProps> = ({
              [&_.ant-menu-item-icon]:!text-white
              px-2 pt-3"
       />
-
 
       <div className="absolute bottom-3 left-0 w-full px-2 space-y-1">
         <Button
@@ -215,6 +212,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Button
           type="text"
           icon={<LogoutOutlined />}
+          loading={isPending}
+          onClick={handleLogout}
           className="!text-white !w-full !h-9 hover:!bg-white/10"
         >
           Logout
@@ -225,33 +224,3 @@ const Sidebar: React.FC<SidebarProps> = ({
 };
 
 export default Sidebar;
-
-
-
-
-// <div className="absolute bottom-3 left-0 w-full px-2">
-//   <Button
-//     type="text"
-//     // icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-//     // onClick={onToggle}
-//     className="!text-white !w-full !h-9 hover:!bg-white/10"
-//   >
-//     FAQ
-//   </Button>
-//   <Button
-//     type="text"
-//     icon={<LogoutOutlined />}
-//     // onClick={onToggle}
-//     className="!text-white !w-full !h-9 hover:!bg-white/10"
-//   >
-//     Logout
-//   </Button>
-//   {/* <Button
-//     type="text"
-//     icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-//     onClick={onToggle}
-//     className="!text-white !w-full !h-9 hover:!bg-white/10"
-//   >
-//     {!collapsed}
-//   </Button> */}
-// </div>

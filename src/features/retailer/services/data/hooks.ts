@@ -42,12 +42,12 @@ const qk = {
 };
 
 /** Helper to broadly match this module's keys */
-const keyStartsWithServiceBase = (key: readonly unknown[]) =>
-  Array.isArray(key) &&
-  key.length >= 3 &&
-  key[0] === "bbps" &&
-  key[1] === "retailer" &&
-  key[2] === "service";
+// const keyStartsWithServiceBase = (key: readonly unknown[]) =>
+//   Array.isArray(key) &&
+//   key.length >= 3 &&
+//   key[0] === "bbps" &&
+//   key[1] === "retailer" &&
+//   key[2] === "service";
 
 /** ========== Queries ========== */
 
