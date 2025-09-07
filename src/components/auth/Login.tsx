@@ -124,7 +124,6 @@ export const LoginMain = () => {
           label={<span className="text-gray-500">Password</span>}
           name="password"
           rules={[{ required: true, message: 'Please enter password' }]}
-          initialValue={"Asdf@1234"}
         >
           <Input.Password
             size="large"
