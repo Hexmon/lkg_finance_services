@@ -111,6 +111,28 @@ export const walletStats = [
     label: "Commission Earned",
     amount: "₹1,240",
     icon: "/star.svg",
-    growthIcon: "/icons/growth.svg",
+    growthIcon: "/icons/growth.svg"
   },
 ]
+
+export const services = [
+  {
+    key: "cash-withdrawal",
+    label: "Cash Withdrawal",
+    description: "Withdraw cash using Aadhaar",
+    icon: "/cash-withdraw.svg",
+    active: true,
+  },
+  {
+    key: "balance-enquiry",
+    label: "Balance Enquiry",
+    description: "Check account balance",
+    icon: "/balance-en.svg",
+  },
+  {
+    key: "mini-statement",
+    label: "Mini Statement",
+    description: "Get last 5 transactions",
+    icon: "/mini-stmt.svg",
+  },
+];
