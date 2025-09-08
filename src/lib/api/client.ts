@@ -118,7 +118,7 @@ export async function request<T>(
     if (!res.ok) {
       // ----- Handle 401 redirect (browser only) -----
       if (res.status === 401 && typeof window !== 'undefined') {
-        const shouldRedirect = init?.redirectOn401 ?? true;
+        const shouldRedirect = init?.redirectOn401 ?? false;
         if (shouldRedirect) {
           const signinPath = init?.redirectPath || '/signin';
           const here = window.location.pathname + window.location.search + window.location.hash;

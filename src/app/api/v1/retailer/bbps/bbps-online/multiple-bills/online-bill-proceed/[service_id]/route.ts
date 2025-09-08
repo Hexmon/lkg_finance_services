@@ -1,6 +1,6 @@
-// src\app\api\v1\retailer\bbps\bbps-online\multiple-bills\online-bill-proceed\[service_id]\route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { bbpsFetch } from '@/app/api/_lib/http-bbps';
@@ -14,11 +14,9 @@ import {
 // Avoid caching for auth-backed data
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  req: Request,
-  // Next 15: params is a Promise
-  ctx: { params: Promise<{ service_id: string }> }
-) {
+type Ctx = { params: Promise<{ service_id: string }> };
+
+export async function POST(req: NextRequest, ctx: Ctx) {
   const { service_id } = await ctx.params;
 
   // ---- Auth (JWT from HttpOnly cookie; never expose) ----
@@ -56,7 +54,6 @@ export async function POST(
 
     const data = OnlineBillProceedResponseSchema.parse(raw);
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(

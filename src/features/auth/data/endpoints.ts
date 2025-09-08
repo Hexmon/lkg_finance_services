@@ -44,7 +44,7 @@ const p = {
 /** ---------- Login ---------- */
 export async function apiLogin(payload: LoginRequest): Promise<LoginResponse> {
   const body = LoginRequestSchema.parse(payload);
-  const data = await postJSON<LoginResponse>(p.login, body);
+  const data = await postJSON<LoginResponse>(p.login, body, { redirectOn401: false });
   return LoginResponseSchema.parse(data);
 }
 
