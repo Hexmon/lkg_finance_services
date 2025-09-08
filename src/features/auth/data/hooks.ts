@@ -68,10 +68,10 @@ export function useLoginMutation() {
   return useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (payload) => apiLogin(payload),
     onSuccess: async (data) => {
-      // Do NOT store token client-side anymore.
       if (data.userId) dispatch(setUserId(data.userId));
-      // Invalidate cached queries that depend on auth (e.g., /me)
-      await qc.invalidateQueries();
+      await qc.invalidateQueries({ queryKey: ['auth', 'session'] });
+      await qc.invalidateQueries({ queryKey: ['retailer'] });
+      await qc.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }

@@ -35,11 +35,11 @@ export async function apiGetTransactionSummary(
     ? `${p.transactionSummary}?${sp.toString()}`
     : p.transactionSummary;
 
-  const data = await getJSON<unknown>(path);
+  const data = await getJSON<unknown>(path, { redirectOn401: false });
   return TransactionSummaryResponseSchema.parse(data);
 }
 
 export async function apiGetRetailerDashboard(): Promise<DashboardDetailsResponse> {
-  const data = await getJSON<unknown>(p.dashboard);
+  const data = await getJSON<unknown>(p.dashboard, { redirectOn401: false });
   return DashboardDetailsResponseSchema.parse(data);
 }

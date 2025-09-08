@@ -47,12 +47,7 @@ export default function DashboardLayout({ children, activePath = '/dashboard', s
         <Content className="overflow-y-auto p-4 !bg-[#ececec] sm:p-6">
           {
             isLoading ? (
-              <div className="flex justify-center items-center h-[70vh]">
-                <Spin size="large" tip="Loading...">
-                  <div className="h-full w-full" />
-                </Spin>
-              </div>
-
+              <Spin size="large" tip="Loading..." fullscreen />
             ) : (
               children
             )
