@@ -5,8 +5,6 @@
  * - GET /secure/retailer/transaction_summary
  * - GET /secure/retailer/getDashboard
  */
-
-import { RETAILER_ENDPOINTS } from "@/config/endpoints";
 import {
   TransactionSummaryQuerySchema,
   TransactionSummaryQuery,
@@ -15,48 +13,33 @@ import {
   DashboardDetailsResponseSchema,
   DashboardDetailsResponse,
 } from "../domain/types";
-import { retailerRequest } from "../../client";
+import { getJSON } from "@/lib/api/client";
 
-/** Const paths */
-const TRANSACTION_SUMMARY_PATH = RETAILER_ENDPOINTS.GENERAL.Transaction_SUMMARY;
-const DASHBOARD_DETAILS_PATH = RETAILER_ENDPOINTS.GENERAL.DASHBOARD_DETAILS;
+const p = {
+  dashboard: '/retailer/dashboard/get-dashboard',
+  transactionSummary: '/retailer/dashboard/transaction-summary',
+} as const;
 
-/**
- * GET /secure/retailer/transaction_summary
- */
-export async function apiTransactionSummaryList(
-  input: TransactionSummaryQuery = {},
-  opts?: { signal?: AbortSignal }
+export async function apiGetTransactionSummary(
+  query?: TransactionSummaryQuery
 ): Promise<TransactionSummaryResponse> {
-  const params = TransactionSummaryQuerySchema.parse(input);
+  const q = query ? TransactionSummaryQuerySchema.parse(query) : undefined;
 
-  const raw = await retailerRequest<TransactionSummaryResponse>({
-    method: "GET",
-    path: TRANSACTION_SUMMARY_PATH,
-    query: params,
-    headers: {},
-    auth: true,
-    apiKey: false,
-    signal: opts?.signal ?? null,
-  });
+  const sp = new URLSearchParams();
+  if (q?.page !== undefined) sp.set('page', String(q.page));
+  if (q?.per_page !== undefined) sp.set('per_page', String(q.per_page));
+  if (q?.order !== undefined) sp.set('order', q.order);
+  if (q?.sort_by !== undefined) sp.set('sort_by', q.sort_by);
 
-  return TransactionSummaryResponseSchema.parse(raw);
+  const path = sp.toString()
+    ? `${p.transactionSummary}?${sp.toString()}`
+    : p.transactionSummary;
+
+  const data = await getJSON<unknown>(path);
+  return TransactionSummaryResponseSchema.parse(data);
 }
 
-/**
- * GET /secure/retailer/getDashboard
- */
-export async function apiDashboardDetails(
-  opts?: { signal?: AbortSignal }
-): Promise<DashboardDetailsResponse> {
-  const raw = await retailerRequest<DashboardDetailsResponse>({
-    method: "GET",
-    path: DASHBOARD_DETAILS_PATH,
-    headers: {},
-    auth: true,
-    apiKey: false,
-    signal: opts?.signal ?? null,
-  });
-
-  return DashboardDetailsResponseSchema.parse(raw);
+export async function apiGetRetailerDashboard(): Promise<DashboardDetailsResponse> {
+  const data = await getJSON<unknown>(p.dashboard);
+  return DashboardDetailsResponseSchema.parse(data);
 }

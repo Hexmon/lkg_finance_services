@@ -1,81 +1,83 @@
-/**
- * Retailer | General module — hooks
- *
- * Hooks covered:
- * - useTransactionSummaryQuery
- * - useDashboardDetailsQuery
- * + Aggregator useGeneralApi()
- */
+// src/features/retailer/general/data/hooks.ts
+'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
-  useQuery,
-  useQueryClient,
-  type UseQueryOptions,
-  type QueryKey,
-} from "@tanstack/react-query";
-import {
-  apiTransactionSummaryList,
-  apiDashboardDetails,
-} from "./endpoints";
-import {
+  apiGetRetailerDashboard,
+  apiGetTransactionSummary,
+} from './endpoints';
+import type {
+  DashboardDetailsResponse,
   TransactionSummaryQuery,
   TransactionSummaryResponse,
-  DashboardDetailsResponse,
-} from "../domain/types";
+} from '@/features/retailer/general/domain/types';
 
-/** Cache keys */
-const qk = {
-  base: ["bbps", "retailer", "general"] as const,
-  transactionSummary: (params: TransactionSummaryQuery) =>
-    [...qk.base, "transaction-summary", params] as QueryKey,
-  dashboard: () => [...qk.base, "dashboard"] as QueryKey,
-};
+/**
+ * Default dashboard object so UI can destructure without guards.
+ * Matches DashboardDetailsResponse shape.
+ */
+export const DEFAULT_DASHBOARD: DashboardDetailsResponse = {
+  quick_links: [],
+  user_id: '',
+  name: '',
+  profile: '',
+  username: '',
+  balances: {},
+  transactions: {
+    success_rate: 0,
+    success_rate_ratio: 0,
+    growth: 0,
+    total_transaction: { total_count: 0, ratio: 0, growth: 0 },
+    overall_transaction: { total_count: 0, ratio: 0, growth: 0 },
+  },
+  virtual_account: { vba_account_number: '', vba_ifsc: '' },
+  commissions: {
+    overall: 0,
+    overall_ratio: 0,
+    current_month: 0,
+    current_month_ratio: 0,
+    last_month: 0,
+  },
+} as const;
 
-/** ---------- Transaction Summary (query) ---------- */
-export function useTransactionSummaryQuery(
-  params: TransactionSummaryQuery = {},
-  options?: Omit<
-    UseQueryOptions<TransactionSummaryResponse, Error, TransactionSummaryResponse, QueryKey>,
-    "queryKey" | "queryFn"
-  >
-) {
-  return useQuery({
-    queryKey: qk.transactionSummary(params),
-    queryFn: ({ signal }) => apiTransactionSummaryList(params, { signal }),
-    ...(options ?? {}),
+/** ---------- Dashboard ---------- */
+export function useRetailerDashboardQuery() {
+  // v5: set TQueryFnData, TError, TData so `data` resolves to the same type you select
+  return useQuery<DashboardDetailsResponse, unknown, DashboardDetailsResponse>({
+    queryKey: ['retailer', 'dashboard'] as const,
+    queryFn: apiGetRetailerDashboard,
+    // Ensure consumers always see a concrete object (not undefined)
+    select: (d) => d ?? DEFAULT_DASHBOARD,
+    placeholderData: DEFAULT_DASHBOARD,
+    staleTime: 60_000,   // 1 min
+    gcTime: 5 * 60_000,  // 5 min
+    refetchOnWindowFocus: false,
   });
 }
 
-/** ---------- Dashboard Details (query) ---------- */
-export function useDashboardDetailsQuery(
-  options?: Omit<
-    UseQueryOptions<DashboardDetailsResponse, Error, DashboardDetailsResponse, QueryKey>,
-    "queryKey" | "queryFn"
-  >
-) {
-  return useQuery({
-    queryKey: qk.dashboard(),
-    queryFn: ({ signal }) => apiDashboardDetails({ signal }),
-    ...(options ?? {}),
-  });
-}
-
-/** ---------- Aggregator ---------- */
-export function useGeneralApi() {
-  const qc = useQueryClient();
-
-  return {
-    /** Imperative, cached fetches */
-    getTransactionSummary: (params: TransactionSummaryQuery = {}) =>
-      qc.fetchQuery({
-        queryKey: qk.transactionSummary(params),
-        queryFn: ({ signal }) => apiTransactionSummaryList(params, { signal }),
-      }),
-
-    getDashboardDetails: () =>
-      qc.fetchQuery({
-        queryKey: qk.dashboard(),
-        queryFn: ({ signal }) => apiDashboardDetails({ signal }),
-      }),
+/** ---------- Transaction Summary (pagination-friendly) ---------- */
+export function useTransactionSummaryQuery(query: TransactionSummaryQuery) {
+  // Sensible empty page while fetching/transitioning
+  const emptyPage: TransactionSummaryResponse = {
+    total: 0,
+    page: query.page ?? 1,
+    per_page: query.per_page ?? 10,
+    pages: 0,
+    has_next: false,
+    has_prev: false,
+    next_page: null,
+    prev_page: null,
+    sort_by: query.sort_by ?? 'created_at',
+    data: [],
   };
+
+  return useQuery<TransactionSummaryResponse, unknown, TransactionSummaryResponse>({
+    queryKey: ['retailer', 'transaction-summary', query] as const,
+    queryFn: () => apiGetTransactionSummary(query),
+    // v5 replacement for keepPreviousData; keeps UI stable across page changes
+    placeholderData: (prev) => prev ?? emptyPage,
+    select: (d) => d ?? emptyPage,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 }
