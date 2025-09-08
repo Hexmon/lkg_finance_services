@@ -1,0 +1,26 @@
+<svg width="47" height="46" viewBox="0 0 47 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d_553_12873)">
+    <rect width="40" height="40" rx="20" fill="#3386FF"/>
+    <!-- Inserted Circles SVG -->
+    <g transform="translate(7,6)"> <!-- Adjust to center inside -->
+      <circle cx="12.5" cy="12.5" r="11.75" stroke="white" stroke-width="1.5"/>
+      <circle cx="12.5" cy="12.5" r="9.75" stroke="white" stroke-width="1.5"/>
+      <circle cx="12.5" cy="12.5" r="7.75" stroke="white" stroke-width="1.5"/>
+      <circle cx="12.5" cy="12.5" r="5.75" stroke="white" stroke-width="1.5"/>
+      <circle cx="12.5" cy="12.5" r="3.75" stroke="white" stroke-width="1.5"/>
+    </g>
+  </g>
+  <defs>
+    <filter id="filter0_d_553_12873" x="0" y="0" width="46.8" height="45.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feMorphology radius="3" operator="erode" in="SourceAlpha" result="effect1_dropShadow_553_12873"/>
+      <feOffset dx="5" dy="4"/>
+      <feGaussianBlur stdDeviation="2.4"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.511047 0 0 0 0 0.511047 0 0 0 0 0.511538 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_553_12873"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_553_12873" result="shape"/>
+    </filter>
+  </defs>
+</svg>
