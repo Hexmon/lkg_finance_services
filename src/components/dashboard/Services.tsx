@@ -23,30 +23,10 @@ type QuickLink = {
   updated_at: string | null;
 };
 
-type QuickLinkWithNav = QuickLink & {
-  navigationURL: string;
-};
-
-type ServicesProps = {
-  quick_link: QuickLink[];
-};
-
-export default function Services({ quick_link }: ServicesProps) {
+export default function Services({ quick_link }: {quick_link: QuickLink[]}) {
   const router = useRouter()
 
-  const items: QuickLinkWithNav[] = (quick_link ?? [])
-    .slice(0, 4)
-    .map((item) => {
-      const formattedRoute =
-        item.meta?.route
-          ?.replace(/^\//, "") // remove leading slash
-          ?.replace(/_/g, "-") || "/";
-
-      return {
-        ...item,
-        navigationURL: formattedRoute,
-      };
-    });
+  const items: QuickLink[] = (quick_link ?? [])
 
   return (
     <Card className="rounded-2xl shadow-sm mb-6">
@@ -82,7 +62,7 @@ export default function Services({ quick_link }: ServicesProps) {
                 </Text>
                 <Button
                   size="middle"
-                  onClick={() => router.push(data.navigationURL)}
+                  onClick={() => router.push(data.meta.route ?? "/")}
                   type="primary"
                   className="!bg-[#3386FF] w-[80%] !rounded-xl"
                 >
