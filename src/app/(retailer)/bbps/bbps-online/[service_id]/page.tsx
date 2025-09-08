@@ -8,6 +8,7 @@ import {
   DeleteOutlined,
   ThunderboltOutlined,
   AppstoreOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
@@ -16,6 +17,7 @@ import { useBbpsCategoryListQuery } from "@/features/retailer/retailer_bbps/bbps
 import { useParams, useRouter } from "next/navigation";
 import { useOnlineBillerListQuery, useOnlineBillProceedMutation } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
 import { useMessage } from "@/hooks/useMessage";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
 const { Title, Text } = Typography;
 
@@ -114,6 +116,7 @@ export default function ChooseServicePage() {
 
   return (
     <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
+
       <div className="p-6 min-h-screen w-full">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -121,11 +124,13 @@ export default function ChooseServicePage() {
             className="flex items-center gap-2 text-gray-700 cursor-pointer"
             onClick={() => window.history.back()}
           >
-            <LeftOutlined />
-            <div>
-              <Title level={3} className="!mb-0">Choose Service</Title>
-              <Text type="secondary">Online Bill Payment</Text>
-            </div>
+            <DashboardSectionHeader
+              title="Choose Service"
+              titleClassName="text-[25px] font-medium "
+              subtitle="Online Bill Payment"
+              subtitleClassName="text-[15.5px] font-light text-[#1D1D1D]"
+
+            />
           </div>
 
           <div className="flex items-center gap-4">
@@ -137,24 +142,33 @@ export default function ChooseServicePage() {
         </div>
 
         {/* Search Bar */}
-        <Input
-          placeholder="Search for bill payment services..."
-          className="rounded-xl shadow-sm mb-6"
-        />
+        <div className="flex items-center h-[61px] mb-6 bg-[#FFFFFF] rounded-xl shadow-sm px-4">
+          {/* Icon */}
+          <div className="text-[#D3C7B7] text-xl pr-3">
+            <SearchOutlined />
+          </div>
 
-        <Card className="rounded-2xl shadow-md w-full mb-6">
-          <Text strong className="block mb-3">Available Services</Text>
+          {/* Input */}
+          <input
+            type="text"
+            placeholder="Search for bill payment services..."
+            className="w-full border-none outline-none bg-transparent text-[#9A9595] placeholder-[#9A9595] text-[15px]"
+          />
+        </div>
+
+        <Card className="!rounded-2xl !shadow-md !w-full !mb-6">
+          <Text strong className="!block !mb-3 !text-[20px] !ml-8">Available Services</Text>
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {(catData ?? []).map((data) => {
               const { bbps_category_id, biller_category } = data || {}
               return (
                 <div key={bbps_category_id} onClick={() => { router.push(`/bbps/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}>
                   <Card
-                    className="cursor-pointer rounded-xl text-center py-6 bg-[#faf5e9] hover:border-blue-400 hover:shadow-md transition"
+                    className="cursor-pointer rounded-sm text-center py-2 bg-[#faf9f6] hover:border-blue-400 hover:shadow-md transition w-full h-[72px] text-[8px] break-words leading-tight"
                   >
-                    {/* <div className="text-2xl mb-2">{service.icon}</div> */}
-                    <Text className="text-[10px]">{biller_category}</Text>
+                    <Text className="text-[8px]">{biller_category}</Text>
                   </Card>
+
                 </div>
               )
             })}
@@ -163,12 +177,23 @@ export default function ChooseServicePage() {
 
         {/* Manage Billers */}
         <Card className="rounded-2xl shadow-md w-full mb-6">
-          <Text strong className="block mb-3">Manage Billers</Text>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="bg-[#5298FF54] w-[38px] h-[37px] rounded-[6px] flex items-center justify-center">
+              <Image
+                src="/mobile-bill.svg"
+                alt="Bill Phone"
+                width={15}
+                height={15}
+              />
+            </div>
+            <Text strong className="!text-[20px]">Manage Billers</Text>
+          </div>
+
           <div className="flex flex-col gap-4">
             {billers.map((biller) => (
               <div
                 key={biller.id}
-                className="flex justify-between items-center bg-[#faf5e9] rounded-xl px-4 py-3 shadow-sm"
+                className="flex justify-between items-center bg-[#FFFFFF] rounded-xl px-4 py-3 shadow-sm"
               >
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">{biller.icon}</div>
@@ -181,7 +206,7 @@ export default function ChooseServicePage() {
                   <Text strong>₹{biller.amount}</Text>
                   <DeleteOutlined
                     onClick={() => removeBiller(biller.id)}
-                    className="text-red-500 cursor-pointer"
+                    className="!text-red-500 !cursor-pointer"
                   />
                 </div>
               </div>
@@ -189,17 +214,15 @@ export default function ChooseServicePage() {
           </div>
 
           {/* Total Amount */}
-          <div className="flex justify-between items-center mt-4 px-2">
-            <Text strong>Total Amount</Text>
+          <div className="flex justify-between items-center mt-4 px-2 mb-5">
+            <Text strong className="!text-[20px] !font-medium">Total Amount</Text>
             <Text strong>₹{totalAmount}.00</Text>
           </div>
-        </Card>
-
-        {/* Proceed Button */}
+          {/* Proceed Button */}
         <Button
           type="primary"
           block
-          className="!bg-blue-600 !border-blue-600 !text-white rounded-xl py-5 text-lg shadow-md"
+          className="!bg-[#3386FF] !border-[3386FF] !text-white !rounded-xl !py-5 !text-[12px] !shadow-md !w-full !h-[39px]"
           disabled={billers.length === 0 || isProceeding}
           loading={isProceeding}
           onClick={handleProceed}
@@ -211,6 +234,9 @@ export default function ChooseServicePage() {
             {(proceedError as Error)?.message || "Failed to proceed"}
           </div>
         )}
+        </Card>
+
+        
       </div>
     </DashboardLayout>
   );

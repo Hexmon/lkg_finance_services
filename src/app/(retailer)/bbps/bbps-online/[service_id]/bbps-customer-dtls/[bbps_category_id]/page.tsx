@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { Card, Form, Input, Button } from "antd";
+import { Card, Form, Input, Button, Typography } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
@@ -10,6 +10,8 @@ import { useAppDispatch, useAppSelector, selectCustomer } from "@/lib/store";
 import { setCustomerDetails } from "@/lib/store/slices/customerSlice";
 import { useMessage } from "@/hooks/useMessage";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+const { Title, Text } = Typography;
 
 type FormValues = {
   customerName: string;
@@ -65,13 +67,14 @@ export default function CustomerDetailsForm() {
       sections={billPaymentSidebarConfig}
       pageTitle="Bill Payment"
     >
-      <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="p-8 min-h-screen ">
         <DashboardSectionHeader
           title={<h1 className="!text-black !font-semibold !text-[20px]">Customer Details</h1>}
-          subtitle={<span className="text-[#1D1D1D] font-light text-[12px]">Customer Input Details</span>}
+          subtitle={<span className="text-[#1D1D1D] font-normal text-[12px]">Customer Input Details</span>}
           showBack
         />
-        <Card className="rounded-2xl shadow-md w-full">
+        <Card className="!rounded-2xl !shadow-md !w-full !mt-4">
+        <Text className="!font-medium !text-[15px] !ml-7 !mb-8">Customer Details</Text>
           <Form<FormValues>
             layout="vertical"
             form={form}
@@ -81,20 +84,21 @@ export default function CustomerDetailsForm() {
             initialValues={initialValues}
             // keep Ant Form instance state when the component unmounts
             preserve
+            className="!ml-7 !mt-6 !text-[12px]"
           >
             <Form.Item
-              label="Customer Name"
+              label="Customer Name *"
               name="customerName"
-              rules={[{ required: true, message: "Please enter customer name" }]}
+              rules={[{ message: "Please enter customer name" }]}
             >
               <Input size="large" placeholder="Enter Customer Name" />
             </Form.Item>
 
             <Form.Item
-              label="Customer Mobile Number"
+              label="Customer Mobile Number *"
               name="mobileNumber"
               rules={[
-                { required: true, message: "Please enter mobile number" },
+                { message: "Please enter mobile number" },
                 { pattern: /^\d{10}$/, message: "Enter a valid 10-digit number" },
               ]}
             >
@@ -114,7 +118,7 @@ export default function CustomerDetailsForm() {
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" size="large" block htmlType="submit">
+              <Button type="primary" size="large" block htmlType="submit" className="!bg-[#3386FF] !text-[12px] !mt-6">
                 Proceed
               </Button>
             </Form.Item>

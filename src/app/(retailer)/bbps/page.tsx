@@ -87,15 +87,6 @@ export default function BillPaymentServicePage() {
                     footer={
                       isSubscribe ? (
                         <div className="flex flex-wrap justify-center gap-2 mt-3 w-[251px] h-[16px]">
-                          <Button size="small" className="!text-[10px] !bg-[#F4F8FF] border-0 w-[75px] h-[16px] rounded-[5px] !text-[#9A9595]">
-                            Auto Fetch
-                          </Button>
-                          <Button size="small" className="!text-[10px] !font-[Poppins,sans-serif] !bg-[#F4F8FF] border-0 w-[75px] h-[16px] rounded-[5px] !text-[#9A9595]">
-                            Quick Pay
-                          </Button>
-                          <Button size="small" className="!text-[10px] !font-[Poppins,sans-serif] !bg-[#F4F8FF] border-0 w-[75px] h-[16px] rounded-[5px] !text-[#9A9595]">
-                            Secure
-                          </Button>
                         </div>
                       ) : (
                         <div className="flex justify-center">
