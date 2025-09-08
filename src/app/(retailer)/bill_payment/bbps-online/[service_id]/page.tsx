@@ -59,7 +59,7 @@ export default function ChooseServicePage() {
     onSuccess: (resp) => {
       success(resp?.message ?? "Request submitted successfully");
       // Optionally navigate / refetch online billers, etc.
-      // router.push(`/bbps/bbps-online/confirmation/${service_id}`);
+      // router.push(`/bill_payment/bbps-online/confirmation/${service_id}`);
     },
     onError: (err) => {
       error(err.message || "Failed to proceed");
@@ -162,7 +162,7 @@ export default function ChooseServicePage() {
             {(catData ?? []).map((data) => {
               const { bbps_category_id, biller_category } = data || {}
               return (
-                <div key={bbps_category_id} onClick={() => { router.push(`/bbps/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}>
+                <div key={bbps_category_id} onClick={() => { router.push(`/bill_payment/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}>
                   <Card
                     className="cursor-pointer rounded-sm text-center py-2 bg-[#faf9f6] hover:border-blue-400 hover:shadow-md transition w-full h-[72px] text-[8px] break-words leading-tight"
                   >

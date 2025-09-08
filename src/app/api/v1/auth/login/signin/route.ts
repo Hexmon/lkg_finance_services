@@ -1,6 +1,6 @@
-// src/app/api/v1/auth/login/signin/route.ts
+// // src\app\api\v1\auth\login\signin\route.ts
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 import { authFetch } from '@/app/api/_lib/http';
@@ -17,17 +17,26 @@ type UpstreamOk = {
 };
 type UpstreamPwdReset = { status: 1001; message: string; user_id: string };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   let body: z.infer<typeof Body>;
-  try { body = Body.parse(await req.json()); }
-  catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }); }
+  try {
+    body = Body.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
 
   try {
-    const res = await authFetch<UpstreamOk | UpstreamPwdReset>(AUTHERIZATION_ENDPOINT.AUTH_LOGIN_PATH, { body });
+    const res = await authFetch<UpstreamOk | UpstreamPwdReset>(
+      AUTHERIZATION_ENDPOINT.AUTH_LOGIN_PATH,
+      { body }
+    );
 
     if ('status' in res && res.status === 1001) {
       await clearAuthCookies();
-      return NextResponse.json({ status: 1001, message: res.message, userId: res.user_id }, { status: 200 });
+      return NextResponse.json(
+        { status: 1001, message: res.message, userId: res.user_id },
+        { status: 200 }
+      );
     }
 
     const ok = res as UpstreamOk;
@@ -44,6 +53,9 @@ export async function POST(req: Request) {
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? 'Login failed' }, { status: err?.status ?? 502 });
+    return NextResponse.json(
+      { error: err?.message ?? 'Login failed' },
+      { status: err?.status ?? 502 }
+    );
   }
 }

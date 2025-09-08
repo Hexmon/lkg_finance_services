@@ -1,6 +1,5 @@
-// src\app\api\v1\retailer\dashboard\transaction-summary\route.ts
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
@@ -13,17 +12,16 @@ import {
   type TransactionSummaryResponse,
 } from '@/features/retailer/general/domain/types';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   // 1) Auth via HttpOnly cookie
-  const jar = await cookies();
+  const jar = await cookies(); // sync
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // 2) Normalize + validate query params with Zod
-  const url = new URL(req.url);
-  const spIn = url.searchParams;
+  const spIn = req.nextUrl.searchParams;
 
   const raw: Partial<TransactionSummaryQuery> = {
     page: spIn.get('page') ? Number(spIn.get('page')) : undefined,
@@ -41,7 +39,7 @@ export async function GET(req: Request) {
   }
   const q = parsed.data;
 
-  // rebuild normalized querystring
+  // Rebuild normalized querystring
   const spOut = new URLSearchParams();
   if (q.page !== undefined) spOut.set('page', String(q.page));
   if (q.per_page !== undefined) spOut.set('per_page', String(q.per_page));
@@ -63,11 +61,10 @@ export async function GET(req: Request) {
     });
 
     // 4) Parse/validate response
-    const data: TransactionSummaryResponse =
-      TransactionSummaryResponseSchema.parse(upstream);
+    const data: TransactionSummaryResponse = TransactionSummaryResponseSchema.parse(upstream);
 
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(

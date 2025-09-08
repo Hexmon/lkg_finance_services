@@ -1,5 +1,5 @@
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { RETAILER_ENDPOINTS } from '@/config/endpoints';
@@ -10,7 +10,7 @@ import {
   type ServiceChargesResponse,
 } from '@/features/retailer/services/domain/types';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

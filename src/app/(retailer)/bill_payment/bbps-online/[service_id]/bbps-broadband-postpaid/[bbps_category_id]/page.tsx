@@ -20,7 +20,7 @@ export default function BillDetailsPage() {
   // ✅ Guard: if customer details missing, send user back to the form step
   useEffect(() => {
     if (!details) {
-      router.replace(`/bbps/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`);
+      router.replace(`/bill_payment/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`);
     }
   }, [details, router, service_id, bbps_category_id]);
 

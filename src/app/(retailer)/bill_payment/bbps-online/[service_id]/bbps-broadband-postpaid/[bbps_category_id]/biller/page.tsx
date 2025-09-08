@@ -25,7 +25,7 @@ export default function BroadbandPrepaidPage() {
   } = useBbpsBillerListQuery({ service_id, bbps_category_id, is_offline: false, mode: "ONLINE" });
 
   return (
-    <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
+    <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
       <div className="p-6 bg-gray-50 min-h-screen w-full">
         <div className="flex justify-between items-center">
           <DashboardSectionHeader

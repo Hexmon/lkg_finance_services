@@ -1,5 +1,5 @@
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { RETAILER_ENDPOINTS } from '@/config/endpoints';
@@ -10,14 +10,13 @@ import {
   type ServiceListResponse,
 } from '@/features/retailer/services/domain/types';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Validate optional query params
-  const url = new URL(req.url);
-  const qp = Object.fromEntries(url.searchParams.entries());
+  const sp = req.nextUrl.searchParams;
+  const qp = Object.fromEntries(sp.entries());
   const parsed = ServiceListQuerySchema.safeParse({
     category: qp.category,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +43,9 @@ export async function GET(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
-    return NextResponse.json(err?.data ?? { status, error: { message: err?.message ?? 'Service list failed' } }, { status });
+    return NextResponse.json(
+      err?.data ?? { status, error: { message: err?.message ?? 'Service list failed' } },
+      { status }
+    );
   }
 }

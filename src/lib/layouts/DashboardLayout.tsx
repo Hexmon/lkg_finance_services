@@ -48,8 +48,11 @@ export default function DashboardLayout({ children, activePath = '/dashboard', s
           {
             isLoading ? (
               <div className="flex justify-center items-center h-[70vh]">
-                <Spin size="large" tip="Loading..." />
+                <Spin size="large" tip="Loading...">
+                  <div className="h-full w-full" />
+                </Spin>
               </div>
+
             ) : (
               children
             )

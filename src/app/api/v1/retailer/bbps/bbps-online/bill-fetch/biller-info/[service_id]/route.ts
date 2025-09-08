@@ -1,10 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
+import { BAInputParamsSchema, BACustomerInfoSchema } from '@/features/retailer/retailer_bbps/bbps-online/bill_avenue/domain/types';
 import { retailerFetch } from '@/app/api/_lib/http-retailer';
 
-export async function POST(req: Request, { params }: { params: { service_id: string } }) {
+type Ctx = { params: Promise<{ service_id: string }> };
+
+export async function POST(req: NextRequest, context: Ctx) {
+  const { service_id } = await context.params;
+
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -12,22 +18,29 @@ export async function POST(req: Request, { params }: { params: { service_id: str
   const body = await req.json().catch(() => null);
   if (!body?.billerId) return NextResponse.json({ error: 'billerId required' }, { status: 400 });
 
+  if (body.customerInfo) {
+    const parsed = BACustomerInfoSchema.safeParse(body.customerInfo);
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid customerInfo', issues: parsed.error.issues }, { status: 400 });
+  }
+  if (body.inputParams) {
+    const parsed = BAInputParamsSchema.safeParse(body.inputParams);
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid inputParams', issues: parsed.error.issues }, { status: 400 });
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = await retailerFetch<any>(
-      `/secure/bbps/bills/biller-info/${params.service_id}`,
+      `/secure/bbps/bills/bill-fetch/${service_id}`,
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          apiurl: '/extMdmCntrl/mdmRequestNew/xml',
+          apiurl: '/extBillCntrl/billFetchRequest/xml',
         },
         body,
         query: { mode: 'ONLINE' },
       }
     );
     return NextResponse.json(raw, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     return NextResponse.json(err?.data ?? { error: err.message }, { status: err.status ?? 502 });
   }
