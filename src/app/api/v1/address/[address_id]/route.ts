@@ -1,5 +1,5 @@
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 import { authFetch } from '@/app/api/_lib/http';
@@ -11,13 +11,20 @@ import {
 } from '@/features/address/domain/types';
 
 /** PATCH /api/v1/address/:address_id → upstream PATCH /secure/address/:address_id */
-export async function PATCH(req: Request, ctx: { params: { address_id: string } }) {
-  const { address_id } = ctx.params;
-  if (!address_id) return NextResponse.json({ error: 'address_id required' }, { status: 400 });
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ address_id: string }> }
+) {
+  const { address_id } = await ctx.params;
+  if (!address_id) {
+    return NextResponse.json({ error: 'address_id required' }, { status: 400 });
+  }
 
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const json = await req.json().catch(() => null);
   const parsed = UpdateAddressBodySchema.safeParse(json);
@@ -38,7 +45,7 @@ export async function PATCH(req: Request, ctx: { params: { address_id: string } 
       }
     );
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(
@@ -49,13 +56,20 @@ export async function PATCH(req: Request, ctx: { params: { address_id: string } 
 }
 
 /** DELETE /api/v1/address/:address_id → upstream DELETE /secure/address/:address_id */
-export async function DELETE(_req: Request, ctx: { params: { address_id: string } }) {
-  const { address_id } = ctx.params;
-  if (!address_id) return NextResponse.json({ error: 'address_id required' }, { status: 400 });
+export async function DELETE(
+  _req: NextRequest,
+  ctx: { params: Promise<{ address_id: string }> }
+) {
+  const { address_id } = await ctx.params;
+  if (!address_id) {
+    return NextResponse.json({ error: 'address_id required' }, { status: 400 });
+  }
 
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
     const res = await fetch(
@@ -79,7 +93,7 @@ export async function DELETE(_req: Request, ctx: { params: { address_id: string 
       });
     }
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(

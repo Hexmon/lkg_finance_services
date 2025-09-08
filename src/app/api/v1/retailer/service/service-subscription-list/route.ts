@@ -1,3 +1,4 @@
+// src\app\api\v1\retailer\service\service-subscription-list\route.ts
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';

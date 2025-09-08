@@ -21,7 +21,7 @@ export const LoginMain = () => {
   const [form] = Form.useForm<LoginFormValues>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const username = searchParams.get('username') || '';
+  const usernameFromQuery = searchParams.get('username') || '';
 
   const { success, error, warning } = useMessage();
   const { mutateAsync: login, isPending } = useLoginMutation();
@@ -54,7 +54,7 @@ export const LoginMain = () => {
     } catch (e) {
       if (e instanceof ApiError) {
         error(e.message || 'Unable to sign in. Please try again.');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if (e && typeof e === 'object' && 'message' in e && typeof (e as any).message === 'string') {
         error((e as { message: string }).message);
       } else {
@@ -94,14 +94,13 @@ export const LoginMain = () => {
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
         requiredMark={false}
-        initialValues={{ username }}
+        initialValues={{ username: usernameFromQuery || "" }}
       >
         {/* Username */}
         <Form.Item
           label={<span className="text-gray-500">Username</span>}
           name="username"
           rules={[{ required: true, message: 'Please enter username' }]}
-          initialValue={"RA175900435"}
         >
           <Input
             size="large"

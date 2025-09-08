@@ -1,5 +1,5 @@
 import 'server-only';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 import { authFetch } from '@/app/api/_lib/http';
@@ -16,9 +16,9 @@ function withTrailingSlash(p: string) {
 }
 
 /** POST /api/v1/address → upstream POST /secure/address */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // Require session
-  const jar = await cookies();
+  const jar = await cookies(); // sync in Next 15
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       }
     );
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(
@@ -52,13 +52,12 @@ export async function POST(req: Request) {
 }
 
 /** GET /api/v1/address?user_id=... → upstream GET /secure/address/ (optionally with ?user_id=...) */
-export async function GET(req: Request) {
-  const jar = await cookies();
+export async function GET(req: NextRequest) {
+  const jar = await cookies(); // sync
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const url = new URL(req.url);
-  const userId = url.searchParams.get('user_id');
+  const userId = req.nextUrl.searchParams.get('user_id');
 
   // Build upstream path: `/secure/address/` (optionally with ?user_id=)
   let path = withTrailingSlash(AUTHERIZATION_ENDPOINT.ADDRESS_PATH);
@@ -68,7 +67,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    // authFetch defaults to POST; override to GET and no body
+    // authFetch defaults to POST; here call fetch directly for GET
     const res = await fetch(`${process.env.AUTH_BASE_URL!}${path}`, {
       method: 'GET',
       headers: {
@@ -81,13 +80,13 @@ export async function GET(req: Request) {
 
     const data = (await res.json()) as GetAddressesResponse;
     if (!res.ok) {
-      throw Object.assign(new Error(data as unknown as string), {
+      throw Object.assign(new Error(typeof data === 'string' ? data : 'Upstream error'), {
         status: res.status,
         data,
       });
     }
     return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
     return NextResponse.json(
