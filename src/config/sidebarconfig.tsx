@@ -8,16 +8,16 @@ export const dashboardSidebarConfig: SidebarSection[] = [
   {
     title: 'Services',
     items: [
-      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money-transfer' },
-      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash-withdraw' },
-      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bbps' },
+      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money_transfer' },
+      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash_withdrawal' },
+      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bill_payment' },
       { label: 'Fastag', icon: "/sidebar-icons/fastag.png", path: '/fastag' },
-      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/pancard' },
+      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/support_ticket' },
     ],
   },
   {
     title: 'Reports',
-    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports' }],
+    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports_analysis' }],
   },
 ];
 
@@ -29,16 +29,16 @@ export const moneyTransferSidebarConfig: SidebarSection[] = [
   {
     title: 'Services',
     items: [
-      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money-transfer' },
-      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash-withdraw' },
-      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bbps' },
+      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money_transfer' },
+      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash_withdrawal' },
+      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bill_payment' },
       { label: 'Fastag', icon: "/sidebar-icons/fastag.png", path: '/fastag' },
-      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/pancard' },
+      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/support_ticket' },
     ],
   },
   {
     title: 'Reports',
-    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports' }],
+    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports_analysis' }],
   },
 ];
 
@@ -50,11 +50,11 @@ export const cashWithdrawSidebarConfig: SidebarSection[] = [
   {
     title: 'Services',
     items: [
-      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money-transfer' },
-      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash-withdraw' },
-      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bbps' },
+      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money_transfer' },
+      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash_withdrawal' },
+      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bill_payment' },
       { label: 'Fastag', icon: "/sidebar-icons/fastag.png", path: '/fastag' },
-      { label: 'Pan Card', icon: "/sidebar-icons/pan-card.png", path: '/pancard' },
+      { label: 'Pan Card', icon: "/sidebar-icons/pan-card.png", path: '/support_ticket' },
     ],
   },
 ];
@@ -68,15 +68,15 @@ export const billPaymentSidebarConfig: SidebarSection[] = [
   {
     title: 'Services',
     items: [
-      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money-transfer' },
-      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash-withdraw' },
-      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bbps' },
+      { label: 'Money Transfer', icon: "/sidebar-icons/money-transfer.svg", path: '/money_transfer' },
+      { label: 'Cash Withdrawal', icon: "/sidebar-icons/cash-withdraw.png", path: '/cash_withdrawal' },
+      { label: 'Bill Payment', icon: "/sidebar-icons/bill-payment.png", path: '/bill_payment' },
       { label: 'Fastag', icon: "/sidebar-icons/fastag.png", path: '/fastag' },
-      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/pancard' },
+      { label: 'Support Ticket', icon: "/sidebar-icons/pan-card.png", path: '/support_ticket' },
     ],
   },
   {
     title: 'Reports',
-    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports' }],
+    items: [{ label: 'Report & Analytics', icon: "/sidebar-icons/report-management.png", path: '/reports_analysis' }],
   },
 ];

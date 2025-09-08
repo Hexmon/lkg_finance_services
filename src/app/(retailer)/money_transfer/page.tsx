@@ -14,7 +14,7 @@ export default function MoneyTransferServicePage() {
     console.log({data, error , isLoading});
     
     return (
-        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money-transfer" pageTitle="Money Transfer">
+        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money_transfer" pageTitle="Money Transfer">
             <DashboardSectionHeader
                 title="Money Transfer Service"
                 titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"

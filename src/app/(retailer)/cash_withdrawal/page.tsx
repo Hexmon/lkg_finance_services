@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function CashWithdraw() {
     return (
-        <DashboardLayout sections={cashWithdrawSidebarConfig} activePath="/cash-withdraw" pageTitle="Cash Withdrawal">
+        <DashboardLayout sections={cashWithdrawSidebarConfig} activePath="/cash_withdrawal" pageTitle="Cash Withdrawal">
             <div className="max-w-[450px] mx-auto mb-[7px]">
                 <div className="flex justify-between">
                     <Button size="middle" className="!text-[10px] !border-0 !bg-white shadow-md rounded-[9px] !text-black"><ArrowLeftOutlined /> Back to Service</Button>
