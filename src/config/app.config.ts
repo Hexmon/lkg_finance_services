@@ -35,28 +35,28 @@ export const quickService = [
     icon: "/icons/money-transfer.png",
     title: "Money Transfer",
     subtitle: "Send Money Instantly",
-    navigationURL: "/money-transfer"
+    navigationURL: "/money_transfer"
   },
   {
     id: 2,
     icon: "/icons/cash-withdraw.svg",
     title: "Cash Withdrawal",
     subtitle: "AEPS transactions",
-    navigationURL: "/cash-withdraw"
+    navigationURL: "/cash_withdrawal"
   },
   {
     id: 3,
     icon: "/icons/bill-payment.svg",
     title: "Bill Payment",
     subtitle: "Pay all bills",
-    navigationURL: "/bbps"
+    navigationURL: "/bill_payment"
   },
   {
     id: 4,
     icon: "/icons/cashfree-payment.svg",
     title: "Cashfree Payout",
     subtitle: "Bank transfers",
-    navigationURL: ""
+    navigationURL: "/cashfree_payout"
   },
 ]
 

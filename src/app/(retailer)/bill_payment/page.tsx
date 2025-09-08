@@ -49,7 +49,7 @@ export default function BillPaymentServicePage() {
   ]
 
   return (
-    <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
+    <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
       <DashboardSectionHeader
         title={<span className="!text-[#3386FF] !font-semibold !text-[32px]">Bill Payment Service</span>}
         subtitle={null}
@@ -71,7 +71,7 @@ export default function BillPaymentServicePage() {
             cardData.map((data) => {
               const { icon, id, isBlocked, isSubscribe, subtitle, title } = data || {}
               return (
-                <div key={id} className="cursor-pointer" onClick={() => { router.push(`/bbps/bbps-online/${id}`) }}>
+                <div key={id} className="cursor-pointer" onClick={() => { router.push(`/bill_payment/bbps-online/${id}`) }}>
                   <CardLayout
                     as="section"
                     size="lg"
