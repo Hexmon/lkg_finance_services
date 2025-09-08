@@ -16,7 +16,7 @@ export default function IdentityVerified({ userName = "Rajesh Kumar" }: Identity
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push("/cash_withdrawal/aeps_service");
-    }, 3000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [router]);

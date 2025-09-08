@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, Typography, Button, Input, Select, Form, Table } from "antd";
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
@@ -8,12 +8,17 @@ import { cashWithdrawSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { CardLayout } from "@/lib/layouts/CardLayout";
+import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
+import TransactionHistory from "@/components/cash-withdraw/TransactionHistory";
+import NewTransaction from "@/components/cash-withdraw/NewTransaction";
 
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function CashWithdrawPage() {
+    const [activeTab, setActiveTab] = useState<string | number>("newtransaction");
+
     const stats = [
         {
             icon: "/heart-line.svg",
@@ -41,6 +46,41 @@ export default function CashWithdrawPage() {
         },
     ];
 
+    const items: TabItem[] = [
+        {
+            key: "newtransaction",
+            label: (
+                <div
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "newtransaction"
+                            ? "bg-[#3386FF] text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                >
+                    <Image src="/rocket.svg" alt="New" width={16} height={16} />
+                    <span>New Transaction</span>
+                </div>
+            ),
+            content: <NewTransaction />,
+        },
+        {
+            key: "transactionhistory",
+            label: (
+                <div
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "transactionhistory"
+                            ? "bg-[#3386FF] text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                >
+                    <Image src="/line-blk.svg" alt="History" width={16} height={16} />
+                    <span>Transaction History</span>
+                </div>
+            ),
+            content: <TransactionHistory />,
+        },
+    ];
+
+
+
     return (
         <DashboardLayout
             sections={cashWithdrawSidebarConfig}
@@ -50,6 +90,7 @@ export default function CashWithdrawPage() {
             <DashboardSectionHeader
                 title="AEPS Service"
                 subtitle="Aadhar Enabled Payment System"
+                titleClassName="text-[20px] font-medium"
             />
             <div className="p-6 min-h-screen w-full">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -59,7 +100,7 @@ export default function CashWithdrawPage() {
                             variant="default"
                             elevation={2}
                             rounded="rounded-xl"
-                            className="!bg-[#f9f5ec] text-center relative !w-[240px] !h-[136px] !rounded-[15px]"
+                            className="!bg-[#ffffff] text-center relative !w-[240px] !h-[136px] !rounded-[15px]"
                             width="240px"
                             height="136px"
                             body={
@@ -67,12 +108,12 @@ export default function CashWithdrawPage() {
                                     {/* Main Icon */}
                                     <div className="bg-[#3386FF] rounded-[40px] w-[40px] h-[40px] flex items-center justify-center">
                                         <Image
-                                        src={item.icon}
-                                        alt={item.label}
-                                        width={30}
-                                        height={30}
-                                        className="object-contain"
-                                    />
+                                            src={item.icon}
+                                            alt={item.label}
+                                            width={30}
+                                            height={30}
+                                            className="object-contain"
+                                        />
                                     </div>
 
                                     {/* Value + Label */}
@@ -98,31 +139,18 @@ export default function CashWithdrawPage() {
                 </div>
 
                 {/* Tabs (New Transaction, Transaction History) */}
-                <div className="flex gap-[10px] mb-6 relative -left-px">
-                    {/* Active Tab */}
-                    <Button className="!flex !items-center !w-[283px] !h-[60px] !rounded-[15px] !pt-[17px] !pr-[22px] !pb-[17px] !pl-[22px] !bg-blue-600 !text-white !shadow-sm !opacity-100">
-                        <Image
-                            src="/rocket.svg"
-                            alt="person logo"
-                            height={16}
-                            width={16}
-                        />
-                        New Transaction
-                    </Button>
+                <SmartTabs
+                    items={items}
+                    activeKey={activeTab}
+                    onChange={setActiveTab}
+                    keepAlive
+                    fitted={false}
+                    durationMs={260}
+                    easing="cubic-bezier(.22,1,.36,1)"
+                />
 
-                    {/* Inactive Tab */}
-                    <Button className="!flex !items-center !w-[283px] !h-[60px] !rounded-[15px] !pt-[17px] !pr-[22px] !pb-[17px] !pl-[22px] !bg-neutral-100 !text-neutral-700 !shadow-sm !opacity-100">
-                        <Image
-                            src="/line-blk.svg"
-                            alt="person logo"
-                            height={16}
-                            width={16}
-                        />
-                        Transaction History
-                    </Button>
-                </div>
 
-                
+
 
             </div>
         </DashboardLayout>
