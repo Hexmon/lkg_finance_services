@@ -6,8 +6,8 @@
  * - GET /secure/retailer/getDashboard
  *
  * Notes:
- * - The Dashboard payload shape can vary by tenant/provider; we intentionally
- *   accept a passthrough object for now (keeps "no any" without guessing).
+ * - Dashboard: we strongly type known fields, but keep `.passthrough()` at the top
+ *   level to tolerate provider-specific extras.
  */
 
 import { z } from "zod";
@@ -32,14 +32,23 @@ export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
   ])
 );
 
-/** ---------- Transaction Summary ---------- */
+/** ---------- NumberLike (accepts numbers or numeric strings) ---------- */
+export const NumberLike = z.union([
+  z.number(),
+  z.string().transform((s) => Number(s)).pipe(z.number()),
+]);
+
+/** =====================================================================
+ *  Transaction Summary
+ * ====================================================================*/
+
 /** Query params */
 export const TransactionSummaryQuerySchema = z
   .object({
-    page: z.number().int().positive().optional(), // default 1
-    per_page: z.number().int().positive().optional(), // default 10
-    order: z.enum(["asc", "desc"]).optional(), // default desc
-    sort_by: z.string().min(1).optional(), // default created_at
+    page: z.number().int().positive().optional(),      // default 1
+    per_page: z.number().int().positive().optional(),  // default 10
+    order: z.enum(["asc", "desc"]).optional(),         // default desc
+    sort_by: z.string().min(1).optional(),             // default created_at
   })
   .strict();
 
@@ -99,8 +108,8 @@ export const TransactionSummaryItemSchema = z
     service_id: z.string().uuid().nullable(),
     user_id: z.string().uuid(),
     wallet_id: z.string().uuid(),
-    txn_type: z.string().min(1), // e.g., "SUBSCRIPTION", "FUND_REQUEST"
-    txn_status: z.string().min(1), // e.g., "SUCCESS"
+    txn_type: z.string().min(1),       // e.g., "SUBSCRIPTION", "FUND_REQUEST"
+    txn_status: z.string().min(1),     // e.g., "SUCCESS"
     txn_reference_id: z.union([z.string(), z.number()]).nullable(),
 
     txn_amount: z.number(),
@@ -114,7 +123,7 @@ export const TransactionSummaryItemSchema = z
     commission: z.unknown().nullable(),
     revenue: z.array(TxnRevenueItemSchema).nullable(),
 
-    mode: z.string().min(1), // e.g., "WALLET"
+    mode: z.string().min(1),       // e.g., "WALLET"
     txn_subtype: z.string().min(1), // "CR" | "DR"
     txn_metadata: z.union([JsonSchema, z.null()]).optional(),
 
@@ -147,12 +156,87 @@ export type TransactionSummaryResponse = z.infer<
   typeof TransactionSummaryResponseSchema
 >;
 
-/** ---------- Dashboard Details ---------- */
-/**
- * Provider response is known to vary across tenants/partners,
- * so we accept a passthrough object while keeping "no any".
- */
-export const DashboardDetailsResponseSchema = z.object({}).passthrough();
+/** =====================================================================
+ *  Dashboard Details (strong fields + tolerant to extras)
+ * ====================================================================*/
+
+/** Quick Links */
+export const QuickLinkMetaSchema = z
+  .object({
+    id: z.string().uuid(),
+    display: z.string(),
+    icon: z.string(), // allow URLs or base64/data URIs
+    route: z.string(),
+    order: z.number(),
+    is_active: z.boolean(),
+    created_at: z.string(),
+    updated_at: z.string().nullable(),
+  })
+  .strict();
+
+export const QuickLinkSchema = z
+  .object({
+    meta: QuickLinkMetaSchema,
+    category_id: z.string().uuid(),
+    name: z.string(),
+    description: z.string(),
+    created_at: z.string(),
+    updated_at: z.string().nullable(),
+  })
+  .strict();
+
+/** Transactions block */
+export const TxnStatsSchema = z
+  .object({
+    total_count: NumberLike,
+    ratio: NumberLike,
+    growth: NumberLike,
+  })
+  .strict();
+
+export const TransactionsBlockSchema = z
+  .object({
+    success_rate: NumberLike,
+    success_rate_ratio: NumberLike,
+    growth: NumberLike,
+    total_transaction: TxnStatsSchema,
+    overall_transaction: TxnStatsSchema,
+  })
+  .strict();
+
+/** Virtual account & Commissions */
+export const VirtualAccountSchema = z
+  .object({
+    vba_account_number: z.string(),
+    vba_ifsc: z.string(),
+  })
+  .strict();
+
+export const CommissionsSchema = z
+  .object({
+    overall: NumberLike,
+    overall_ratio: NumberLike,
+    current_month: NumberLike,
+    current_month_ratio: NumberLike,
+    last_month: NumberLike,
+  })
+  .strict();
+
+/** Final dashboard response */
+export const DashboardDetailsResponseSchema = z
+  .object({
+    quick_links: z.array(QuickLinkSchema),
+    user_id: z.string().uuid(),
+    name: z.string(),
+    profile: z.string(), // base64 image or URL
+    username: z.string(),
+    balances: z.record(z.string(), NumberLike), // dynamic keys: MAIN, AEPS, etc.
+    transactions: TransactionsBlockSchema,
+    virtual_account: VirtualAccountSchema,
+    commissions: CommissionsSchema,
+  })
+  .passthrough(); // keep tolerant to extra vendor fields
+
 export type DashboardDetailsResponse = z.infer<
   typeof DashboardDetailsResponseSchema
 >;
