@@ -1,3 +1,4 @@
+// src\app\api\v1\auth\user-onboarding\mobile-email-verification\generate-email-otp\routes.ts
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -10,6 +11,8 @@ import {
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 
 export async function POST(req: Request) {
+  console.log("api cleddefkjefvnekjn   iknjdnfik ");
+  
   const json = await req.json().catch(() => null);
   const parsed = GenerateEmailOtpRequestSchema.safeParse(json);
   if (!parsed.success) {
