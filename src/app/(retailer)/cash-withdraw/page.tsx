@@ -3,6 +3,7 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { ArrowLeftOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Button } from "antd";
+import Image from "next/image";
 
 export default function CashWithdraw() {
     return (
@@ -33,7 +34,13 @@ export default function CashWithdraw() {
                 body={
                     <div className="grid place-items-center gap-3 py-6">
                         <div className="h-24 w-24 rounded-full bg-white shadow-inner grid place-items-center">
-                            <div className="h-12 w-12 rounded-full border-4 border-blue-500" />
+                            <Image
+                            src="/biometric.svg"
+                            alt="Biometric Verification"
+                            width={110}   // same as h-12
+                            height={110}  // same as w-12
+                            className="object-contain "
+                        />
                         </div>
                         <div className="text-sm text-blue-700/80">Processing Data</div>
                         <div className="text-sm">Verifying: <strong>Rajesh Kumar</strong></div>
