@@ -31,17 +31,8 @@ export default function DashboardLayout({ children, activePath = '/dashboard', s
         <div className="sticky top-0 z-20 backdrop-blur m-1">
           <Topbar
             title={pageTitle ?? ""}
-            balance={25000}
             onAddFunds={() => console.log('Add Funds')}
             onDebitFunds={() => console.log('Debit Funds')}
-            notifications={0}
-            user={{
-              name: 'Rajesh Saini',
-              id: 'R047040',
-              role: 'Retailer',
-              avatarUrl: 'https://i.pravatar.cc/100?img=5',
-              verified: true,
-            }}
           />
         </div>
         <Content className="overflow-y-auto p-4 !bg-[#ececec] sm:p-6">

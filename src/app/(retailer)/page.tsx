@@ -4,7 +4,7 @@
 import React from "react";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
-import { DashboardDetailsResponse, DEFAULT_DASHBOARD, useRetailerDashboardQuery, useTransactionSummaryQuery } from "@/features/retailer/general";
+import { DashboardDetailsResponse, DEFAULT_DASHBOARD, useRetailerDashboardQuery } from "@/features/retailer/general";
 import Profile from "@/components/dashboard/Profile";
 import Feature from "@/components/dashboard/Feature";
 import Services from "@/components/dashboard/Services";

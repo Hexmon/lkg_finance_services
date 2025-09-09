@@ -69,7 +69,7 @@ export default function Feature({totalTxnCount, totalTxnRatio,success_rate, succ
                         <div className="flex justify-between items-center">
                             <div className="text-[#787878] text-[14px] font-medium">Customers</div>
                             <Image
-                                src="/icons/Customers.svg"
+                                src="/icons/customers.svg"
                                 alt=""
                                 width={25}
                                 height={25}

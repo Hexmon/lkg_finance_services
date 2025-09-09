@@ -12,6 +12,7 @@ import createWebStorage from 'redux-persist/lib/storage/createWebStorage';
 import customerReducer from './slices/customerSlice';
 import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
+import profileReducer from './slices/profileSlice';
 
 // SSR-safe storage
 function createNoopStorage(): PersistStorage {
@@ -36,6 +37,7 @@ const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   ui: uiReducer,
   customer: customerReducer,
+  profile: profileReducer,
 });
 
 // Optionally persist other top-level slices (ui) at root
