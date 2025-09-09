@@ -5,6 +5,15 @@
 // - Clears timeout properly in finally
 // - Redirects to /signin on 401 by default (can be disabled per-call)
 
+import { apiLogout } from "@/features/auth/data/endpoints";
+
+let redirectingToSignin = false;
+let onUnauthorized: null | (() => void | Promise<void>) = null;
+
+export function registerOnUnauthorized(handler: () => void | Promise<void>) {
+  onUnauthorized = handler;
+}
+
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type ReqInit = Omit<RequestInit, 'method' | 'body'>;
 
@@ -116,18 +125,31 @@ export async function request<T>(
     const json = text ? safeJson<unknown>(text) : null;
 
     if (!res.ok) {
-      // ----- Handle 401 redirect (browser only) -----
+      // ...inside request(), after you parsed `json` and before throwing:
       if (res.status === 401 && typeof window !== 'undefined') {
-        const shouldRedirect = init?.redirectOn401 ?? false;
+        const shouldRedirect = init?.redirectOn401 ?? true;
         if (shouldRedirect) {
           const signinPath = init?.redirectPath || '/signin';
           const here = window.location.pathname + window.location.search + window.location.hash;
-          // avoid redirect loop if already on /signin
-          if (!window.location.pathname.startsWith(signinPath)) {
-            window.location.assign(`${signinPath}?next=${encodeURIComponent(here)}`);
+
+          if (!window.location.pathname.startsWith(signinPath) && !redirectingToSignin) {
+            redirectingToSignin = true;
+
+            // 🔑 run client-side cleanup (Redux, Persist, React Query, etc.)
+            try { await onUnauthorized?.(); } catch { }
+
+            // Optional: also ask server to clear cookies (fire-and-forget)
+            try { apiLogout?.(); } catch { }
+
+            // Avoid back-button loop
+            window.location.replace(`${signinPath}?next=${encodeURIComponent(here)}`);
           }
+
+          // Don’t throw—prevents toasts/boundaries just before navigation
+          return new Promise<never>(() => { });
         }
       }
+
 
       const message =
         getMessageFromJson(json) ?? (res.statusText || `HTTP ${res.status}`) ?? 'Request failed';

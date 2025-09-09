@@ -94,7 +94,8 @@ export const LoginMain = () => {
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
         requiredMark={false}
-        initialValues={{ username: usernameFromQuery || "" }}
+        // initialValues={{ username: usernameFromQuery || "" }}
+        initialValues={{ username: usernameFromQuery || "RA175900435", password: "Asdf@1234" }}
       >
         {/* Username */}
         <Form.Item

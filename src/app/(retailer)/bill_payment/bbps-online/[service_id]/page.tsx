@@ -2,12 +2,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Card, Typography, Button, Input } from "antd";
+import { Card, Typography, Button } from "antd";
 import {
-  LeftOutlined,
   DeleteOutlined,
-  ThunderboltOutlined,
-  AppstoreOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
@@ -19,7 +16,7 @@ import { useOnlineBillerListQuery, useOnlineBillProceedMutation } from "@/featur
 import { useMessage } from "@/hooks/useMessage";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function ChooseServicePage() {
   type RouteParams = { service_id: string };
@@ -49,6 +46,31 @@ export default function ChooseServicePage() {
   );
 
   const { data: billersResp, isLoading: isBillersLoading, error: billersError } = useOnlineBillerListQuery(onlineParams, { query: { enabled: Boolean(service_id) } });
+  const billers = billersResp?.data?.map(
+    ({
+      status,
+      biller_batch_id,
+      input_json: {
+        amountInfo: { amount },
+        customerInfo: { REMITTER_NAME, customerMobile } = {},
+        billerResponse: { billAmount, customerName } = {},
+      },
+    }) => ({
+      status,
+      amount,
+      biller_batch_id,
+      REMITTER_NAME,
+      customerMobile,
+      billAmount,
+      customerName,
+    })
+  ) ?? [];
+
+  const totalAmount = billers.reduce(
+    (sum, { amount }) => sum + Number(amount || 0),
+    0
+  );
+
 
   const {
     mutateAsync: proceed,
@@ -90,25 +112,22 @@ export default function ChooseServicePage() {
     }
   };
 
-  const [billers, setBillers] = useState([
-    {
-      id: "21081904512",
-      name: "Jaipur Vidyut Vitran Nigam (JVVNL)",
-      icon: <ThunderboltOutlined className="text-yellow-500" />,
-      amount: 2450,
-    },
-    {
-      id: "DTV987654321",
-      name: "Airtel Digital TV",
-      icon: <AppstoreOutlined className="text-purple-500" />,
-      amount: 399,
-    },
-  ]);
+  const [searchText, setSearchText] = useState("");
 
-  const totalAmount = billers.reduce((sum, b) => sum + b.amount, 0);
+  const filteredCategories = useMemo(() => {
+    const list = catData ?? [];
+    if (!searchText.trim()) return list;
+
+    const q = searchText.toLowerCase();
+    return list.filter((item) => {
+      const name = (item?.biller_category ?? "").toLowerCase();
+      const id = (item?.bbps_category_id ?? "").toLowerCase();
+      return name.includes(q) || id.includes(q);
+    });
+  }, [catData, searchText]);
 
   const removeBiller = (id: string) => {
-    setBillers(billers.filter((b) => b.id !== id));
+    // setBillers(billers.filter((b) => b.id !== id));
   };
 
   // const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
@@ -148,24 +167,26 @@ export default function ChooseServicePage() {
             <SearchOutlined />
           </div>
 
-          {/* Input */}
           <input
             type="text"
             placeholder="Search for bill payment services..."
             className="w-full border-none outline-none bg-transparent text-[#9A9595] placeholder-[#9A9595] text-[15px]"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
 
         <Card className="!rounded-2xl !shadow-md !w-full !mb-6">
           <Text strong className="!block !mb-3 !text-[20px] !ml-8">Available Services</Text>
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {(catData ?? []).map((data) => {
-              const { bbps_category_id, biller_category } = data || {}
+            {(filteredCategories ?? []).map((data) => {
+              const { bbps_category_id, biller_category, icon } = data || {}
               return (
                 <div key={bbps_category_id} onClick={() => { router.push(`/bill_payment/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}>
                   <Card
-                    className="cursor-pointer rounded-sm text-center py-2 bg-[#faf9f6] hover:border-blue-400 hover:shadow-md transition w-full h-[72px] text-[8px] break-words leading-tight"
+                    className="cursor-pointer shadow rounded-md text-center py-2 bg-[#faf9f6] hover:border-blue-400 hover:shadow-md transition w-full h-[130px] text-[8px] break-words leading-tight"
                   >
+                    <Image src={icon} alt={biller_category} height={50} width={50} className="text-center m-auto" />
                     <Text className="text-[8px]">{biller_category}</Text>
                   </Card>
 
@@ -180,7 +201,7 @@ export default function ChooseServicePage() {
           <div className="flex items-center gap-2 mb-3">
             <div className="bg-[#5298FF54] w-[38px] h-[37px] rounded-[6px] flex items-center justify-center">
               <Image
-                src="/mobile-bill.svg"
+                src="/mbill.svg"
                 alt="Bill Phone"
                 width={15}
                 height={15}
@@ -189,54 +210,72 @@ export default function ChooseServicePage() {
             <Text strong className="!text-[20px]">Manage Billers</Text>
           </div>
 
-          <div className="flex flex-col gap-4">
-            {billers.map((biller) => (
-              <div
-                key={biller.id}
-                className="flex justify-between items-center bg-[#FFFFFF] rounded-xl px-4 py-3 shadow-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{biller.icon}</div>
-                  <div>
-                    <Text strong>{biller.name}</Text>
-                    <div className="text-xs text-gray-500">{biller.id}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Text strong>₹{biller.amount}</Text>
-                  <DeleteOutlined
-                    onClick={() => removeBiller(biller.id)}
-                    className="!text-red-500 !cursor-pointer"
-                  />
-                </div>
+          {Array.isArray(billers) && billers.length > 0 ? (
+            <>
+              {/* Billers List */}
+              <div className="flex flex-col gap-4">
+                {billers.map(
+                  ({ billAmount, customerName, biller_batch_id }) => (
+                    <div
+                      key={biller_batch_id}
+                      className="flex justify-between items-center bg-white rounded-xl px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <Text strong>{customerName ?? "Unknown"}</Text>
+                          <div className="text-xs text-gray-500">
+                            {biller_batch_id}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Text strong>₹{billAmount ?? 0}</Text>
+                        <DeleteOutlined
+                          onClick={() => removeBiller(biller_batch_id)}
+                          className="!text-red-500 !cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* Total Amount */}
-          <div className="flex justify-between items-center mt-4 px-2 mb-5">
-            <Text strong className="!text-[20px] !font-medium">Total Amount</Text>
-            <Text strong>₹{totalAmount}.00</Text>
-          </div>
-          {/* Proceed Button */}
-        <Button
-          type="primary"
-          block
-          className="!bg-[#3386FF] !border-[3386FF] !text-white !rounded-xl !py-5 !text-[12px] !shadow-md !w-full !h-[39px]"
-          disabled={billers.length === 0 || isProceeding}
-          loading={isProceeding}
-          onClick={handleProceed}
-        >
-          Proceed to Pay
-        </Button>
-        {proceedError && (
-          <div className="mt-3 text-red-500 text-sm">
-            {(proceedError as Error)?.message || "Failed to proceed"}
-          </div>
-        )}
+              {/* Total Section */}
+              <div className="flex justify-between items-center mt-4 px-2 mb-5">
+                <Text strong className="!text-[20px] !font-medium">
+                  Total Amount
+                </Text>
+                <Text strong>₹{totalAmount}.00</Text>
+              </div>
+
+              {/* Proceed Button */}
+              <Button
+                type="primary"
+                block
+                className="!bg-[#3386FF] !border-[#3386FF] !text-white !rounded-xl !py-5 !text-[12px] !shadow-md !w-full !h-[39px]"
+                disabled={isProceeding}
+                loading={isProceeding}
+                onClick={handleProceed}
+              >
+                Proceed to Pay
+              </Button>
+
+              {/* Error Message */}
+              {proceedError && (
+                <div className="mt-3 text-red-500 text-sm">
+                  {(proceedError as Error)?.message || "Failed to proceed"}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center text-gray-500 py-6">
+              No billers available
+            </div>
+          )}
+
         </Card>
 
-        
+
       </div>
     </DashboardLayout>
   );

@@ -19,6 +19,7 @@ export type CircleListResponse = z.infer<typeof CircleListResponseSchema>;
 export const CategorySchema = z.object({
   bbps_category_id: z.string(),
   biller_category: z.string(),
+  icon: z.string()
 });
 export const CategoryListResponseSchema = z.object({
   status: z.union([z.number(), z.string()]).transform((s) => Number(s)),

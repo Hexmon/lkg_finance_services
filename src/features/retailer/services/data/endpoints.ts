@@ -24,14 +24,16 @@ import {
   ServiceChargesResponse,
 } from "../domain/types";
 import { retailerRequest } from "../../client";
-import { getJSON } from "@/lib/api/client";
+import { getJSON, postJSON } from "@/lib/api/client";
 
 /** Paths (const string paths only) */
 const SERVICE_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_LIST;
-const SERVICE_SUBSCRIPTION_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_SUBSCRIPTION_LIST;
 const SUBSCRIPTIONS_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SUBSCRIPTIONS;
-const SERVICE_SUBSCRIBE_PATH = RETAILER_ENDPOINTS.SERVICE.SUBSCRIBE;
 const SERVICE_CHARGES_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_CHARGES;
+
+const p = {
+  subscribe: '/retailer/service/subscribe',
+}
 
 /**
  * GET /secure/retailer/service-list
@@ -95,28 +97,16 @@ export async function apiServiceSubscriptionsList(
   return SubscriptionsListResponseSchema.parse(res);
 }
 
-/**
- * POST /secure/retailer/subscribe
- * Creates/updates retailer subscription for a service.
- * Note: If already subscribed, server responds 409; the shared client throws ApiError.
- */
 export async function apiServiceSubscribe(
-  body: ServiceSubscribeBody,
-  opts?: { signal?: AbortSignal }
+  payload: ServiceSubscribeBody
 ): Promise<ServiceSubscribeResponse> {
-  const payload = ServiceSubscribeBodySchema.parse(body);
-
-  const res = await retailerRequest<ServiceSubscribeResponse>({
-    method: "POST",
-    path: SERVICE_SUBSCRIBE_PATH,
-    body: payload,
-    headers: {}, // JSON content-type is auto-set by client
-    auth: true,
-    apiKey: false,
-    signal: opts?.signal,
+  const body = ServiceSubscribeBodySchema.parse(payload);
+  const data = await postJSON<ServiceSubscribeResponse>(p.subscribe, body, {
+    redirectOn401: true,
+    redirectPath: '/signin',
   });
 
-  return ServiceSubscribeResponseSchema.parse(res);
+  return ServiceSubscribeResponseSchema.parse(data);
 }
 
 /**

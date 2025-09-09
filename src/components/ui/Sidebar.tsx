@@ -151,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       width={width}
       collapsedWidth={collapsedWidth}
       breakpoint="lg"
-      className="!bg-[#174c96] rounded-xl"
+      className="!bg-[#1A468D] rounded-xl"
       style={{
         transition: 'width 220ms ease',
         height: '99vh',

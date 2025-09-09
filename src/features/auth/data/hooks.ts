@@ -57,6 +57,7 @@ import type {
 
 import { persistor, RootState, useAppDispatch } from '@/lib/store';
 import { clearAuth, setUserId } from '@/lib/store/slices/authSlice'; // ← removed setToken
+import { clearProfile } from '@/lib/store/slices/profileSlice';
 
 export const selectUserId = (s: RootState) => s.auth.userId;
 
@@ -84,9 +85,11 @@ export function useLogoutMutation() {
   return useMutation<{ success: true }>({
     mutationFn: apiLogout,
     onSettled: async () => {
+      dispatch(clearProfile());
       dispatch(clearAuth());
       qc.clear();
       await persistor.flush();
+      await persistor.purge();
     },
   });
 }

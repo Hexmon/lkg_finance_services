@@ -5,16 +5,16 @@ import { Card, Typography } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
-import { useServiceListQuery } from "@/features/retailer/services";
+import { useServiceSubscriptionListQuery } from "@/features/retailer/services";
 
 const { Title, Text } = Typography;
 
 export default function MoneyTransferServicePage() {
-    const {data, error , isLoading} = useServiceListQuery()
-    console.log({data, error , isLoading});
-    
+    const { data: { data: servieData, status } = {}, isLoading, error } = useServiceSubscriptionListQuery({ service_name: 'DMT' });
+console.log({servieData});
+
     return (
-        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money_transfer" pageTitle="Money Transfer">
+        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money_transfer" pageTitle="Money Transfer" isLoading={isLoading}>
             <DashboardSectionHeader
                 title="Money Transfer Service"
                 titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"
@@ -22,7 +22,6 @@ export default function MoneyTransferServicePage() {
             />
             <div className="p-6 min-h-screen w-full">
 
-                {/* Content Card - aligned left */}
                 <div className="flex">
                     <Card className="rounded-2xl shadow-md text-center w-[400px]">
                         <div className="flex flex-col items-center justify-center">
