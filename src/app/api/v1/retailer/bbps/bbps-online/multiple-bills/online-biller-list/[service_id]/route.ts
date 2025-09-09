@@ -33,9 +33,9 @@ const toNum = (v: string | null | undefined): number | undefined => {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { service_id: string } }
+  context: { params: Promise<{ service_id: string }> } // ✅ new shape
 ) {
-  const { service_id } = params ?? {};
+  const { service_id } = await context.params; // ✅ await the params
   if (!service_id) {
     return NextResponse.json(
       { status: 400, error: { message: 'service_id is required' } },
@@ -44,7 +44,7 @@ export async function GET(
   }
 
   // ---- Auth (JWT from HttpOnly cookie; never expose) ----
-  const jar = await cookies();
+  const jar = await cookies(); // ✅ no await needed
   let token = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -97,11 +97,9 @@ export async function GET(
     const data = OnlineBillerListResponseSchema.parse(rawResp);
     return NextResponse.json(data, { status: 200 });
   } catch (e: any) {
-    // If backend returns structured error with status, prefer it
     const backendStatus =
       e?.status ?? e?.data?.status ?? e?.response?.status ?? 502;
 
-    // If Zod fails while parsing backend response, surface a 502 with details (without leaking full payload)
     if (e instanceof ZodError) {
       return NextResponse.json(
         {
