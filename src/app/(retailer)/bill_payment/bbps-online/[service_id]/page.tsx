@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Card, Typography, Button, Input } from "antd";
+import { Card, Typography, Button, Input, Modal, Radio } from "antd";
 import {
   LeftOutlined,
   DeleteOutlined,
@@ -113,6 +113,9 @@ export default function ChooseServicePage() {
 
   // const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
   // await removeBiller({ biller_batch_id });
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [paymentMode, setPaymentMode] = useState("Wallet");
 
   return (
     <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
@@ -238,6 +241,51 @@ export default function ChooseServicePage() {
 
         
       </div>
+      {/* 💳 Payment Modal */}
+            <div className="rounded-2xl bg-[#FFFDF8] shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-6 py-6 text-center flex items-center justify-center w-[365px] h-[292px]">
+            <Modal
+              open={isModalOpen}
+              onCancel={() => setIsModalOpen(false)}
+              footer={null}
+              closable={false}
+              centered
+              width={340}
+              className="!rounded-2xl !p-0"
+            >
+              <div className="text-center py-6 px-4">
+                <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
+                <div className="text-[#3386FF] text-2xl font-bold mb-4">₹70692</div>
+      
+                {/* Payment Mode */}
+                <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
+                  <Radio.Group value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+                    <Radio value="Wallet">Wallet</Radio>
+                    <Radio value="">
+                      <Image
+                        src="/cashfree.svg"
+                        alt="Cashfree"
+                        width={70}
+                        height={20}
+                        className="inline-block"
+                      />
+                    </Radio>
+                  </Radio.Group>
+                </div>
+      
+                <Button
+                  type="primary"
+                  block
+                  className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    router.push("/bill_payment/bbps-online/bbps-successful")
+                  }}
+                >
+                  Proceed to Pay
+                </Button>
+              </div>
+            </Modal>
+            </div>
     </DashboardLayout>
   );
 }
