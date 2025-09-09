@@ -1,7 +1,5 @@
-/**
- * React Query v5 hooks for Retailer Service APIs.
- * Query keys are stable & discoverable. Each hook validates IO via Zod.
- */
+// src/features/retailer/services/data/hooks.ts
+'use client';
 
 import {
   useQuery,
@@ -9,15 +7,17 @@ import {
   QueryKey,
   UseQueryOptions,
   useMutation,
-} from "@tanstack/react-query";
+} from '@tanstack/react-query';
+
 import {
   apiServiceList,
   apiServiceSubscriptionList,
   apiServiceSubscriptionsList,
   apiServiceSubscribe,
   apiServiceCharges,
-} from "./endpoints";
-import {
+} from './endpoints';
+
+import type {
   ServiceListQuery,
   ServiceListResponse,
   ServiceSubscriptionListQuery,
@@ -28,37 +28,37 @@ import {
   ServiceSubscribeResponse,
   ServiceChargesBody,
   ServiceChargesResponse,
-} from "../domain/types";
+} from '../domain/types';
 
-/** Cache keys */
+/** ------------------------------------------------------------------ */
+/** Cache keys (stable)                                                */
+/** ------------------------------------------------------------------ */
 const qk = {
-  base: ["bbps", "retailer", "service"] as const,
+  base: ['retailer', 'services'] as const,
   list: (params: ServiceListQuery) =>
-    [...qk.base, "list", params] as QueryKey,
+    [...qk.base, 'list', params] as QueryKey,
   subscriptionList: (params: ServiceSubscriptionListQuery) =>
-    [...qk.base, "subscription-list", params] as QueryKey,
+    [...qk.base, 'subscription-list', params] as QueryKey,
   subscriptions: (params: SubscriptionsListQuery) =>
-    [...qk.base, "subscriptions", params] as QueryKey,
+    [...qk.base, 'subscriptions', params] as QueryKey,
 };
 
-/** Helper to broadly match this module's keys */
-// const keyStartsWithServiceBase = (key: readonly unknown[]) =>
-//   Array.isArray(key) &&
-//   key.length >= 3 &&
-//   key[0] === "bbps" &&
-//   key[1] === "retailer" &&
-//   key[2] === "service";
+/** Broadly match this module's keys for invalidation */
+const keyStartsWithServiceBase = (key: readonly unknown[]) =>
+  Array.isArray(key) &&
+  key.length >= qk.base.length &&
+  key.slice(0, qk.base.length).every((v, i) => v === qk.base[i]);
 
-/** ========== Queries ========== */
+/** ------------------------------------------------------------------ */
+/** Queries                                                            */
+/** ------------------------------------------------------------------ */
 
-/**
- * GET /secure/retailer/service-list
- */
+/** GET /secure/retailer/service-list */
 export function useServiceListQuery(
   params: ServiceListQuery = {},
   options?: Omit<
     UseQueryOptions<ServiceListResponse, Error, ServiceListResponse, QueryKey>,
-    "queryKey" | "queryFn"
+    'queryKey' | 'queryFn'
   >
 ) {
   return useQuery({
@@ -68,9 +68,7 @@ export function useServiceListQuery(
   });
 }
 
-/**
- * GET /secure/retailer/service-subscription-list
- */
+/** GET /secure/retailer/service-subscription-list */
 export function useServiceSubscriptionListQuery(
   params: ServiceSubscriptionListQuery,
   options?: Omit<
@@ -80,7 +78,7 @@ export function useServiceSubscriptionListQuery(
       ServiceSubscriptionListResponse,
       QueryKey
     >,
-    "queryKey" | "queryFn" | "enabled"
+    'queryKey' | 'queryFn' | 'enabled'
   >
 ) {
   const enabled = Boolean(params?.service_name && params.service_name.length > 0);
@@ -92,9 +90,7 @@ export function useServiceSubscriptionListQuery(
   });
 }
 
-/**
- * GET /secure/retailer/subscriptions (paginated)
- */
+/** GET /secure/retailer/subscriptions (paginated) */
 export function useServiceSubscriptionsListQuery(
   params: SubscriptionsListQuery = {},
   options?: Omit<
@@ -104,7 +100,7 @@ export function useServiceSubscriptionsListQuery(
       SubscriptionsListResponse,
       QueryKey
     >,
-    "queryKey" | "queryFn"
+    'queryKey' | 'queryFn'
   >
 ) {
   return useQuery({
@@ -114,44 +110,55 @@ export function useServiceSubscriptionsListQuery(
   });
 }
 
-/** ========== Mutations ========== */
+/** ------------------------------------------------------------------ */
+/** Mutations                                                          */
+/** ------------------------------------------------------------------ */
 
-/**
- * POST /secure/retailer/subscribe
- * Invalidate all service-related caches on success.
- */
-export function useServiceSubscribeMutation() {
+export function useServiceSubscribe() {
   const qc = useQueryClient();
 
-  return useMutation<ServiceSubscribeResponse, Error, ServiceSubscribeBody>({
-    mutationFn: (body) => apiServiceSubscribe(body),
+  const mutation = useMutation<ServiceSubscribeResponse, unknown, ServiceSubscribeBody>({
+    mutationFn: apiServiceSubscribe,
     onSuccess: async () => {
       await qc.invalidateQueries({
-        predicate: (query) =>
-          Array.isArray(query.queryKey) &&
-          query.queryKey[0] === "bbps" &&
-          query.queryKey[1] === "retailer" &&
-          query.queryKey[2] === "service",
+        predicate: (q) => keyStartsWithServiceBase(q.queryKey),
       });
+      await qc.invalidateQueries({ queryKey: ['retailer', 'dashboard'] });
     },
   });
+
+  return {
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    subscribe: mutation.mutate,
+    subscribeAsync: mutation.mutateAsync, // <-- expose async variant
+  };
 }
 
 /**
- * POST /secure/retailer/service-charges (calculation)
- * No invalidation needed (non-mutating).
+ * POST /secure/retailer/service-charges
+ * Returns { data, calculateCharges, error, isLoading }
+ * This is a pure calculation; no cache invalidation required.
  */
-export function useServiceChargesMutation() {
-  return useMutation<ServiceChargesResponse, Error, ServiceChargesBody>({
+export function useServiceCharges() {
+  const mutation = useMutation<ServiceChargesResponse, Error, ServiceChargesBody>({
     mutationFn: (body) => apiServiceCharges(body),
   });
+
+  return {
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    calculateCharges: mutation.mutate,
+  };
 }
 
-/** ========== Aggregator helper ========== */
+/** ------------------------------------------------------------------ */
+/** Optional: imperative aggregator                                    */
+/** ------------------------------------------------------------------ */
 export function useServiceApi() {
   const qc = useQueryClient();
-  const { mutateAsync: subscribe } = useServiceSubscribeMutation();
-  const { mutateAsync: calculateCharges } = useServiceChargesMutation();
 
   return {
     /** Imperative fetch with caching for service list */
@@ -164,7 +171,7 @@ export function useServiceApi() {
     /** Imperative fetch with caching for subscription list (by service_name) */
     getServiceSubscriptionList: (params: ServiceSubscriptionListQuery) => {
       if (!params?.service_name) {
-        return Promise.reject(new Error("service_name is required"));
+        return Promise.reject(new Error('service_name is required'));
       }
       return qc.fetchQuery({
         queryKey: qk.subscriptionList(params),
@@ -178,9 +185,5 @@ export function useServiceApi() {
         queryKey: qk.subscriptions(params),
         queryFn: ({ signal }) => apiServiceSubscriptionsList(params, { signal }),
       }),
-
-    /** Mutations as callables */
-    subscribe,
-    calculateCharges,
   };
 }

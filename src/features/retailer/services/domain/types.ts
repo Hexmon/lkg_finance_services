@@ -165,6 +165,14 @@ export type SubscriptionsListResponse = z.infer<
  *  Subscribe (create/update retailer subscription)
  *  POST /secure/retailer/subscribe
  *  ========================= */
+const ISO_LIKE_DATETIME =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+
+const LooseDateTime = z
+  .string()
+  .regex(ISO_LIKE_DATETIME, "Invalid ISO-like datetime");
+
+
 export const ServiceSubscribeBodySchema = z
   .object({
     service_id: z.string().uuid(),
@@ -176,15 +184,15 @@ export type ServiceSubscribeBody = z.infer<typeof ServiceSubscribeBodySchema>;
 
 export const ServiceSubscribeSuccessDataSchema = z
   .object({
-    status: z.enum(["ACTIVE", "EXPIRED", "PENDING"]).or(z.literal("ACTIVE")),
+    status: z.enum(["ACTIVE", "INACTIVE", "PENDING", "EXPIRED"]),
     api_partner: z.string().min(1),
     name: z.string().min(1),
     subscription_id: z.string().uuid(),
     service_id: z.string().uuid(),
     user_id: z.string().uuid(),
     transaction_id: z.string().uuid().nullable(),
-    subscribed_at: z.string().min(1),
-    updated_at: z.string().min(1).nullable(),
+    subscribed_at: LooseDateTime,
+    updated_at: LooseDateTime.nullable(),
   })
   .strict();
 
@@ -195,7 +203,6 @@ export type ServiceSubscribeSuccessData = z.infer<
 export const ServiceSubscribeResponseSchema = z
   .object({
     data: ServiceSubscribeSuccessDataSchema,
-    // provider returns "201" as a string; accept numeric or string
     status: z.union([z.literal("201"), z.number().int()]),
   })
   .strict();

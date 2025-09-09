@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -7,9 +7,19 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { store, persistor } from '@/lib/store';
 import { getQueryClient } from '@/lib/query/client';
 import { MessageProvider } from '@/hooks/useMessage';
+import { registerOnUnauthorized } from '@/lib/api/client';
+import { registerQueryClient, logoutClientSide } from '@/lib/auth/logoutClientSide';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const qc = getQueryClient();
+
+  useEffect(() => {
+    registerQueryClient(qc);
+    registerOnUnauthorized(async () => {
+      await logoutClientSide(); // clears Redux, Persist, React Query cache
+    });
+  }, [qc]);
+
   return (
     <ReduxProvider store={store}>
       <PersistGate loading={null} persistor={persistor}>

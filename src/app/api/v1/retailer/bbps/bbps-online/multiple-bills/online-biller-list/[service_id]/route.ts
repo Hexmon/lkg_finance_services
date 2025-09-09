@@ -4,12 +4,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { bbpsFetch } from '@/app/api/_lib/http-bbps';
+import { RETAILER_ENDPOINTS } from '@/config/endpoints';
+
+// 👇 Use the schemas/types from your domain/types.ts file
 import {
   OnlineBillerListQuerySchema,
   OnlineBillerListResponse,
   OnlineBillerListResponseSchema,
 } from '@/features/retailer/retailer_bbps/bbps-online/multiple_bills';
-import { RETAILER_ENDPOINTS } from '@/config/endpoints';
+import { ZodError } from 'zod';
 
 // Avoid caching for auth-backed data
 export const dynamic = 'force-dynamic';
@@ -28,15 +31,24 @@ const toNum = (v: string | null | undefined): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-type Ctx = { params: Promise<{ service_id: string }> };
-
-export async function GET(req: NextRequest, ctx: Ctx) {
-  const { service_id } = await ctx.params;
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { service_id: string } }
+) {
+  const { service_id } = params ?? {};
+  if (!service_id) {
+    return NextResponse.json(
+      { status: 400, error: { message: 'service_id is required' } },
+      { status: 400 }
+    );
+  }
 
   // ---- Auth (JWT from HttpOnly cookie; never expose) ----
   const jar = await cookies();
   let token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   token = token.replace(/^Bearer\s+/i, '').trim(); // prevent double "Bearer "
 
   // ---- Parse & normalize query with sensible defaults ----
@@ -51,11 +63,27 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     is_direct: toBool(sp.get('is_direct')) ?? false,
   };
 
-  // Validate against your exported schema
-  const parsedQuery = OnlineBillerListQuerySchema.parse(raw);
+  let parsedQuery: ReturnType<typeof OnlineBillerListQuerySchema.parse>;
+  try {
+    parsedQuery = OnlineBillerListQuerySchema.parse(raw);
+  } catch (e) {
+    const err = e as ZodError;
+    return NextResponse.json(
+      {
+        status: 400,
+        error: {
+          message: 'Invalid query parameters',
+          issues: err.issues,
+        },
+      },
+      { status: 400 }
+    );
+  }
 
   try {
-    const path = `${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.MULTIPLE_BILLS.ONLINE_BILLER_LIST}/${service_id}`;
+    const path =
+      `${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.MULTIPLE_BILLS.ONLINE_BILLER_LIST}` +
+      `/${service_id}`;
 
     const rawResp = await bbpsFetch<OnlineBillerListResponse>(path, {
       method: 'GET',
@@ -68,14 +96,31 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
     const data = OnlineBillerListResponseSchema.parse(rawResp);
     return NextResponse.json(data, { status: 200 });
-  } catch (err: any) {
-    const status = err?.status ?? err?.data?.status ?? 502;
+  } catch (e: any) {
+    // If backend returns structured error with status, prefer it
+    const backendStatus =
+      e?.status ?? e?.data?.status ?? e?.response?.status ?? 502;
+
+    // If Zod fails while parsing backend response, surface a 502 with details (without leaking full payload)
+    if (e instanceof ZodError) {
+      return NextResponse.json(
+        {
+          status: 502,
+          error: {
+            message: 'Invalid response shape from BBPS backend',
+            issues: e.issues,
+          },
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(
       {
-        status,
-        error: { message: err?.message ?? 'Online biller list failed' },
+        status: backendStatus,
+        error: { message: e?.message ?? 'Online biller list failed' },
       },
-      { status }
+      { status: backendStatus }
     );
   }
 }

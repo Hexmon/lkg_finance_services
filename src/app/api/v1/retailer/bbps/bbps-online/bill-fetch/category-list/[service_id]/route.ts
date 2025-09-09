@@ -8,6 +8,7 @@ import { bbpsFetch } from '@/app/api/_lib/http-bbps';
 export const BbpsCategorySchema = z.object({
   bbps_category_id: z.string(),
   biller_category: z.string(),
+  icon: z.string(),
 });
 export type BbpsCategory = z.infer<typeof BbpsCategorySchema>;
 

@@ -89,6 +89,7 @@ export function useLogoutMutation() {
       dispatch(clearAuth());
       qc.clear();
       await persistor.flush();
+      await persistor.purge();
     },
   });
 }

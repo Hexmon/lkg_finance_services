@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -8,36 +9,59 @@ import {
   ServiceSubscribeBodySchema,
   ServiceSubscribeResponseSchema,
   type ServiceSubscribeResponse,
-} from '@/features/retailer/services/domain/types';
+} from '@/features/retailer/services';
 
 export async function POST(req: NextRequest) {
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const json = await req.json().catch(() => null);
   const parsed = ServiceSubscribeBodySchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request body', issues: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid request body', issues: parsed.error.issues },
+      { status: 400 }
+    );
   }
 
   try {
+    console.log("indeisd rtyr ");
+    
     const raw = await retailerFetch<ServiceSubscribeResponse>(
       RETAILER_ENDPOINTS.SERVICE.SUBSCRIBE,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: parsed.data,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Tip: you can omit Content-Type, retailerFetch sets it when needed
+        },
+        body: parsed.data, // <-- FIX: do NOT JSON.stringify here
       }
     );
+
     const data = ServiceSubscribeResponseSchema.parse(raw);
-    return NextResponse.json(data, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+    const statusCode =
+      typeof (data as any)?.status === 'string' && (data as any).status === '201'
+        ? 201
+        : 200;
+
+    return NextResponse.json(data, { status: statusCode });
   } catch (err: any) {
-    const status = err?.status ?? err?.data?.status ?? 502;
-    return NextResponse.json(
-      err?.data ?? { status, error: { message: err?.message ?? 'Service subscribe failed' } },
-      { status }
+    console.log({err});
+    
+    const status = Number(
+      err?.status ?? err?.response?.status ?? err?.data?.status ?? 502
     );
+
+    const payload =
+      err?.data ?? {
+        error: { message: err?.message ?? 'Service subscribe failed' },
+      };
+
+    return NextResponse.json(payload, { status: status || 502 });
   }
 }
