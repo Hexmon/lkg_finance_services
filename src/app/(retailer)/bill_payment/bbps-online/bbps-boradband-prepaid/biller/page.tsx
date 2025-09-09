@@ -6,42 +6,37 @@ import { LeftOutlined, WifiOutlined } from "@ant-design/icons";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
+import { useBbpsBillerListQuery } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
+import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const { Title, Text } = Typography;
 
 export default function BroadbandPrepaidPage() {
   const [biller, setBiller] = useState<string | undefined>();
-  const [customerId, setCustomerId] = useState("");
-  const [amount, setAmount] = useState("799");
-  const [selectedPlan, setSelectedPlan] = useState<string>("100Mbps");
+  const [mobileno, setMobileno] = useState("");
+  const { service_id, bbps_category_id } = useParams() as { service_id: string; bbps_category_id: string };
 
-  const plans = [
-    { speed: "100Mbps", price: "799" },
-    { speed: "200Mbps", price: "999" },
-    { speed: "300Mbps", price: "1299" },
-    { speed: "500Mbps", price: "1999" },
-  ];
+  const {
+    data: billerData,
+    isLoading,
+    isError,
+    error,
+  } = useBbpsBillerListQuery({ service_id, bbps_category_id, is_offline: false, mode: "ONLINE" });
+  const router = useRouter();
 
   return (
-      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
-      <div className="p-6 bg-[#f9f6ef] min-h-screen w-full">
-        {/* Header with Back + Title + Logo */}
-        <div className="flex justify-between items-center mb-2">
-          <div>
-            <div
-              className="flex items-center gap-2 text-blue-700 cursor-pointer"
-              onClick={() => window.history.back()}
-            >
-              <LeftOutlined />
-              <Title level={3} className="!mb-0">
-                Broadband Prepaid
-              </Title>
-            </div>
-            <Text type="secondary" className="ml-6">
-              Recharge
-            </Text>
-          </div>
-
+    <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
+      <div className="min-h-screen w-full mb-3">
+        <div className="flex justify-between items-center">
+          <DashboardSectionHeader
+            title="Mobile Prepaid"
+            titleClassName="!font-medium text-[20px] !mt-0"
+            subtitle="Recharge"
+            subtitleClassName="!mb-4"
+            showBack
+          />
           <Image
             src="/logo.svg"
             alt="logo"
@@ -53,92 +48,55 @@ export default function BroadbandPrepaidPage() {
 
         {/* Full Width Card */}
         <Card className="rounded-2xl shadow-md w-full">
-          <div className="flex items-center gap-2 mb-4">
-            <WifiOutlined className="text-blue-500 text-lg" />
+          {/* Section Title */}
+          <div className="flex items-center gap-2 mb-8">
+            <Image
+            src="/wifi.svg"
+            alt="wifi"
+            width={21}
+            height={21}
+            className="object-contain"
+            />
             <Title level={5} className="!mb-0">
-              Select Broadband Biller 
+              Select Broadband Biller
             </Title>
           </div>
 
-          <div className="flex flex-col gap-4">
+          {/* Form */}
+          <div className="flex flex-col gap-4 ml-6">
             {/* Biller Dropdown */}
             <div>
-              <Text strong>Biller *</Text>
+              <Text strong className="!mb-4">Biller *</Text>
               <Select
                 placeholder="Choose Your Biller"
                 value={biller}
                 onChange={setBiller}
-                className="w-full mt-1"
+                className="!w-full !mt-1 !h-[54px]"
               >
-                <Select.Option value="airtel">Airtel</Select.Option>
-                <Select.Option value="jio">Jio</Select.Option>
-                <Select.Option value="bsnl">BSNL</Select.Option>
+                <Select.Option value="BroadBandPostPaid_Dummy">BroadBandPostPaid_Dummy</Select.Option>
               </Select>
             </div>
 
             {/* Customer ID Input */}
             <div>
-              <Text strong>Customer ID / Phone Number</Text>
+              <Text strong>Mobile No *</Text>
               <Input
                 placeholder="Enter your Customer ID or Phone Number"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className="mt-1"
+                value={mobileno}
+                onChange={(e) => setMobileno(e.target.value)}
+                className="mt-1 !h-[54px] !mb-8"
               />
             </div>
 
-            {/* Recharge Amount Input */}
-            <div>
-              <Text strong>Recharge Amount *</Text>
-              <Input
-                prefix="₹"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            {/* Popular Broadband Plans */}
-            <div className="mt-4">
-              <Text strong>Popular Broadband Plans</Text>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                {plans.map((plan) => (
-                  <Card
-                    key={plan.speed}
-                    onClick={() => {
-                      setSelectedPlan(plan.speed);
-                      setAmount(plan.price);
-                    }}
-                    className={`cursor-pointer rounded-xl shadow-sm text-center transition-all ${selectedPlan === plan.speed
-                        ? "bg-blue-100 border-2 border-blue-500"
-                        : "bg-[#faf5e9] border border-gray-200"
-                      }`}
-                  >
-                    <Text className="text-blue-600 font-bold text-lg">
-                      {plan.speed}
-                    </Text>
-                    <div className="text-gray-800 font-semibold">₹{plan.price}</div>
-                    <div className="text-xs text-gray-500">Monthly Unlimited</div>
-
-                    {/* Show "Pending Payment" only for selected one */}
-                    {selectedPlan === plan.speed && (
-                      <div className="mt-2 text-xs font-semibold text-blue-700">
-                        Pending Payment
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Proceed To Pay Button */}
+            {/* Fetch Bill Button */}
             <Button
               type="primary"
               block
-              disabled={!biller || !customerId || !amount}
-              className="!bg-[#BBD3EB] !border-[#BBD3EB] !text-gray-700 rounded-xl mt-4"
+              disabled={!biller || !mobileno}
+              className="!bg-[#3386FF] !h-[45px] !rounded-[12px] !text-white"
+              onClick={() => router.push("/bill_payment/bbps-online/[service_id]/bbps-broadband-postpaid/[bbps_category_id]")}
             >
-              Proceed To Pay
+              Fetch Plan Details
             </Button>
           </div>
         </Card>

@@ -105,8 +105,8 @@ export default function BillPaymentServicePage() {
         arrowClassName="!text-[#3386FF]"
         dropdownItems={[
           { key: "bill", label: "Bill Payment Service", path: "/bill-payment" },
-          { key: "complain", label: "Register Complain", path: "/bill-payment/complain" },
-          { key: "status", label: "Transaction Status", path: "/bill-payment/status" },
+          { key: "complain", label: "Register Complain", path: "/bill_payment/raise-complaint" },
+          { key: "status", label: "Transaction Status", path: "/bill_payment/transaction-status" },
         ]}
         dropdownSelectedKey="bill"
         onDropdownSelect={(key) => console.log("selected:", key)}

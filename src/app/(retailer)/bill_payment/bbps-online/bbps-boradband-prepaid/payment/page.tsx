@@ -129,7 +129,7 @@ export default function PaymentSuccessPage() {
           {/* Buttons */}
           <div className="flex gap-4 justify-center mt-8 mb-5">
             <button className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-medium w-full cursor-pointer"
-            onClick={()=> router.push("/bill_payment/bbps-online/bbps-postpaid-receipt")}
+            onClick={()=> router.push("/bill_payment/bbps-online/bbps-mobile-receipt")}
             >
               Download Receipt
             </button>
