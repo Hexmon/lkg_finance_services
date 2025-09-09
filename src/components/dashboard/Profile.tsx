@@ -3,7 +3,7 @@ import { Button, Typography } from "antd";
 const { Title, Text } = Typography
 export default function Profile({ username, virtual_account, totalBalance }: { username: string, virtual_account: { vba_account_number: string; vba_ifsc: string; }, totalBalance: number }) {
     return (
-        <div className="bg-white rounded-xl shadow-md p-5 mb-6 flex justify-between items-center">
+        <div className="bg-white rounded-xl shadow-md p-5 mb-6 flex justify-between items-center flex-wrap">
             {/* Left Section */}
             <div>
                 <Title level={4} className="!mb-1 text-2xl !font-bold">
@@ -24,12 +24,12 @@ export default function Profile({ username, virtual_account, totalBalance }: { u
                 </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
                 <CardLayout
                     elevation={3}
                     rounded="rounded-lg"
                     padding="px-5 py-3"
-                    width="min-w-[185px]"
+                    width="min-w-[200px]"
                     height="h-auto"
                     bgColor="bg-white"
                     className="justify-between"
