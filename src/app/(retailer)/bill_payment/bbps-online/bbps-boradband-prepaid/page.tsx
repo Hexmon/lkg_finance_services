@@ -6,6 +6,7 @@ import { Card, Typography } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
 const { Title, Text } = Typography;
 
@@ -63,33 +64,28 @@ const plans = [
 
 export default function BroadbandPrepaid() {
   return (
-      <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
-      <div className="p-6 bg-[#e9e1d1] min-h-screen w-full">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <div className="flex items-center gap-2 text-gray-800">
-              <LeftOutlined />
-              <Title level={4} className="!mb-0">
-                Broadband Prepaid
-              </Title>
-            </div>
-            <Text type="secondary" className="ml-6">
-              Recharge
-            </Text>
-          </div>
-
-          <Image
-            src="/logo.svg"
-            alt="logo"
-            width={120}
-            height={80}
-            className="p-1"
-          />
-        </div>
+      <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
+            <div className="min-h-screen w-full mb-3">
+              <div className="flex justify-between items-center">
+                <DashboardSectionHeader
+                  title="Mobile Prepaid"
+                  titleClassName="!font-medium text-[20px] !mt-0"
+                  subtitle="Recharge"
+                  subtitleClassName="!mb-4"
+                  showBack
+                />
+                <Image
+                  src="/logo.svg"
+                  alt="logo"
+                  width={100}
+                  height={100}
+                  className="p-1"
+                />
+              </div>
 
         {/* Table Card */}
-        <Card className="rounded-2xl shadow-md w-full bg-[#fdf8f3] p-4">
+        <div className="bg-[#90888869] py-4 px-8 rounded-xl">
+          <Card className="rounded-2xl shadow-md w-full bg-[#fdf8f3] p-4 h-[496px]">
           <table className="w-full">
             <thead>
               <tr className="text-left text-gray-700">
@@ -102,10 +98,10 @@ export default function BroadbandPrepaid() {
             </thead>
             <tbody>
               {plans.map((plan, index) => (
-                <tr key={index} className="align-top">
-                  <td className="p-3">
+                <tr key={index} className="align-top !h-[45px]">
+                  <td className="p-3 !h-[45px]">
                     {plan.highlight ? (
-                      <span className="px-3 py-1 bg-[#cfe1f8] text-blue-600 font-medium rounded-md shadow-sm">
+                      <span className="px-3 py-1 bg-[#cfe1f8] text-blue-600 font-medium rounded-md shadow-sm ">
                         {plan.category}
                       </span>
                     ) : (
@@ -113,25 +109,25 @@ export default function BroadbandPrepaid() {
                     )}
                   </td>
                   <td
-                    className={`p-3 font-medium ${plan.highlight ? "bg-[#cfe1f8] rounded-md" : ""
+                    className={`p-3 font-medium ${plan.highlight ? "bg-[#cfe1f8] rounded-md !h-[45px]" : ""
                       }`}
                   >
                     {plan.talktime}
                   </td>
                   <td
-                    className={`p-3 font-medium ${plan.highlight ? "bg-[#cfe1f8] rounded-md" : ""
+                    className={`p-3 font-medium ${plan.highlight ? "bg-[#cfe1f8] rounded-md !h-[45px]" : ""
                       }`}
                   >
                     {plan.validity}
                   </td>
                   <td
-                    className={`p-3 text-sm text-gray-700 ${plan.highlight ? "bg-[#cfe1f8] rounded-md" : ""
+                    className={`p-3 text-sm text-gray-700 ${plan.highlight ? "bg-[#cfe1f8] rounded-md !h-[45px]" : ""
                       }`}
                   >
                     {plan.description}
                   </td>
                   <td
-                    className={`p-3 font-semibold text-blue-600 ${plan.highlight ? "bg-[#cfe1f8] rounded-md" : ""
+                    className={`p-3 font-semibold text-blue-600 ${plan.highlight ? "bg-[#cfe1f8] rounded-md !h-[45px]" : ""
                       }`}
                   >
                     {plan.price}
@@ -141,6 +137,7 @@ export default function BroadbandPrepaid() {
             </tbody>
           </table>
         </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

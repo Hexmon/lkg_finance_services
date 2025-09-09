@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Card, Typography, Button, Input } from "antd";
+import { Card, Typography, Button, Input, Modal, Radio } from "antd";
 import {
   LeftOutlined,
   DeleteOutlined,
@@ -113,6 +113,9 @@ export default function ChooseServicePage() {
 
   // const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
   // await removeBiller({ biller_batch_id });
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [paymentMode, setPaymentMode] = useState("Wallet");
 
   return (
     <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
