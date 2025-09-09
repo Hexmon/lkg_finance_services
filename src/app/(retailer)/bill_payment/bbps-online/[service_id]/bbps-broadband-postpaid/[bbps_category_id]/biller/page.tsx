@@ -9,6 +9,7 @@ import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { useBbpsBillerListQuery } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const { Title, Text } = Typography;
 
@@ -23,14 +24,17 @@ export default function BroadbandPrepaidPage() {
     isError,
     error,
   } = useBbpsBillerListQuery({ service_id, bbps_category_id, is_offline: false, mode: "ONLINE" });
+  const router = useRouter();
 
   return (
     <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>
-      <div className="p-6 bg-gray-50 min-h-screen w-full">
+      <div className="min-h-screen w-full mb-3">
         <div className="flex justify-between items-center">
           <DashboardSectionHeader
-            title={<h1 className="!text-black !font-semibold !text-[20px]">Broadband Postpaid</h1>}
-            subtitle={<span className="text-[#1D1D1D] font-light text-[12px]">Recharge</span>}
+            title="Broadband Postpaid"
+            titleClassName="!font-medium text-[20px] !mt-0"
+            subtitle="Recharge"
+            subtitleClassName="!mb-4"
             showBack
           />
           <Image
@@ -45,38 +49,42 @@ export default function BroadbandPrepaidPage() {
         {/* Full Width Card */}
         <Card className="rounded-2xl shadow-md w-full">
           {/* Section Title */}
-          <div className="flex items-center gap-2 mb-4">
-            <WifiOutlined className="text-blue-500 text-lg" />
+          <div className="flex items-center gap-2 mb-8">
+            <Image
+            src="/wifi.svg"
+            alt="wifi"
+            width={21}
+            height={21}
+            className="object-contain"
+            />
             <Title level={5} className="!mb-0">
               Select Broadband Biller
             </Title>
           </div>
 
           {/* Form */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 ml-6">
             {/* Biller Dropdown */}
             <div>
-              <Text strong>Biller *</Text>
+              <Text strong className="!mb-4">Biller *</Text>
               <Select
                 placeholder="Choose Your Biller"
                 value={biller}
                 onChange={setBiller}
-                className="w-full mt-1"
+                className="!w-full !mt-1 !h-[54px]"
               >
-                <Select.Option value="airtel">Airtel</Select.Option>
-                <Select.Option value="jio">Jio</Select.Option>
-                <Select.Option value="bsnl">BSNL</Select.Option>
+                <Select.Option value="BroadBandPostPaid_Dummy">BroadBandPostPaid_Dummy</Select.Option>
               </Select>
             </div>
 
             {/* Customer ID Input */}
             <div>
-              <Text strong>Customer ID / Phone Number</Text>
+              <Text strong>Customer ID *</Text>
               <Input
                 placeholder="Enter your Customer ID or Phone Number"
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
-                className="mt-1"
+                className="mt-1 !h-[54px] !mb-8"
               />
             </div>
 
@@ -85,11 +93,8 @@ export default function BroadbandPrepaidPage() {
               type="primary"
               block
               disabled={!biller || !customerId}
-              style={{
-                backgroundColor: "#BBD3EB",
-                borderColor: "#BBD3EB",
-                borderRadius: "8px",
-              }}
+              className="!bg-[#3386FF] !h-[45px] !rounded-[12px] !text-white"
+              onClick={() => router.push("/bill_payment/bbps-online/[service_id]/bbps-broadband-postpaid/[bbps_category_id]")}
             >
               Fetch Bill Details
             </Button>
