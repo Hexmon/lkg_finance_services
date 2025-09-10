@@ -126,7 +126,7 @@ export default function BillDetailsPage() {
         </div>
       </div>
       {/* 💳 Payment Modal */}
-      <div className="rounded-2xl bg-[#FFFDF8] shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-6 py-6 text-center flex items-center justify-center w-[365px] h-[292px]">
+      
       <Modal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
@@ -169,7 +169,6 @@ export default function BillDetailsPage() {
           </Button>
         </div>
       </Modal>
-      </div>
     </DashboardLayout>
   );
 }

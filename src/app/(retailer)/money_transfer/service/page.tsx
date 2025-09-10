@@ -7,12 +7,14 @@ import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const { Title, Text } = Typography;
 
 export default function MoneyTransferServicePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
+  const router = useRouter();
 
   // Table columns
   const columns = [
@@ -91,22 +93,52 @@ export default function MoneyTransferServicePage() {
           }
           body={
             <>
-              {/* Input + Continue Button */}
-              <div className="!flex !items-center !gap-2 !mb-2">
-                <Input placeholder="Enter Sender Mobile Number" className="w-full h-[52px]" />
+              {/* Sender Mobile Input */}
+              <Input
+                placeholder="Enter Sender Mobile Number"
+                className="!w-full !h-[52px] !mb-4"
+              />
+
+              {/* Mode Selection */}
+              <div className="mb-4">
+                <select
+                  className="w-full h-[52px] border border-gray-300 rounded-md px-3 text-gray-700 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select Mode..
+                  </option>
+                  <option value="IMPS">IMPS – Instant Transfer (24*7)</option>
+                  <option value="NEFT">NEFT – Working Hours Only</option>
+                  <option value="RTGS">RTGS</option>
+                </select>
+              </div>
+
+              {/* Bank Selection */}
+              <div className="mb-6">
+                <select
+                  className="w-full h-[52px] border border-gray-300 rounded-md px-3 text-gray-700 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select Bank ID
+                  </option>
+                  <option value="AIRTEL">AIRTEL</option>
+                  <option value="FINO">FINO</option>
+                </select>
+              </div>
+
+
+              {/* Continue Button */}
+              <div className="flex justify-end mb-6">
                 <Button
                   type="primary"
-                  className="!bg-blue-600 !h-[52px] !w-[155px]"
+                  className="!bg[#3386FF] !h-[52px] !w-[155px] !rounded-[12px]"
                   onClick={() => setIsModalOpen(true)}
                 >
                   Continue
                 </Button>
               </div>
-
-              {/* Helper Text */}
-              <Text type="secondary" className="block mb-6">
-                Please enter sender mobile number to start Money Transfer.
-              </Text>
 
               {/* Recent Transactions */}
               <Title level={5} className="!mb-4 !font-medium !text-[20px]">
@@ -125,7 +157,7 @@ export default function MoneyTransferServicePage() {
             <div className="flex justify-end">
               <Button
                 type="primary"
-                className="!bg-blue-600 w-[111px] !round-[9px] !text-[10px]"
+                className="!bg[#3386FF] w-[111px] !round-[9px] !text-[10px]"
                 onClick={() => setIsBeneficiaryModalOpen(true)}
               >
                 + Add Beneficiary
@@ -133,6 +165,7 @@ export default function MoneyTransferServicePage() {
             </div>
           }
         />
+        s
 
         {/* Add Beneficiary Modal */}
         <Modal
@@ -289,8 +322,9 @@ export default function MoneyTransferServicePage() {
                 block
                 className="!bg-blue-600 mt-2 !w-[155px] !h-[37px] !rounded-[10px]"
                 htmlType="submit"
+                onClick={() => router.push("/money_transfer/service/sender_onboarding") }
               >
-                Submit
+                Next
               </Button>
             </div>
           </Form>
