@@ -9,7 +9,7 @@ import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { useRouter } from "next/navigation";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Option } = Select;
 
 export default function BillDetailsPage() {
@@ -78,6 +78,7 @@ export default function BillDetailsPage() {
                   <div className="text-gray-500">Bill Date</div>
                   <div>2025-09-02</div>
                 </div>
+                <br />
                 <div>
                   <div className="text-gray-500">Customer Convenience Fees</div>
                   <div>₹0</div>
@@ -89,7 +90,7 @@ export default function BillDetailsPage() {
                     <Option value="Online">Online</Option>
                   </Select>
                 </div>
-                <div className="col-span-2 md:col-span-3">
+                <div className="">
                   <div className="text-gray-500">Bill Amount</div>
                   <div className="text-[#3386FF] text-base font-semibold">₹70692</div>
                 </div>
@@ -101,74 +102,70 @@ export default function BillDetailsPage() {
               </div>
               {/* Action Buttons */}
               <div className="flex flex-col md:flex-row gap-8 mt-6">
-                <Button block className="!h-[39px] !rounded-xl !shadow-md">
+                <Button block className="!h-[42px] !rounded-xl !shadow-md">
                   Back to Edit
                 </Button>
-                <Button block className="!h-[39px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
-                onClick={() => setIsModalOpen(true)}
+                <Button block className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
+                  onClick={() => setIsModalOpen(true)}
                 >
                   Pay ₹70692
                 </Button>
               </div>
 
               <div className="!pt-2 !flex !items-center !justify-center">
-                <Button block className="!h-[39px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
+                <Button block className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
                 >
                   Add to Biller
                 </Button>
               </div>
             </div>
-
-
-
-
           </div>
         </div>
       </div>
-      {/* 💳 Payment Modal */}
+
       <div className="rounded-2xl bg-[#FFFDF8] shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-6 py-6 text-center flex items-center justify-center w-[365px] h-[292px]">
-      <Modal
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-        closable={false}
-        centered
-        width={340}
-        className="!rounded-2xl !p-0"
-      >
-        <div className="text-center py-6 px-4">
-          <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
-          <div className="text-[#3386FF] text-2xl font-bold mb-4">₹70692</div>
+        <Modal
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={null}
+          closable={false}
+          centered
+          width={340}
+          className="!rounded-2xl !p-0"
+        >
+          <div className="text-center py-6 px-4">
+            <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
+            <div className="text-[#3386FF] text-2xl font-bold mb-4">₹70692</div>
 
-          {/* Payment Mode */}
-          <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
-            <Radio.Group value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
-              <Radio value="Wallet">Wallet</Radio>
-              <Radio value="">
-                <Image
-                  src="/cashfree.svg"
-                  alt="Cashfree"
-                  width={70}
-                  height={20}
-                  className="inline-block"
-                />
-              </Radio>
-            </Radio.Group>
+            {/* Payment Mode */}
+            <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
+              <Radio.Group value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+                <Radio value="Wallet">Wallet</Radio>
+                <Radio value="">
+                  <Image
+                    src="/cashfree.svg"
+                    alt="Cashfree"
+                    width={70}
+                    height={20}
+                    className="inline-block"
+                  />
+                </Radio>
+              </Radio.Group>
+            </div>
+
+            <Button
+              type="primary"
+              block
+              className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
+              onClick={() => {
+                setIsModalOpen(false);
+                router.push("/bill_payment/bbps-online/bbps-successful")
+              }}
+            >
+              Proceed to Pay
+            </Button>
           </div>
-
-          <Button
-            type="primary"
-            block
-            className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
-            onClick={() => {
-              setIsModalOpen(false);
-              router.push("/bill_payment/bbps-online/bbps-successful")
-            }}
-          >
-            Proceed to Pay
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
       </div>
     </DashboardLayout>
   );

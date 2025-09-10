@@ -1,108 +1,70 @@
-// import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
-// import {
-//   apiBillPayment,
-//   apiTxnStatus,
-//   apiComplaintRegister,
-//   apiComplaintTrack,
-//   apiBillValidation,
-//   apiAllPlans,
-// } from "./endpoints";
-// import {
-//   type BillPaymentRequest,
-//   type BillPaymentResponse,
-//   type TxnStatusRequest,
-//   type TxnStatusResponse,
-//   type ComplaintRegisterRequest,
-//   type ComplaintRegisterResponse,
-//   type ComplaintTrackRequest,
-//   type ComplaintTrackResponse,
-//   type BillValidationRequest,
-//   type BillValidationResponse,
-//   type AllPlansResponse,
-// } from "../domain/types";
+// src/features/retailer/retailer_bbps/bbps-online/bill_avenue/hooks.ts
+import {
+  useMutation,
+  useQuery,
+  UseMutationOptions,
+  UseQueryOptions,
+  QueryKey,
+} from "@tanstack/react-query";
+import { TxnStatusRequest, BillPaymentResponse, BillPaymentRequest, TxnStatusResponse } from "../domain/types";
+import { apiBillPayment, apiTxnStatus } from "./endpoints";
 
-// /** -------- Bill Payment (mutation) -------- */
-// export function useBillPaymentMutation() {
-//   const qc = useQueryClient();
-//   return useMutation<BillPaymentResponse, unknown, BillPaymentRequest>({
-//     mutationKey: ["bbps", "bill-avenue", "bill-payment"],
-//     mutationFn: (body) => apiBillPayment(body),
-//     onSuccess: () => {
-//       // qc.invalidateQueries({ queryKey: ["bbps", "bill-avenue", "txn-status"] });
-//     },
-//   });
-// }
+/** ---------------------- Query Keys ---------------------- **/
+const qk = {
+  base: ["bbps", "bill-avenue"] as const,
+  billPayment: (service_id: string) =>
+    [...qk.base, "bill-payment", service_id] as QueryKey,
+  txnStatus: (service_id: string, body: TxnStatusRequest) =>
+    [...qk.base, "txn-status", service_id, body] as QueryKey,
+};
 
-// /** -------- Transaction Status (mutation) -------- */
-// export function useTxnStatusMutation() {
-//   return useMutation<TxnStatusResponse, unknown, TxnStatusRequest>({
-//     mutationKey: ["bbps", "bill-avenue", "txn-status"],
-//     mutationFn: (body) => apiTxnStatus(body),
-//   });
-// }
+/** ---------------------- Bill Payment (Mutation) ---------------------- **/
+export function useBillPayment(
+  service_id: string,
+  opts?: UseMutationOptions<BillPaymentResponse, Error, BillPaymentRequest, unknown>
+) {
+  const m = useMutation<BillPaymentResponse, Error, BillPaymentRequest>({
+    mutationKey: qk.billPayment(service_id),
+    mutationFn: (body) => apiBillPayment({ service_id }, body),
+    ...opts,
+  });
 
-// /** -------- Complaint Register (mutation) -------- */
-// export function useComplaintRegisterMutation() {
-//   return useMutation<ComplaintRegisterResponse, unknown, ComplaintRegisterRequest>({
-//     mutationKey: ["bbps", "bill-avenue", "complaint-register"],
-//     mutationFn: (body) => apiComplaintRegister(body),
-//   });
-// }
+  return {
+    data: m.data,
+    payBill: m.mutateAsync,
+    isLoading: m.isPending,
+    error: m.error,
+    reset: m.reset,
+    status: m.status,
+  };
+}
 
-// /** -------- Complaint Track (mutation) -------- */
-// export function useComplaintTrackMutation() {
-//   return useMutation<ComplaintTrackResponse, unknown, ComplaintTrackRequest>({
-//     mutationKey: ["bbps", "bill-avenue", "complaint-track"],
-//     mutationFn: (body) => apiComplaintTrack(body),
-//   });
-// }
+/** ---------------------- Txn Status (Query) ---------------------- **/
+/**
+ * Usage:
+ * const { data, fetchStatus, isLoading, error } =
+ *   useTxnStatus(service_id, body, { enabled: false });
+ */
+export function useTxnStatus(
+  service_id: string,
+  body: TxnStatusRequest,
+  options?: Omit<
+    UseQueryOptions<TxnStatusResponse, Error, TxnStatusResponse, QueryKey>,
+    "queryKey" | "queryFn"
+  >
+) {
+  const q = useQuery<TxnStatusResponse, Error, TxnStatusResponse, QueryKey>({
+    queryKey: qk.txnStatus(service_id, body),
+    queryFn: () => apiTxnStatus({ service_id }, body),
+    enabled: options?.enabled ?? false, // default opt-in via refetch
+    ...options,
+  });
 
-// /** -------- Bill Validation (mutation) -------- */
-// export function useBillValidationMutation() {
-//   return useMutation<BillValidationResponse, unknown, BillValidationRequest>({
-//     mutationKey: ["bbps", "bill-avenue", "bill-validation"],
-//     mutationFn: (body) => apiBillValidation(body),
-//   });
-// }
-
-// /** -------- All Plans (query) -------- */
-// export function useAllPlansQuery(
-//   billerId: string,
-//   opt?: {
-//     query?: Omit<
-//       UseQueryOptions<AllPlansResponse, unknown, AllPlansResponse, unknown[]>,
-//       "queryKey" | "queryFn"
-//     >;
-//   },
-// ) {
-//   return useQuery({
-//     queryKey: ["bbps", "bill-avenue", "all-plans", billerId],
-//     queryFn: () => apiAllPlans(billerId),
-//     enabled: (opt?.query?.enabled ?? true) && billerId.length > 0,
-//     ...(opt?.query ?? {}),
-//   });
-// }
-
-// /** -------- Aggregator: function-call style -------- */
-// export function useBillAvenueApi() {
-//   const billPaymentMut = useBillPaymentMutation();
-//   const txnStatusMut = useTxnStatusMutation();
-//   const complaintRegMut = useComplaintRegisterMutation();
-//   const complaintTrackMut = useComplaintTrackMutation();
-//   const billValidationMut = useBillValidationMutation();
-
-//   return {
-//     billPayment: billPaymentMut.mutateAsync,
-//     txnStatus: txnStatusMut.mutateAsync,
-//     complaintRegister: complaintRegMut.mutateAsync,
-//     complaintTrack: complaintTrackMut.mutateAsync,
-//     billValidation: billValidationMut.mutateAsync,
-
-//     // status objects
-//     billPaymentStatus: billPaymentMut,
-//     txnStatusStatus: txnStatusMut,
-//     complaintRegisterStatus: complaintRegMut,
-//     complaintTrackStatus: complaintTrackMut,
-//     billValidationStatus: billValidationMut,
-//   };
-// }
+  return {
+    data: q.data,
+    fetchStatus: q.refetch,
+    isLoading: q.isLoading,
+    error: q.error,
+    status: q.status,
+  };
+}
