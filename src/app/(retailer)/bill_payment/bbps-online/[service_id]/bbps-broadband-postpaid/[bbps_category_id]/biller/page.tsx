@@ -1,263 +1,238 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Card, Typography, Select, Input, Button } from "antd";
+import React from "react";
+import { Card, Typography, Input, Button, Alert } from "antd";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
-import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
-import { useBbpsBillerListQuery } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
-import { useParams, useRouter } from "next/navigation";
+import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
+
+import {
+  useBbpsBillerListQuery,
+  useBbpsPlanPullQuery,
+  useBbpsBillerFetchMutation,
+} from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
+
+import {
+  Biller,
+  BillerInputParam,
+  Plan,
+} from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch/domain/types";
+import BillerSelect from "@/components/bbps/BillerSelect";
+import BillPreviewCard from "@/components/bbps/BillPreviewCard";
+import DynamicParamsForm from "@/components/bbps/DynamicParamsForm";
+import PlanChooserModal from "@/components/bbps/PlanChooserModal";
 
 const { Title, Text } = Typography;
 
-export default function BroadbandPrepaidPage() {
-  const router = useRouter();
+export default function BillerPage() {
   const { service_id, bbps_category_id } = useParams() as {
     service_id: string;
     bbps_category_id: string;
   };
 
-  // Single state store for all dynamic inputs (keyed by param_name)
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [biller, setBiller] = useState<string | undefined>();
-
-  const {
-    data: {
-      data: [
-        {
-          inputParams = [],
-          biller_name,
-          biller_status,
-          planMdmRequirement,
-          biller_fetch_requiremet
-        } = {},
-      ] = [],
-    } = {},
-    isLoading,
-    isError,
-    error,
-  } = useBbpsBillerListQuery({
+  /** ── data: billers ─────────────────────────────── */
+  const billerList = useBbpsBillerListQuery({
     service_id,
     bbps_category_id,
     is_offline: false,
     mode: "ONLINE",
   });
+  const billers: Biller[] = billerList.data?.data ?? [];
 
-  // Default the biller dropdown to the fetched biller_name (once)
+  /** ── local state ───────────────────────────────── */
+  const [billerId, setBillerId] = React.useState<string>();
+  const [formValues, setFormValues] = React.useState<Record<string, string>>({});
+  const [mobile, setMobile] = React.useState("");
+  const [selectedPlan, setSelectedPlan] = React.useState<Plan>();
+  const [planModalOpen, setPlanModalOpen] = React.useState(false);
+  const [planEnabled, setPlanEnabled] = React.useState(false);
+  const [fetchError, setFetchError] = React.useState<string>();
+
+  const selectedBiller = billers.find((b) => b.biller_id === billerId);
+  const isActive = (selectedBiller?.biller_status ?? "INACTIVE") === "ACTIVE";
+  const planReq = (selectedBiller?.planMdmRequirement || "NOT_SUPPORTED") as
+    | "MANDATORY" | "OPTIONAL" | "NOT_SUPPORTED";
+  const fetchReq = (selectedBiller?.biller_fetch_requiremet || "NOT_REQUIRED") as
+    | "MANDATORY" | "OPTIONAL" | "NOT_REQUIRED";
+  const paymentExactness = (selectedBiller?.biller_payment_exactness || null) as "EXACT" | "RANGE" | null;
+
+  /** ── plans (enabled on demand) ─────────────────── */
+  const planPull = useBbpsPlanPullQuery(
+    { service_id, billerId: billerId || "", mode: "ONLINE" },
+    { query: { enabled: !!billerId && planEnabled } }
+  );
+  const plans = React.useMemo(() => {
+    const now = new Date();
+    return (planPull.data?.data?.planDetails ?? []).filter((p) => {
+      if (p.status !== "ACTIVE") return false;
+      const fromOK = !p.effectiveFrom || new Date(p.effectiveFrom) <= now;
+      const toOK = !p.effectiveTo || new Date(p.effectiveTo) >= now;
+      return fromOK && toOK;
+    });
+  }, [planPull.data]);
+
+  /** ── bill fetch ─────────────────────────────────── */
+  const billFetch = useBbpsBillerFetchMutation({
+    onError: (e) => setFetchError((e as any)?.message || "Failed to fetch bill."),
+    onSuccess: () => setFetchError(undefined),
+  });
+
+  /** ── effects ───────────────────────────────────── */
+  // pick first ACTIVE biller once
   React.useEffect(() => {
-    if (biller_name && !biller) {
-      setBiller(biller_name);
+    if (!billerId && billers.length) {
+      const first = billers.find((b) => (b.biller_status ?? "INACTIVE") === "ACTIVE") ?? billers[0];
+      setBillerId(first.biller_id);
     }
-  }, [biller_name, biller]);
+  }, [billers, billerId]);
 
-  // Basic validation helper using provided regex (if any)
-  const isParamValid = (paramName: string, value: string, pattern?: string) => {
+  // when biller changes, reset & decide plan behavior
+  React.useEffect(() => {
+    setFormValues({});
+    setSelectedPlan(undefined);
+    setFetchError(undefined);
+    billFetch.reset();
+
+    if (!billerId) return;
+    if (planReq === "MANDATORY") {
+      setPlanEnabled(true);
+      setPlanModalOpen(true);
+    } else {
+      setPlanEnabled(false);
+      setPlanModalOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billerId, planReq]);
+
+  /** ── validation ─────────────────────────────────── */
+  const inputs: BillerInputParam[] = (selectedBiller?.inputParams ?? []).filter((p) => p.is_visible);
+  const isInputValid = (v: string, pattern?: string | null) => {
     if (!pattern) return true;
-    try {
-      const re = new RegExp(pattern);
-      return re.test(value ?? "");
-    } catch {
-      // If pattern is invalid, don't block the user
-      return true;
-    }
+    try { return new RegExp(pattern).test(v ?? ""); } catch { return true; }
   };
-
-  const canSubmit = useMemo(() => {
-    if (!biller || !biller_status) return false; // add biller_status condition
-    for (const p of inputParams) {
-      const val = formValues[p.param_name] ?? "";
-      if (!p.is_optional && !val) return false;
-      if (val && !isParamValid(p.param_name, val, p.regex_pattern ?? undefined)) {
-        return false;
-      }
-      if (p.min_length != null && val.length < p.min_length) return false;
-      if (p.max_length != null && val.length > p.max_length) return false;
+  const formValid = React.useMemo(() => {
+    if (!selectedBiller || !isActive) return false;
+    for (const p of inputs) {
+      const v = formValues[p.param_name] ?? "";
+      if (!p.is_optional && !v) return false;
+      if (v && !isInputValid(v, p.regex_pattern ?? undefined)) return false;
+      if (p.min_length != null && v.length < p.min_length) return false;
+      if (p.max_length != null && v.length > p.max_length) return false;
     }
+    if (!/^\d{10}$/.test(mobile)) return false;
+    if (planReq === "MANDATORY" && !selectedPlan) return false;
     return true;
-  }, [biller, inputParams, formValues, biller_status]);
+  }, [selectedBiller, isActive, inputs, formValues, mobile, planReq, selectedPlan]);
 
-
-  // Map BBPS data_type codes into readable labels
-  const formatDataType = (type?: string) => {
-    switch (type) {
-      case "NUMERIC":
-        return "Numbers only";
-      case "ALPHABET":
-        return "Alphabets only";
-      case "ALPHANUMERIC":
-        return "Letters and numbers";
-      case "DATE":
-        return "Date format";
-      default:
-        return type || "";
-    }
+  /** ── actions ───────────────────────────────────── */
+  const handleFetch = () => {
+    if (!formValid || !selectedBiller) return;
+    const payloadInputs = inputs.map((p) => ({ paramName: p.param_name, paramValue: formValues[p.param_name] ?? "" }));
+    billFetch.mutate({
+      service_id,
+      mode: "ONLINE",
+      body: {
+        billerId: selectedBiller.biller_id,
+        customerInfo: { customerMobile: mobile },
+        inputParams: { input: payloadInputs.length === 1 ? payloadInputs[0] : payloadInputs },
+      },
+    });
   };
 
-  // Turn regex into simpler wording (basic example)
-  const formatRegex = (regex?: string) => {
-    if (!regex) return "";
-    if (regex === "^[0-9]{10}$") return "Must be exactly 10 digits";
-    if (regex.includes("[a-zA-Z0-9]")) return "Up to 30 letters or numbers";
-    return `Pattern: ${regex}`;
-  };
-
-
-  const errorMessage =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isError && (typeof error === "object" && error && "data" in (error as any))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (error as any)?.data?.error?.message ?? "Failed to load biller details."
-      : isError
-        ? "Failed to load biller details."
-        : undefined;
+  /** ── UI ─────────────────────────────────────────── */
+  const billerErr =
+    billerList.isError ? ((billerList.error as any)?.data?.error?.message ?? "Failed to load billers.") : undefined;
 
   return (
     <DashboardLayout
       activePath="/bill_payment"
       sections={billPaymentSidebarConfig}
       pageTitle="Bill Payment"
-      isLoading={isLoading}
+      isLoading={billerList.isLoading}
     >
       <div className="min-h-screen w-full mb-3">
         <div className="flex justify-between items-center">
-          <DashboardSectionHeader
-            title="Broadband Postpaid"
-            titleClassName="!font-medium text-[20px] !mt-0"
-            subtitle="Recharge"
-            subtitleClassName="!mb-4"
-            showBack
-          />
-          <Image
-            src="/logo.svg"
-            alt="logo"
-            width={100}
-            height={100}
-            className="p-1"
-          />
+          <DashboardSectionHeader title="Broadband Postpaid" subtitle="Recharge" showBack />
+          <Image src="/logo.svg" alt="logo" width={100} height={100} className="p-1" />
         </div>
 
         <Card className="rounded-2xl shadow-md w-full">
-          {/* Section Title */}
           <div className="flex items-center gap-2 mb-8">
-            <Image
-              src="/wifi.svg"
-              alt="wifi"
-              width={21}
-              height={21}
-              className="object-contain"
-            />
-            <Title level={5} className="!mb-0">
-              Select Broadband Biller
-            </Title>
+            <Image src="/wifi.svg" alt="wifi" width={21} height={21} />
+            <Title level={5} className="!mb-0">Select Broadband Biller</Title>
           </div>
 
-          {/* Error (if any) */}
-          {errorMessage && (
-            <div className="mb-4 text-red-600 text-sm">{errorMessage}</div>
-          )}
+          {billerErr && <Alert type="error" showIcon message={billerErr} className="mb-4" />}
 
-          {/* Form */}
           <div className="flex flex-col gap-4 ml-6">
-            {/* Biller Dropdown */}
-            <div>
-              <Text strong className="!mb-4">
-                Biller *
-              </Text>
-              <Select
-                placeholder="Choose Your Biller"
-                value={biller}
-                onChange={setBiller}
-                className="!w-full !mt-1 !h-[54px]"
-                options={
-                  biller_name
-                    ? [{ label: biller_name, value: biller_name }]
-                    : []
-                }
+            <BillerSelect
+              billers={billers}
+              value={billerId}
+              onChange={setBillerId}
+              showInactiveWarning={!!billerId && !isActive}
+            />
+
+            {/* <div>
+              <Text strong>Mobile Number *</Text>
+              <Input
+                placeholder="10-digit mobile"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                maxLength={10}
+                className="mt-1 !h-[54px]"
               />
-            </div>
+              {mobile && !/^\d{10}$/.test(mobile) && (
+                <div className="text-xs text-red-600 mt-1">Enter a valid 10-digit number.</div>
+              )}
+            </div> */}
 
-            {/* Dynamic Input Fields based on inputParams */}
-            {inputParams?.map((param, idx) => {
-              const val = formValues[param.param_name] ?? "";
-              const showRegexError =
-                !!val &&
-                !!param.regex_pattern &&
-                !isParamValid(param.param_name, val, param.regex_pattern);
-              const showMinLenError =
-                !!val && param.min_length != null && val.length < param.min_length;
-              const showMaxLenError =
-                !!val && param.max_length != null && val.length > param.max_length;
+            {planReq === "OPTIONAL" && (
+              <Button className="!h-[40px] !rounded-[10px]" onClick={() => { setPlanEnabled(true); setPlanModalOpen(true); }}>
+                Choose Plan (optional)
+              </Button>
+            )}
 
-              return (
-                <div key={idx}>
-                  <Text strong>
-                    {param.display_name} {param.is_optional ? "" : "*"}
-                  </Text>
-                  <Input
-                    placeholder={`Enter ${param.display_name}`}
-                    value={val}
-                    onChange={(e) =>
-                      setFormValues((prev) => ({
-                        ...prev,
-                        [param.param_name]: e.target.value,
-                      }))
-                    }
-                    className="mt-1 !h-[54px]"
-                    maxLength={param.max_length ?? undefined}
-                    // Note: Input doesn't enforce minLength visually; we use messages below.
-                    required={!param.is_optional}
-                  />
-                  {(showRegexError || showMinLenError || showMaxLenError) && (
-                    <div className="text-xs text-red-600 mt-1">
-                      {!showRegexError ? null : "Invalid format."}
-                      {!showMinLenError ? null : (
-                        <>
-                          {" "}
-                          Minimum length is {param.min_length}.
-                        </>
-                      )}
-                      {!showMaxLenError ? null : (
-                        <>
-                          {" "}
-                          Maximum length is {param.max_length}.
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-500 mt-1 mb-6">
-                    {param.data_type && <span>{formatDataType(param.data_type)}</span>}
-                    {param.regex_pattern && (
-                      <span> • {formatRegex(param.regex_pattern)}</span>
-                    )}
-                    {param.min_length != null && param.max_length != null && (
-                      <span> • Length: {param.min_length}–{param.max_length} characters</span>
-                    )}
-                  </div>
-
-                </div>
-              );
-            })}
+            <DynamicParamsForm
+              inputs={inputs}
+              values={formValues}
+              onChange={(name, val) => setFormValues((prev) => ({ ...prev, [name]: val }))}
+            />
 
             <Button
               type="primary"
               block
-              disabled={!canSubmit}
-              loading={isLoading}
-              className={`!h-[45px] !rounded-[12px] !text-white ${canSubmit ? "!bg-[#3386FF]" : "!bg-[#3386FF] !cursor-not-allowed !opacity-60"
-                }`}
-              onClick={() => {
-                router.push(
-                  `/bill_payment/bbps-online/${service_id}/bbps-broadband-postpaid/${bbps_category_id}`
-                );
-              }}
+              disabled={!formValid || billFetch.isPending}
+              loading={billFetch.isPending}
+              className={`!h-[45px] !rounded-[12px] !text-white ${formValid ? "!bg-[#3386FF]" : "!bg-[#3386FF] !cursor-not-allowed !opacity-60"}`}
+              onClick={handleFetch}
             >
               Fetch Bill Details
             </Button>
 
+            {fetchReq === "MANDATORY" && fetchError && (
+              <Alert className="mt-3" type="error" showIcon message={fetchError} />
+            )}
+
+            {billFetch.data?.billFetchResponse && (
+              <BillPreviewCard
+                resp={billFetch.data.billFetchResponse}
+                exactness={paymentExactness}
+              />
+            )}
           </div>
         </Card>
       </div>
+
+      <PlanChooserModal
+        open={planModalOpen}
+        mandatory={planReq === "MANDATORY"}
+        loading={planPull.isFetching}
+        plans={plans}
+        onCancel={() => { if (planReq !== "MANDATORY") setPlanModalOpen(false); }}
+        onSelect={(p) => { setSelectedPlan(p); setPlanModalOpen(false); }}
+      />
     </DashboardLayout>
   );
 }

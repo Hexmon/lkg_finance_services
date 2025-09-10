@@ -192,3 +192,45 @@ export const BillerInfoResponseSchema = z.object({
 });
 export type BillerInfoResponse = z.infer<typeof BillerInfoResponseSchema>;
 
+/** ------------ Plan Pull (GET /secure/bbps/bills/all-plans/{service_id}/{billerId}?mode=ONLINE) ------------ */
+
+/** paramTag can be a single object or an array */
+export const PlanParamTagSchema = z.object({
+  paramName: z.string(),
+  paramValue: z.string(),
+});
+
+export const PlanAddnlInfoSchema = z.object({
+  paramTag: z.union([PlanParamTagSchema, z.array(PlanParamTagSchema)]),
+});
+
+/** One plan item */
+export const PlanSchema = z.object({
+  planId: z.string(),
+  billerId: z.string(),
+  categoryType: z.string().nullable().optional(),
+  categorySubType: z.string().nullable().optional(),
+  amountInRupees: z.string(),       // API returns as string (e.g., "500.0")
+  planDesc: z.string(),
+  planAddnlInfo: PlanAddnlInfoSchema.optional(),
+  effectiveFrom: z.string(),        // ISO date as string
+  effectiveTo: z.string().nullable(),// can be null
+  status: z.string(),               // e.g., "ACTIVE" | "DEACTIVATED"
+});
+
+export const PlanPullResponseSchema = z.object({
+  status: z.union([z.string(), z.number()]).transform((s) => Number(s)), // "200" -> 200
+  requestId: z.string(),
+  data: z.object({
+    responseCode: z.string(),       // e.g., "000"
+    respReason: z.string(),         // e.g., "Successful"
+    planDetails: z.array(PlanSchema),
+  }),
+});
+
+export type PlanParamTag = z.infer<typeof PlanParamTagSchema>;
+export type PlanAddnlInfo = z.infer<typeof PlanAddnlInfoSchema>;
+export type Plan = z.infer<typeof PlanSchema>;
+export type PlanPullResponse = z.infer<typeof PlanPullResponseSchema>;
+
+/* --- keep the rest of your existing exports below unchanged --- */
