@@ -115,7 +115,7 @@ export default function FastTagCustomerKYCUploadPage() {
                                 height={30}
                                 className="mb-2"
                             />
-                            <p className="text-center">Upload Aadhaar, PAN, or Driver's License</p>
+                            <p className="text-center">Upload Aadhaar, PAN, or Drivers License</p>
                             <button className="text-blue-500 mt-1 hover:underline">
                                 Choose File
                             </button>

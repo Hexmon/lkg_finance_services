@@ -47,7 +47,7 @@ export default function SupportTickets() {
 
     const showModal = () => setIsModalOpen(true);
     const handleCancel = () => setIsModalOpen(false);
-    const handleSubmit = (values: any) => {
+    const handleSubmit = (values: string) => {
         console.log("Form Values:", values);
         setIsModalOpen(false);
     };

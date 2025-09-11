@@ -15,7 +15,7 @@ export default function FundRequestPage() {
     const [form] = Form.useForm();
     const [balance, setBalance] = useState<string>("₹25,000");
 
-    const handleSubmit = (values: any) => {
+    const handleSubmit = (values: string) => {
         console.log("Fund Request values:", values);
     };
 

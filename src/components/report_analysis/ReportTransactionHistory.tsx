@@ -48,7 +48,7 @@ export default function ReportTransactionHistory() {
         {
             title: "Transaction ID",
             dataIndex: "txnId",
-            render: (text: string, record: any) => (
+            render: (text: string, record: string) => (
                 <div>
                     <Text className="!font-medium !text-[14px]">{text}</Text>
                     <br />
