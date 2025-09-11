@@ -42,12 +42,19 @@ const tickets: Ticket[] = [
     },
 ];
 
+interface TicketFormValues {
+  transactionId: string;
+  subject: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+}
+
 export default function SupportTickets() {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const showModal = () => setIsModalOpen(true);
     const handleCancel = () => setIsModalOpen(false);
-    const handleSubmit = (values: string) => {
+    const handleSubmit = (values: TicketFormValues) => {
         console.log("Form Values:", values);
         setIsModalOpen(false);
     };

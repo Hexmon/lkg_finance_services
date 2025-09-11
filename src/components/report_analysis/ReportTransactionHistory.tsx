@@ -6,9 +6,22 @@ import Image from "next/image";
 
 const { Text } = Typography;
 const { Option } = Select;
+interface Transaction {
+  key: number;
+  txnId: string;
+  service: string;
+  datetime: string;
+  type: string;
+  customerNo: string;
+  amount: string;
+  commission: string;
+  status: string;
+}
+
 
 export default function ReportTransactionHistory() {
-    const txData = [
+    
+    const txData:Transaction[]  = [
         {
             key: 1,
             txnId: "TXN123456789",
@@ -48,7 +61,7 @@ export default function ReportTransactionHistory() {
         {
             title: "Transaction ID",
             dataIndex: "txnId",
-            render: (text: string, record: string) => (
+            render: (text: string, record: Transaction) => (
                 <div>
                     <Text className="!font-medium !text-[14px]">{text}</Text>
                     <br />
