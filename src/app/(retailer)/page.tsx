@@ -4,7 +4,7 @@
 import React from "react";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
-import { DashboardDetailsResponse, DEFAULT_DASHBOARD, useRetailerDashboardQuery } from "@/features/retailer/general";
+import { DashboardDetailsResponse, DEFAULT_DASHBOARD, useRetailerDashboardQuery, useTransactionSummaryQuery } from "@/features/retailer/general";
 import Profile from "@/components/dashboard/Profile";
 import Feature from "@/components/dashboard/Feature";
 import Services from "@/components/dashboard/Services";
@@ -14,21 +14,9 @@ import RecentActivity from "@/components/dashboard/RecentActivity";
 export default function Dashboard() {
   const { data, isLoading } = useRetailerDashboardQuery();
 
-  const dashboard: DashboardDetailsResponse = data ?? DEFAULT_DASHBOARD;
+  const { quick_links, balances: { MAIN, AEPS } = {}, commissions, name, profile, transactions: apiTransactions, user_id, username, virtual_account }: DashboardDetailsResponse = data ?? DEFAULT_DASHBOARD;
 
-  const {
-    quick_links,
-    name: rawName,
-    balances,
-    commissions,
-    // profile,
-    transactions: apiTransactions,
-    // user_id,
-    username,
-    virtual_account,
-  } = dashboard;
-
-  const totalBalance = (balances?.MAIN ?? "") + (balances?.AEPS ?? "")
+  const totalBalance = (MAIN ?? "") + (AEPS ?? "")
 
   const {
     success_rate = 0,
@@ -46,14 +34,20 @@ export default function Dashboard() {
     // } = {},
   } = apiTransactions || {};
 
+  const { data: { data: transactionData } = {}, isLoading: transactionLoading } = useTransactionSummaryQuery({
+    page: 1,
+    per_page: 5,
+    order: "desc",
+  })
+
   return (
     <DashboardLayout
       sections={moneyTransferSidebarConfig}
       activePath="/"
       pageTitle="Dashboards"
-      isLoading={isLoading}
+      isLoading={isLoading || transactionLoading}
     >
-      <Profile totalBalance={totalBalance} username={rawName || username} virtual_account={virtual_account} />
+      <Profile totalBalance={totalBalance} username={name || username} virtual_account={virtual_account} />
 
       <Feature commissions={commissions} success_rate={success_rate} success_rate_ratio={success_rate_ratio} totalTxnCount={totalTxnCount} totalTxnRatio={totalTxnRatio} />
 
@@ -61,8 +55,8 @@ export default function Dashboard() {
 
       {/* Wallet Overview & Recent Activity */}
       <div className="flex flex-col md:flex-row gap-6 mt-4 w-full">
-        <WalletOverview balances={balances} commissions={commissions} />
-        <RecentActivity />
+        <WalletOverview balances={{ MAIN, AEPS }} commissions={commissions} />
+        <RecentActivity transactionData={transactionData ?? []} />
       </div>
 
       <div className="bg-transparent"></div>
