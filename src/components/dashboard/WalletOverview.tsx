@@ -64,7 +64,7 @@ export default function WalletOverview({
 
       {/* use a button later if you want onClick */}
         <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
-          <Image src="/upload.svg" alt="eye icon" width={15} height={15} />
+          <Image src="/eye.svg" alt="eye icon" width={15} height={15} />
           <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
         </div>
       </div>

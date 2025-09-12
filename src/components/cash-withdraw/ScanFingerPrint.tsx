@@ -19,7 +19,7 @@ export default function ScanFingerPrint({
                 variant="info"
                 size="lg"
                 width="w-full max-w-md"
-                height="min-h-[380px]"
+                height="min-h-[340px]"
                 divider
                 className="mx-auto bg-white shadow-xl"
                 header={
@@ -39,15 +39,15 @@ export default function ScanFingerPrint({
                     </div>
                 }
                 body={
-                    <div className="grid place-items-center gap-4 py-6">
+                    <div className="grid place-items-center gap-4 ">
                         {/* Fingerprint Circle Scanner */}
                         <div className="relative flex items-center justify-center">
-                            <div className="h-32 w-32 rounded-full border-2 border-[#3386FF] flex items-center justify-center">
+                            <div className="h-24 w-24 rounded-full border-2 border-[#3386FF] flex items-center justify-center">
                                 <Image
                                     src="/scanner.svg"
                                     alt="scanner verification"
-                                    height={80}
-                                    width={80}
+                                    height={60}
+                                    width={60}
                                     className="object-contain"
                                 />
                             </div>
