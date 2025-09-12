@@ -175,7 +175,7 @@ export function SmartTabs({
         <div
           role="tablist"
           aria-orientation="horizontal"
-          className={`relative flex gap-1 overflow-x-auto no-scrollbar ${tablistClassName} ${
+          className={`relative flex overflow-x-auto no-scrollbar ${tablistClassName} ${
             fitted ? 'justify-between' : ''
           }`}
           onKeyDown={onKeyDown}
@@ -194,8 +194,8 @@ export function SmartTabs({
                 disabled={!!tab.disabled}
                 onClick={() => setActive(tab.key)}
                 className={[
-                  'relative inline-flex items-center gap-2 rounded-md',
-                  'px-3.5 py-2.5 text-sm md:text-base',
+                  'relative inline-flex items-center rounded-md',
+                  ' py-2.5 text-sm md:text-base',
                   'text-gray-600 hover:text-gray-800',
                   'transition-all duration-200',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
@@ -221,12 +221,12 @@ export function SmartTabs({
           })}
 
           {/* underline slider */}
-          <div
+          {/* <div
             aria-hidden
             ref={barRef}
             className="pointer-events-none absolute bottom-0 h-[2px] bg-blue-600"
             style={{ width: 0, transform: 'translateX(0px)' }}
-          />
+          /> */}
         </div>
 
         {extra && (
