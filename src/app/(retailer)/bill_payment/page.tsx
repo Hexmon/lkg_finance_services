@@ -103,15 +103,15 @@ export default function BillPaymentServicePage() {
         subtitle={null}
         showBack
         arrowClassName="!text-[#3386FF]"
-        dropdownItems={[
-          { key: "bill", label: "Bill Payment Service", path: "/bill-payment" },
-          { key: "complain", label: "Register Complain", path: "/bill_payment/raise-complaint" },
-          { key: "status", label: "Transaction Status", path: "/bill_payment/transaction-status" },
-        ]}
-        dropdownSelectedKey="bill"
-        onDropdownSelect={(key) => console.log("selected:", key)}
-        dropdownTriggerClassName="text-blue-500"
-        dropdownClassName="!min-w-[220px]"
+        // dropdownItems={[
+        //   { key: "bill", label: "Bill Payment Service", path: "/bill-payment" },
+        //   { key: "complain", label: "Register Complain", path: "/bill_payment/raise-complaint" },
+        //   { key: "status", label: "Transaction Status", path: "/bill_payment/transaction-status" },
+        // ]}
+        // dropdownSelectedKey="bill"
+        // onDropdownSelect={(key) => console.log("selected:", key)}
+        // dropdownTriggerClassName="text-blue-500"
+        // dropdownClassName="!min-w-[220px]"
       />
       <div className="p-8 bg-gray-50">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
