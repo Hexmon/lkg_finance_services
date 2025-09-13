@@ -46,17 +46,25 @@ export default function CashWithdrawPage() {
         },
     ];
 
+    // wrap the two labels inside a single parent
     const items: TabItem[] = [
         {
             key: "newtransaction",
             label: (
                 <div
-                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "newtransaction"
-                            ? "bg-[#3386FF] text-white"
+                    className={`flex items-center px-3.5 py-2.5 h-[60px] cursor-pointer transition-colors
+          ${activeTab === "newtransaction"
+                            ? "bg-[#3386FF] text-white rounded-[15px]"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                        } rounded-l-[15px]`}
                 >
-                    <Image src="/rocket.svg" alt="New" width={16} height={16} />
+                    <Image
+                        src={activeTab === "newtransaction" ? "/rocket.svg" : "/rocket-black.svg"}
+                        alt="New"
+                        width={16}
+                        height={16}
+                        className="mr-2"
+                    />
                     <span>New Transaction</span>
                 </div>
             ),
@@ -66,18 +74,27 @@ export default function CashWithdrawPage() {
             key: "transactionhistory",
             label: (
                 <div
-                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "transactionhistory"
-                            ? "bg-[#3386FF] text-white"
+                    className={`flex items-center px-3.5 py-2.5 h-[60px] cursor-pointer transition-colors
+          ${activeTab === "transactionhistory"
+                            ? "bg-[#3386FF] text-white rounded-[15px]"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                        } rounded-r-[15px]`}
                 >
-                    <Image src="/line-blk.svg" alt="History" width={16} height={16} />
+                    <Image
+                        src={activeTab === "transactionhistory" ? "/heart-line.svg" : "/line-blk.svg"}
+                        alt="History"
+                        width={16}
+                        height={16}
+                        className="mr-2"
+                    />
                     <span>Transaction History</span>
                 </div>
             ),
             content: <TransactionHistory />,
         },
     ];
+
+
 
 
 
@@ -93,7 +110,7 @@ export default function CashWithdrawPage() {
                 titleClassName="text-[20px] font-medium"
             />
             <div className="p-6 min-h-screen w-full">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="flex gap-4 mb-6">
                     {stats.map((item, i) => (
                         <CardLayout
                             key={i}

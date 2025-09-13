@@ -202,10 +202,10 @@ const Sidebar: React.FC<SidebarProps> = ({
              px-2 pt-3"
       />
 
-      <div className="absolute bottom-3 left-0 w-full px-2 space-y-1">
+      <div className="absolute bottom-3 left-0 w-full space-y-1">
         <Button
           type="text"
-          className="!text-white !w-full !h-9 hover:!bg-white/10"
+          className="!text-white !w-full !h-9 ml-9 !justify-start pl-3 hover:!bg-white/10"
         >
           FAQ
         </Button>
@@ -214,11 +214,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           icon={<LogoutOutlined />}
           loading={isPending}
           onClick={handleLogout}
-          className="!text-white !w-full !h-9 hover:!bg-white/10"
+          className="!text-white !w-full !h-9 ml-3 !justify-start pl-3 hover:!bg-white/10"
         >
           Logout
         </Button>
       </div>
+
+
     </Sider>
   );
 };
