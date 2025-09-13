@@ -33,7 +33,7 @@ import type {
 /** ------------------------------------------------------------------ */
 /** Cache keys (stable)                                                */
 /** ------------------------------------------------------------------ */
-const qk = {
+export const qk = {
   base: ['retailer', 'services'] as const,
   list: (params: ServiceListQuery) =>
     [...qk.base, 'list', params] as QueryKey,
@@ -44,7 +44,7 @@ const qk = {
 };
 
 /** Broadly match this module's keys for invalidation */
-const keyStartsWithServiceBase = (key: readonly unknown[]) =>
+export const keyStartsWithServiceBase = (key: readonly unknown[]) =>
   Array.isArray(key) &&
   key.length >= qk.base.length &&
   key.slice(0, qk.base.length).every((v, i) => v === qk.base[i]);

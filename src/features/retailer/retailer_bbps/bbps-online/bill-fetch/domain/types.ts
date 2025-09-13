@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src\features\retailer\retailer_bbps\bbps-online\bill-fetch\domain\types.ts
 import { z } from "zod";
 
@@ -74,6 +75,7 @@ export type Biller = z.infer<typeof BillerSchema>;
 export type BillerListResponse = z.infer<typeof BillerListResponseSchema>;
 
 /** ------------ Bill Fetch ------------ */
+/** ---------- Request (unchanged) ---------- */
 export const BillFetchInputParamSchema = z.object({
   paramName: z.string(),
   paramValue: z.string(),
@@ -93,23 +95,94 @@ export const BillFetchRequestSchema = z.object({
 });
 export type BillFetchRequest = z.infer<typeof BillFetchRequestSchema>;
 
-export const BillFetchResponseSchema = z.object({
-  billFetchResponse: z.object({
-    responseCode: z.string(),
-    inputParams: z.object({
-      input: BillFetchInputParamSchema,
-    }),
-    billerResponse: z.object({
-      billAmount: z.string(),
-      billDate: z.string(),
-      billNumber: z.string(),
-      billPeriod: z.string(),
-      customerName: z.string(),
-      dueDate: z.string(),
-    }),
+/** ---------- Core inner success payload ---------- */
+const BillFetchInnerSuccessSchema = z.object({
+  responseCode: z.string(),
+  inputParams: z.object({
+    input: z.union([BillFetchInputParamSchema, z.array(BillFetchInputParamSchema)]),
+  }),
+  billerResponse: z.object({
+    billAmount: z.string(),
+    billDate: z.string(),
+    billNumber: z.string(),
+    billPeriod: z.string(),
+    customerName: z.string(),
+    dueDate: z.string(),
   }),
 });
+
+/** ---------- Success shape #1: canonical ---------- */
+const BillFetchSuccessSchema = z.object({
+  billFetchResponse: BillFetchInnerSuccessSchema,
+});
+
+/** ---------- Success shape #2: wrapped with data.billFetchResponse ---------- */
+const BillFetchWrappedWithKeySchema = z.object({
+  status: z.union([z.string(), z.number()]).optional(),
+  data: z.object({
+    billFetchResponse: BillFetchInnerSuccessSchema,
+  }),
+});
+
+/** ---------- Success shape #3: wrapped with data (no billFetchResponse key) ---------- */
+const BillFetchWrappedBareSchema = z.object({
+  status: z.union([z.string(), z.number()]).optional(),
+  data: BillFetchInnerSuccessSchema,
+});
+
+/** ---------- Success shape #4: bare top-level inner fields ---------- */
+const BillFetchBareTopSchema = BillFetchInnerSuccessSchema;
+
+/** ---------- Error envelope ---------- */
+const BillFetchErrorSchema = z.object({
+  status: z.union([z.string(), z.number()]).optional(),
+  message: z.string().optional(),
+  error: z.unknown().optional(),
+});
+
+/** ---------- Union + Normalize to { billFetchResponse: {...} } ---------- */
+export const BillFetchResponseSchema = z
+  .union([
+    BillFetchSuccessSchema,
+    BillFetchWrappedWithKeySchema,
+    BillFetchWrappedBareSchema,
+    BillFetchBareTopSchema,
+    BillFetchErrorSchema,
+  ])
+  .transform((val) => {
+    // Already canonical
+    if ("billFetchResponse" in val) {
+      return val;
+    }
+
+    // Wrapped with data.billFetchResponse
+    if ("data" in val && val?.data && typeof val.data === "object" && "billFetchResponse" in (val as any).data) {
+      return { billFetchResponse: (val as any).data.billFetchResponse };
+    }
+
+    // Wrapped with data (bare fields)
+    if ("data" in val && val?.data && typeof val.data === "object" && "responseCode" in (val as any).data) {
+      return { billFetchResponse: (val as any).data };
+    }
+
+    // Bare top-level inner fields
+    if ("responseCode" in val && "billerResponse" in val) {
+      return { billFetchResponse: val as z.infer<typeof BillFetchInnerSuccessSchema> };
+    }
+
+    // Error envelope → throw a clean error
+    if ("message" in val || "error" in val) {
+      const status = (val as any)?.status;
+      const message = (val as any)?.message || "Bill fetch failed";
+      throw new Error(`${status ? `[${status}] ` : ""}${message}`);
+    }
+
+    // Unknown structure
+    throw new Error("Invalid BillFetchResponse format");
+  });
+
 export type BillFetchResponse = z.infer<typeof BillFetchResponseSchema>;
+
 
 /** ------------ Error Envelope (best-guess; refine if docs change) ------------ */
 export const ApiErrorEnvelopeSchema = z.object({
@@ -192,3 +265,45 @@ export const BillerInfoResponseSchema = z.object({
 });
 export type BillerInfoResponse = z.infer<typeof BillerInfoResponseSchema>;
 
+/** ------------ Plan Pull (GET /secure/bbps/bills/all-plans/{service_id}/{billerId}?mode=ONLINE) ------------ */
+
+/** paramTag can be a single object or an array */
+export const PlanParamTagSchema = z.object({
+  paramName: z.string(),
+  paramValue: z.string(),
+});
+
+export const PlanAddnlInfoSchema = z.object({
+  paramTag: z.union([PlanParamTagSchema, z.array(PlanParamTagSchema)]),
+});
+
+/** One plan item */
+export const PlanSchema = z.object({
+  planId: z.string(),
+  billerId: z.string(),
+  categoryType: z.string().nullable().optional(),
+  categorySubType: z.string().nullable().optional(),
+  amountInRupees: z.string(),       // API returns as string (e.g., "500.0")
+  planDesc: z.string(),
+  planAddnlInfo: PlanAddnlInfoSchema.optional(),
+  effectiveFrom: z.string(),        // ISO date as string
+  effectiveTo: z.string().nullable(),// can be null
+  status: z.string(),               // e.g., "ACTIVE" | "DEACTIVATED"
+});
+
+export const PlanPullResponseSchema = z.object({
+  status: z.union([z.string(), z.number()]).transform((s) => Number(s)), // "200" -> 200
+  requestId: z.string(),
+  data: z.object({
+    responseCode: z.string(),       // e.g., "000"
+    respReason: z.string(),         // e.g., "Successful"
+    planDetails: z.array(PlanSchema),
+  }),
+});
+
+export type PlanParamTag = z.infer<typeof PlanParamTagSchema>;
+export type PlanAddnlInfo = z.infer<typeof PlanAddnlInfoSchema>;
+export type Plan = z.infer<typeof PlanSchema>;
+export type PlanPullResponse = z.infer<typeof PlanPullResponseSchema>;
+
+/* --- keep the rest of your existing exports below unchanged --- */

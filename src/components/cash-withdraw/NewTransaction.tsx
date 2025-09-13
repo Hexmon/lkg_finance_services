@@ -16,7 +16,7 @@ export default function AEPSFormPage() {
     return (
         <>
             {step === 0 && (
-                <div className="min-h-screen bg-white p-6 space-y-8">
+                <div className="min-h-screen bg-transparent p-6 space-y-3">
                     {/* AEPS Services */}
                     <div className="bg-white rounded-2xl shadow-md p-6">
                         <Title level={5}>Select AEPS Service</Title>
@@ -39,7 +39,7 @@ export default function AEPSFormPage() {
 
                     {/* AEPS Transaction Form */}
                     <div className="bg-white rounded-2xl shadow-md p-6">
-                        <div className="mb-4">
+                        <div className="mb-11">
                             <div className="flex items-center">
                                 <Image
                                     src="/aeps.svg"
@@ -82,7 +82,7 @@ export default function AEPSFormPage() {
                         </div>
 
                         {/* Fingerprint Capture */}
-                        <div className="flex flex-col items-center justify-center mt-8">
+                        <div className="flex flex-col items-center justify-center mt-20">
                             <div className="w-20 h-20 bg-white shadow-inner rounded-full flex items-center justify-center">
                                 <Image src="/biometric.svg" alt="fingerprint" width={90} height={90} />
                             </div>
@@ -123,7 +123,7 @@ export default function AEPSFormPage() {
             )}
 
             {step === 1 && (
-                <div className="min-h-screen bg-white p-6 space-y-8">
+                <div className="min-h-screen bg-transparent p-6 space-y-8">
                     {/* AEPS Services */}
                     <div className="bg-white rounded-2xl shadow-md p-6">
                         <Title level={5}>Select AEPS Service</Title>
@@ -146,7 +146,7 @@ export default function AEPSFormPage() {
 
                     {/* AEPS Transaction Form */}
                     <div className="bg-white rounded-2xl shadow-md p-6">
-                        <div className="mb-4">
+                        <div className="mb-11">
                             <div className="flex items-center">
                                 <Image
                                     src="/aeps.svg"
@@ -189,7 +189,7 @@ export default function AEPSFormPage() {
                         </div>
 
                         {/* Fingerprint Capture */}
-                        <div className="flex flex-col items-center justify-center mt-8">
+                        <div className="flex flex-col items-center justify-center mt-20">
                             <div className="w-20 h-20 bg-white shadow-inner rounded-full flex items-center justify-center">
                                 <Image src="/biometric.svg" alt="fingerprint" width={90} height={90} />
                             </div>

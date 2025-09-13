@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Card, Typography, Button } from "antd";
+import React, { useState } from "react";
+import { Card, Typography, Button, Select, Input } from "antd";
 import {
     UserOutlined,
 } from "@ant-design/icons";
@@ -11,14 +11,50 @@ import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { walletStats } from "@/config/app.config";
 import Image from "next/image";
+import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
+import NewTransfer from "@/components/money-transfer/NewTransfer";
+import Transaction from "@/components/money-transfer/Transaction";
 
 const { Title, Text } = Typography;
 
 export default function MoneyTransferPage() {
+    const [activeTab, setActiveTab] = useState<string | number>("newtransfer");
+    const items: TabItem[] = [
+        {
+            key: "newtransfer",
+            label: (
+                <div
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "newtransfer"
+                        ? "bg-[#3386FF] text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                >
+                    <Image src="/rocket.svg" alt="New" width={16} height={16}/>
+                    <span>New Transfer</span>
+                </div>
+            ),
+            content: <NewTransfer/>,
+        },
+        {
+            key: "transaction",
+            label: (
+                <div
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "transaction"
+                        ? "bg-[#3386FF] text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                >
+                    <Image src="/heart-line.svg" alt="History" width={16} height={16} />
+                    <span>Transaction</span>
+                </div>
+            ),
+            content: <Transaction />,
+        },
+    ];
     return (
-        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/" pageTitle="Dashboards">
+        <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money_transfer_dashboard" pageTitle="Dashboards">
             <CardLayout
-            width="w-full"
+                width="w-full"
                 header={
                     <DashboardSectionHeader
                         title="Money Transfer Service"
@@ -68,89 +104,17 @@ export default function MoneyTransferPage() {
 
                 }
             />
-            <div className="p-6 min-h-screen w-full">
+            <div className="p-6 w-full">
 
-                {/* Tabs (New Transfer, Beneficiaries, Transactions) */}
-                <div className="flex gap-3 mb-6">
-                    <Button className="rounded-md px-6 py-2 shadow-sm">New Transfer</Button>
-                    <Button className="rounded-md px-6 py-2 shadow-sm bg-blue-600 text-white">
-                        Beneficiaries
-                    </Button>
-                    <Button className="rounded-md px-6 py-2 shadow-sm">Transactions</Button>
-                </div>
-
-                {/* Beneficiary Management */}
-                <Card className="rounded-2xl shadow-md mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                        <div>
-                            <Title level={4} className="!mb-0">
-                                Beneficiary Management
-                            </Title>
-                            <Text type="secondary">
-                                Manage your saved beneficiaries
-                            </Text>
-                        </div>
-                        <Button type="primary" className="!bg-blue-600">
-                            + Add Beneficiary
-                        </Button>
-                    </div>
-
-                    <div className="bg-[#fefcf7] p-4 rounded-xl flex justify-between items-center mb-6">
-                        <div>
-                            <Title level={5} className="!mb-1">
-                                Amit Kumar’s Saved Accounts
-                            </Title>
-                            <Text type="secondary">
-                                Senders Mobile No. 7032531753
-                            </Text>
-                        </div>
-                        <div className="flex gap-8 items-center">
-                            <div>
-                                <Text type="secondary">Beneficiary</Text>
-                                <Title level={4}>2</Title>
-                            </div>
-                            <div>
-                                <Text type="secondary">Total Limit</Text>
-                                <Title level={4}>25,000</Title>
-                            </div>
-                            <div>
-                                <Text type="secondary">Remaining Limit</Text>
-                                <Title level={4}>25,000</Title>
-                            </div>
-                            <Button className="!bg-blue-600 text-white">Change Sender</Button>
-                        </div>
-                    </div>
-
-                    {/* Beneficiary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                            { name: "Rajesh Kumar", bank: "SBI", account: "1234" },
-                            { name: "Priya Sharma", bank: "HDFC", account: "1235" },
-                            { name: "Amit Singh", bank: "ICICI", account: "1236" },
-                            { name: "Neha Gupta", bank: "Axis", account: "1238" },
-                            { name: "Rajesh Kumar", bank: "SBI", account: "1239" },
-                        ].map((b, idx) => (
-                            <Card key={idx} className="rounded-xl shadow-sm">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <UserOutlined className="text-2xl text-blue-600" />
-                                    <div>
-                                        <Text strong>{b.name}</Text>
-                                        <div className="text-xs text-gray-500">{b.bank}</div>
-                                    </div>
-                                </div>
-                                <div className="mb-2">
-                                    <Text type="secondary">Account: </Text> *****{b.account}
-                                </div>
-                                <div className="mb-4">
-                                    <Text type="secondary">Mobile: </Text> +91 254•••••
-                                </div>
-                                <Button type="primary" className="!bg-blue-600 w-full">
-                                    Send
-                                </Button>
-                            </Card>
-                        ))}
-                    </div>
-                </Card>
+            <SmartTabs
+                items={items}
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                keepAlive
+                fitted={false}
+                durationMs={260}
+                easing="cubic-bezier(.22,1,.36,1)"
+            />
             </div>
             <div className="bg-transparent"></div>
         </DashboardLayout>

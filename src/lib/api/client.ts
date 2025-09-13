@@ -134,18 +134,10 @@ export async function request<T>(
 
           if (!window.location.pathname.startsWith(signinPath) && !redirectingToSignin) {
             redirectingToSignin = true;
-
-            // 🔑 run client-side cleanup (Redux, Persist, React Query, etc.)
             try { await onUnauthorized?.(); } catch { }
-
-            // Optional: also ask server to clear cookies (fire-and-forget)
             try { apiLogout?.(); } catch { }
-
-            // Avoid back-button loop
             window.location.replace(`${signinPath}?next=${encodeURIComponent(here)}`);
           }
-
-          // Don’t throw—prevents toasts/boundaries just before navigation
           return new Promise<never>(() => { });
         }
       }

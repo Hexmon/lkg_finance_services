@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log("indeisd rtyr ");
     
     const raw = await retailerFetch<ServiceSubscribeResponse>(
       RETAILER_ENDPOINTS.SERVICE.SUBSCRIBE,
@@ -51,8 +50,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: statusCode });
   } catch (err: any) {
-    console.log({err});
-    
     const status = Number(
       err?.status ?? err?.response?.status ?? err?.data?.status ?? 502
     );

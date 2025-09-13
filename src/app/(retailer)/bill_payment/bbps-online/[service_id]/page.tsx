@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Card, Typography, Button } from "antd";
+import { Card, Typography, Button, Dropdown } from "antd";
 import {
   DeleteOutlined,
   SearchOutlined,
@@ -133,6 +133,42 @@ export default function ChooseServicePage() {
   // const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
   // await removeBiller({ biller_batch_id });
 
+  const items = [
+    {
+      key: "1",
+      label: (
+        <div
+          className="px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white cursor-pointer"
+          onClick={() => router.push("/bill_payment")}
+        >
+          Bill Payment
+        </div>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <div
+          className="px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white cursor-pointer"
+          onClick={() => router.push("/bill_payment/raise-complaint")}
+        >
+          Raise Complaint
+        </div>
+      ),
+    },
+    {
+      key: "3",
+      label: (
+        <div
+          className="px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white cursor-pointer"
+          onClick={() => router.push("/bill_payment/transaction-status")}
+        >
+          Transaction Status
+        </div>
+      ),
+    },
+  ];
+
   return (
     <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
 
@@ -153,9 +189,9 @@ export default function ChooseServicePage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button className="!rounded-xl !px-4 !py-2 shadow-sm">
-              View Transaction History
-            </Button>
+            <Dropdown menu={{ items }} placement="bottom" className="">
+              <Button type="primary" className="!bg-white !text-black">View Transaction History</Button>
+            </Dropdown>
             <Image src="/logo.svg" alt="logo" width={120} height={120} />
           </div>
         </div>

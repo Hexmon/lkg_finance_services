@@ -10,7 +10,7 @@ import {
   type TransactionSummaryQuery,
   TransactionSummaryResponseSchema,
   type TransactionSummaryResponse,
-} from '@/features/retailer/general/domain/types';
+} from '@/features/retailer/general';
 
 export async function GET(req: NextRequest) {
   // 1) Auth via HttpOnly cookie

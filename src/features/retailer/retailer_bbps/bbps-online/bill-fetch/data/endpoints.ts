@@ -1,53 +1,17 @@
 // src\features\retailer\retailer_bbps\bbps-online\bill-fetch\data\endpoints.ts
-import { RETAILER_ENDPOINTS } from "@/config/endpoints";
-
 import {
-  CircleListResponseSchema,
   CategoryListResponseSchema,
   BillerListResponseSchema,
   BillFetchRequestSchema,
   BillFetchResponseSchema,
-  BillerInfoRequestSchema,
-  BillerInfoResponseSchema,
-  type CircleListResponse,
   type CategoryListResponse,
   type BillerListResponse,
   type BillFetchRequest,
   type BillFetchResponse,
-  type BillerInfoRequest,
-  type BillerInfoResponse,
+  PlanPullResponse,
+  PlanPullResponseSchema,
 } from "../domain/types";
-import { getTenantId, retailerRequest } from "@/features/retailer/client";
-import { getJSON } from "@/lib/api/client";
-
-/** Build paths that require tenant segment */
-function pathWithTenant(basePath: string, extra?: string) {
-  const tenantId = getTenantId();
-  if (extra && extra.length > 0) return `${basePath}/${tenantId}/${extra}`;
-  return `${basePath}/${tenantId}`;
-}
-
-/** GET /secure/bbps/circle-list/{tenantId}?search=&mode= */
-export async function apiGetCircleList(
-  params: { search?: string; mode: "ONLINE" | "OFFLINE" },
-  opts?: { signal?: AbortSignal }
-): Promise<CircleListResponse> {
-  const path = pathWithTenant(
-    RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_FETCH.CIRCLE_LIST
-  );
-
-  const raw = await retailerRequest<unknown>({
-    method: "GET",
-    path,
-    query: { search: params.search, mode: params.mode },
-    headers: {},
-    auth: true,
-    apiKey: true,
-    signal: opts?.signal,
-  });
-
-  return CircleListResponseSchema.parse(raw);
-}
+import { getJSON, postJSON } from "@/lib/api/client";
 
 /** GET /secure/bbps/bbps-category-list/{tenantId}?mode= */
 export async function apiGetCategoryList(
@@ -103,49 +67,50 @@ export async function apiGetBillerList(
   return BillerListResponseSchema.parse(raw);
 }
 
-/** POST /secure/bbps/bills/bill-fetch/{tenantId} */
-export async function apiBillFetch(
-  body: BillFetchRequest,
+/**
+ * GET (BFF) → /api/v1/retailer/bbps/bbps-online/bill-fetch/plan-pull/[service_id]/[billerId]?mode=ONLINE
+ * Proxies upstream: /secure/bbps/bills/all-plans/{service_id}/{billerId}?mode=ONLINE
+ */
+export async function apiGetPlanPull(
+  params: { service_id: string; billerId: string; mode: "ONLINE" | "OFFLINE" },
   opts?: { signal?: AbortSignal }
-): Promise<BillFetchResponse> {
-  const path = pathWithTenant(
-    RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_FETCH.BILL_FETCH
-  );
-  const validated = BillFetchRequestSchema.parse(body);
+): Promise<PlanPullResponse> {
+  if (!params?.service_id) throw new Error("service_id is required");
+  if (!params?.billerId) throw new Error("billerId is required");
 
-  const raw = await retailerRequest<unknown>({
-    method: "POST",
-    path,
-    body: validated,
-    headers: {},
-    auth: true,
-    apiKey: true,
-    signal: opts?.signal,
-  });
+  const qs = new URLSearchParams({ mode: params.mode }).toString();
 
-  return BillFetchResponseSchema.parse(raw);
+  // NOTE: getJSON prefixes /api/v1, so we keep this relative path without a leading slash.
+  const path = `retailer/bbps/bbps-online/bill-fetch/all-plans/${encodeURIComponent(
+    params.service_id
+  )}/${encodeURIComponent(params.billerId)}?${qs}`;
+
+  const raw = await getJSON<PlanPullResponse>(path, { signal: opts?.signal });
+  return PlanPullResponseSchema.parse(raw);
 }
 
-/** POST /secure/bbps/bills/biller-info/{tenantId} */
-export async function apiGetBillerInfo(
-  body: BillerInfoRequest,
+/**
+ * POST (BFF) → /retailer/bbps/bbps-online/bill-fetch/bill-fetch/[service_id]?mode=
+ * Proxies upstream: /secure/bbps/bills/bill-fetch/{service_id}?mode=
+ */
+export async function apiPostBillFetch(
+  params: {
+    service_id: string;
+    mode: "ONLINE" | "OFFLINE";
+    body: BillFetchRequest;
+  },
   opts?: { signal?: AbortSignal }
-): Promise<BillerInfoResponse> {
-  const path = pathWithTenant(
-    RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_FETCH.BILLER_INFO
-  );
-  const validated = BillerInfoRequestSchema.parse(body);
+): Promise<BillFetchResponse> {
+  if (!params?.service_id) throw new Error("service_id is required");
 
-  const raw = await retailerRequest<unknown>({
-    method: "POST",
-    path,
-    body: validated,
-    // provider requires this static header for the biller-info call
-    headers: { apiurl: "/extMdmCntrl/mdmRequestNew/xml" },
-    auth: true,
-    apiKey: true,
-    signal: opts?.signal,
-  });
+  // Early validate request (BFF also validates)
+  const validated = BillFetchRequestSchema.parse(params.body);
 
-  return BillerInfoResponseSchema.parse(raw);
+  const qs = new URLSearchParams({ mode: params.mode }).toString();
+  const path = `retailer/bbps/bbps-online/bill-fetch/biller-fetch/${encodeURIComponent(
+    params.service_id
+  )}?${qs}`;
+
+  const raw = await postJSON<BillFetchResponse>(path, validated, { signal: opts?.signal });
+  return BillFetchResponseSchema.parse(raw);
 }

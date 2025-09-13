@@ -10,16 +10,41 @@ export default function TransactionHistory() {
   return (
     <>
 
-      {/* Transaction History */}
-      < Card className="rounded-2xl shadow-md" >
-        <div className="flex items-center gap-2 !mb-0 ml-8">
+    <Card className="rounded-2xl shadow-md">
+      <div className="flex justify-between items-center px-6 pt-4 mb-3">
+        <div>
           <Title level={4} className="!mb-0">
             Transaction History
           </Title>
+          <Text className="secondary !font-[300]">
+            Recent money transfer transactions
+          </Text>
         </div>
-        <div className="!mb-4 ml-8">
-          <Text className="secondary !font-[300]">Recent money transfer transactions</Text>
+
+        <div className="flex gap-3">
+          <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
+            <Image
+              src="/filter.svg"
+              alt="filter"
+              width={15}
+              height={15}
+              className="object-contain"
+            />
+            <Text>Filter</Text>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
+            <Image
+              src="/download.svg"
+              alt="download"
+              width={15}
+              height={15}
+              className="object-contain"
+            />
+            <Text>Export</Text>
+          </div>
         </div>
+      </div>
         <div className="px-6 pb-6">
           <Table
             pagination={false}

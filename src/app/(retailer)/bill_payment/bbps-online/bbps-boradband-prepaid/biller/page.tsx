@@ -25,6 +25,7 @@ export default function BroadbandPrepaidPage() {
     error,
   } = useBbpsBillerListQuery({ service_id, bbps_category_id, is_offline: false, mode: "ONLINE" });
   const router = useRouter();
+console.log({billerData});
 
   return (
     <DashboardLayout activePath="/bill_payment" sections={billPaymentSidebarConfig} pageTitle="Bill Payment" isLoading={isLoading}>

@@ -72,7 +72,7 @@ export default function TransactionStatusPage() {
                   <Input
                     placeholder="Enter Mobile No."
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e:React.ChangeEvent<HTMLInputElement>) => setMobile(e.target.value)}
                     className="md:w-[300px]"
                   />
                 </div>
