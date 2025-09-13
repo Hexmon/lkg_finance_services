@@ -1,47 +1,24 @@
 // src\features\retailer\retailer_bbps\bbps-online\bill-fetch\data\hooks.ts
 import {
   useQuery,
-  useMutation,
-  // useQueryClient,
   type UseQueryOptions,
   type QueryKey,
+  UseMutationOptions,
+  useMutation,
 } from "@tanstack/react-query";
-// import { useCallback } from "react";
 import {
-  apiGetCircleList,
   apiGetCategoryList,
   apiGetBillerList,
-  apiBillFetch,
-  apiGetBillerInfo,
+  apiGetPlanPull,
+  apiPostBillFetch
 } from "./endpoints";
 import {
-  type CircleListResponse,
   type CategoryListResponse,
   type BillerListResponse,
-  type BillFetchResponse,
-  type BillFetchRequest,
-  type BillerInfoRequest,
-  type BillerInfoResponse,
+  PlanPullResponse,
+  BillFetchRequest,
+  BillFetchResponse,
 } from "../domain/types";
-
-/** -------- Circle List (query) -------- */
-export function useBbpsCircleListQuery(
-  params: { search?: string; mode: "ONLINE" | "OFFLINE" },
-  _opt?: {
-    token?: string | null; // reserved for future per-call override
-    query?: Omit<
-      UseQueryOptions<CircleListResponse, Error, CircleListResponse, QueryKey>,
-      "queryKey" | "queryFn"
-    >;
-  },
-) {
-  return useQuery({
-    queryKey: ["bbps", "circle-list", params.mode, params.search ?? ""],
-    queryFn: ({ signal }) => apiGetCircleList(params, { signal }),
-    enabled: (_opt?.query?.enabled ?? true) && !!params.mode,
-    ...(_opt?.query ?? {}),
-  });
-}
 
 /** -------- Category List (query) -------- */
 export function useBbpsCategoryListQuery(
@@ -113,23 +90,61 @@ export function useBbpsBillerListQuery(
   });
 }
 
-/** -------- Bill Fetch (mutation) -------- */
-export function useBbpsBillFetchMutation(_opt?: { token?: string | null }) {
-  return useMutation<BillFetchResponse, Error, BillFetchRequest>({
-    mutationKey: ["bbps", "bill-fetch"],
-    mutationFn: (body) => apiBillFetch(body),
-    // onSuccess: () => {
-    //   // If you add cache invalidation later, reintroduce:
-    //   // const qc = useQueryClient();
-    //   // qc.invalidateQueries({ queryKey: ["bbps", "recent-bills"] });
-    // },
+/** -------- Plan Pull (query) --------
+ * Matches BFF route:
+ *   /retailer/bbps/bbps-online/bill-fetch/plan-pull/[service_id]/[billerId]?mode=
+ */
+export function useBbpsPlanPullQuery(
+  params: { service_id: string; billerId: string; mode: "ONLINE" | "OFFLINE" },
+  _opt?: {
+    query?: Omit<
+      UseQueryOptions<PlanPullResponse, Error, PlanPullResponse, QueryKey>,
+      "queryKey" | "queryFn"
+    >;
+  }
+) {
+  const baseEnabled =
+    !!params?.service_id &&
+    params.service_id.length > 0 &&
+    !!params?.billerId &&
+    params.billerId.length > 0 &&
+    !!params?.mode;
+
+  const userEnabled = _opt?.query?.enabled ?? true;
+  const enabled = baseEnabled && userEnabled;
+
+  return useQuery({
+    queryKey: [
+      "bbps",
+      "plan-pull",
+      params.service_id,
+      params.billerId,
+      params.mode,
+    ],
+    queryFn: ({ signal }) => apiGetPlanPull(params, { signal }),
+    ...(_opt?.query ?? {}),
+    enabled,
   });
 }
 
-/** -------- Biller Info (mutation) -------- */
-export function useBbpsBillerInfoMutation() {
-  return useMutation<BillerInfoResponse, Error, BillerInfoRequest>({
-    mutationKey: ["bbps", "biller-info"],
-    mutationFn: (body) => apiGetBillerInfo(body),
+/** -------- Bill Fetch (mutation, POST) -------- */
+type BillFetchVars = {
+  service_id: string;
+  mode: "ONLINE" | "OFFLINE";
+  body: BillFetchRequest;
+};
+
+export function useBbpsBillerFetchMutation(
+  _opt?: UseMutationOptions<BillFetchResponse, Error, BillFetchVars>
+) {
+  return useMutation<BillFetchResponse, Error, BillFetchVars>({
+    mutationKey: ["bbps", "bill-fetch"],
+    mutationFn: (vars) =>
+      apiPostBillFetch(
+        { service_id: vars.service_id, mode: vars.mode, body: vars.body },
+        // react-query provides AbortSignal internally; postJSON uses it via client
+        undefined
+      ),
+    ..._opt,
   });
 }

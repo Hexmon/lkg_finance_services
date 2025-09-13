@@ -1,167 +1,170 @@
 "use client";
 
-import { Card, Table, Typography } from "antd";
-import Title from "antd/es/typography/Title";
-import Image from "next/image";
+import React, { useMemo, useState } from "react";
+import SmartTable, { SmartTableColumn, IconCircleButton } from "@/components/ui/SmartTable";
+import { EyeOutlined, DownloadOutlined } from "@ant-design/icons";
+import type { TransactionSummaryItem } from "@/features/retailer/general/domain/types";
+import { Spin, Tag } from "antd";
+import { useTransactionSummaryQuery } from "@/features/retailer/general/data/hooks"; // adjust path
 
-const { Text } = Typography;
+function StatusPill({ status }: { status: string }) {
+  const s = status.toUpperCase();
+  let color: "success" | "default" | "warning" | "error" = "default";
+  if (s === "SUCCESS") color = "success";
+  else if (s === "PENDING" || s === "PROCESSING") color = "warning";
+  else if (s === "FAILED" || s === "REJECTED") color = "error";
+  return <Tag color={color}>{s}</Tag>;
+}
 
-export default function Transaction() {
+function formatDateParts(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "—", time: "—" };
+  const dd = d.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
+  const tt = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+  return { date: dd, time: tt };
+}
+
+export default function TransactionsPaged() {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(5);
+
+  const { data, isLoading } = useTransactionSummaryQuery({
+    page,
+    per_page: perPage,
+    order: "desc",
+  });
+
+  const rows: TransactionSummaryItem[] = (data?.data ?? []).filter(
+    (row) => row.service === "DMT"
+  );
+  const total = data?.total ?? 0;
+
+  const columns: SmartTableColumn<TransactionSummaryItem>[] = useMemo(
+    () => [
+      { key: "serial", title: "#", width: 56, render: ({ rowIndex }) => <span className="text-sm">{rowIndex + 1}</span> },
+      {
+        key: "created_at",
+        title: "Date",
+        width: 152,
+        render: ({ record }) => {
+          const { date, time } = formatDateParts(record.created_at);
+          return (
+            <div className="leading-tight">
+              <div className="text-[13px]">{date}</div>
+              <div className="text-[12px] text-gray-500">{time}</div>
+            </div>
+          );
+        },
+      },
+      {
+        key: "txn_id",
+        title: "Transaction ID",
+        width: 240,
+        render: ({ record }) => (
+          <div className="leading-tight">
+            <div className="text-[13px] font-medium">{record.txn_id}</div>
+            <div className="text-[12px] text-gray-500">Ref: {record.txn_reference_id ?? "—"}</div>
+          </div>
+        ),
+      },
+      {
+        key: "party",
+        title: "Sender",
+        width: 200,
+        render: ({ record }) => (
+          <div className="leading-tight">
+            <div className="text-[12px] font-medium">{record.name}</div>
+            <div className="text-[12px] text-gray-600">{record.registered_name}</div>
+          </div>
+        ),
+      },
+      {
+        key: "benef",
+        title: "Beneficiary",
+        width: 220,
+        render: ({ record }) => (
+          <div className="leading-tight">
+            <div className="text-[12px] font-medium">{record.service ?? "—"}</div>
+            <div className="text-[12px] text-gray-600">{record.api_partner ?? "—"}</div>
+          </div>
+        ),
+      },
+      {
+        key: "bank",
+        title: "Bank",
+        width: 220,
+        render: ({ record }) => (
+          <div className="leading-tight">
+            <div className="text-[12px] font-medium">
+              {record.mode} • {record.txn_subtype}
+            </div>
+            <div className="text-[12px] text-gray-600">Service ID: {record.service_id ?? "—"}</div>
+          </div>
+        ),
+      },
+      {
+        key: "amount",
+        title: "Amount",
+        width: 160,
+        render: ({ record }) => (
+          <div className="leading-tight">
+            <div className="text-[12px]"><span className="font-medium">Amount:</span> {record.txn_amount}</div>
+            <div className="text-[12px]"><span className="font-medium">Charges:</span> {record.txn_tax ?? 0}</div>
+          </div>
+        ),
+      },
+      { key: "status", title: "Status", width: 120, align: "center", render: ({ record }) => <StatusPill status={record.txn_status} /> },
+      {
+        key: "action",
+        title: "Action",
+        width: 120,
+        align: "center",
+        render: ({ record }) => (
+          <div className="flex items-center gap-2 justify-center">
+            <IconCircleButton title="View" icon={<EyeOutlined />} onClick={() => console.log("view", record.id)} />
+            <IconCircleButton title="Download" icon={<DownloadOutlined />} onClick={() => console.log("download", record.id)} />
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
-    <Card className="rounded-2xl shadow-md">
-      <div className="flex justify-between items-center px-6 pt-4 mb-3">
-        <div>
-          <Title level={4} className="!mb-0">
-            Transaction History
-          </Title>
-          <Text className="secondary !font-[300]">
-            Recent money transfer transactions
-          </Text>
-        </div>
-
-        <div className="flex gap-3">
-          <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
-            <Image
-              src="/filter.svg"
-              alt="filter"
-              width={15}
-              height={15}
-              className="object-contain"
-            />
-            <Text>Filter</Text>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
-            <Image
-              src="/download.svg"
-              alt="download"
-              width={15}
-              height={15}
-              className="object-contain"
-            />
-            <Text>Export</Text>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-6 pb-6">
-        <Table
-          pagination={false}
-          className="custom-table"
-          columns={[
-            {
-              title: "Beneficiaries",
-              dataIndex: "beneficiaries",
-              key: "beneficiaries",
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              render: (_text: string, record: any) => (
-                <div className="flex items-center gap-2">
-                  <Image
-                    src="/transaction-p.svg"
-                    alt="user"
-                    width={38}
-                    height={37}
-                  />
-                  <div>
-                    <div className="font-medium">{record.name}</div>
-                    <div className="text-xs text-gray-500">{record.txnId}</div>
-                  </div>
-                </div>
-              ),
+    <div className="p-4">
+      <Spin spinning={isLoading}>
+        <SmartTable<TransactionSummaryItem>
+          columns={columns}
+          data={rows}
+          dense
+          card
+          colors={{
+            headerBg: "#f5f5f5",
+            headerText: "#111",
+            rowBg: "#ffffff",
+            altRowBg: "#fafafa",
+            rowText: "#111",
+            border: "#e6e6e6",
+            hoverBg: "#f7fbff",
+          }}
+          caption="Transaction Summary"
+          pagination={{
+            mode: "server",
+            page,
+            pageSize: perPage,
+            total,
+            pageSizeOptions: [5, 10, 20, 50],
+            showSizeChanger: true,
+            align: "right",
+            onChange: (p, ps) => {
+              // Sync with query params
+              setPage(p);
+              setPerPage(ps);
+              // your hook will refetch because page/perPage are deps
             },
-            {
-              title: "Amount",
-              dataIndex: "amount",
-              key: "amount",
-              render: (val: string) => (
-                <Text className="text-black font-medium">{val}</Text>
-              ),
-            },
-            {
-              title: "Mode",
-              dataIndex: "mode",
-              key: "mode",
-              render: (val: string) => (
-                <Text className="text-black font-medium">{val}</Text>
-              ),
-            },
-            {
-              title: "Status",
-              dataIndex: "status",
-              key: "status",
-              render: (val: string) =>
-                val === "Success" ? (
-                  <span className="px-2 py-1 rounded-md bg-green-100 text-green-600 text-xs">
-                    {val}
-                  </span>
-                ) : (
-                  <span className="px-2 py-1 rounded-md bg-yellow-100 text-yellow-600 text-xs">
-                    {val}
-                  </span>
-                ),
-            },
-            { title: "Time", dataIndex: "time", key: "time" },
-            {
-              title: "Actions",
-              key: "actions",
-              render: () => (
-                <div className="!shadow-2xl !rounded-2xl w-fit">
-                  <button className="text-gray-600 hover:text-black flex items-center ml-2">
-                    <Image src="/eye.svg" alt="view" width={18} height={18} />
-                  </button>
-                </div>
-              ),
-            },
-          ]}
-          dataSource={[
-            {
-              key: "1",
-              name: "Rajesh Kumar",
-              txnId: "TXN123456789",
-              amount: "₹5,000",
-              mode: "IMPS",
-              status: "Success",
-              time: "2 min ago",
-            },
-            {
-              key: "2",
-              name: "Rajesh Kumar",
-              txnId: "TXN123456789",
-              amount: "₹5,000",
-              mode: "IMPS",
-              status: "Processing",
-              time: "2 min ago",
-            },
-            {
-              key: "3",
-              name: "Rajesh Kumar",
-              txnId: "TXN123456789",
-              amount: "₹5,000",
-              mode: "IMPS",
-              status: "Success",
-              time: "2 min ago",
-            },
-            {
-              key: "4",
-              name: "Rajesh Kumar",
-              txnId: "TXN123456789",
-              amount: "₹5,000",
-              mode: "IMPS",
-              status: "Success",
-              time: "2 min ago",
-            },
-            {
-              key: "5",
-              name: "Rajesh Kumar",
-              txnId: "TXN123456789",
-              amount: "₹5,000",
-              mode: "IMPS",
-              status: "Success",
-              time: "2 min ago",
-            },
-          ]}
+          }}
         />
-      </div>
-    </Card>
+      </Spin>
+    </div>
   );
 }
