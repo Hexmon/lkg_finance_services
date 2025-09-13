@@ -65,6 +65,16 @@ export type CheckSenderResponse = z.infer<typeof CheckSenderResponseSchema>;
  *  - otp: required
  *  - others: optional
  */
+const SenderForOnboardSchema = SenderSchema
+  .extend({
+    // accept string or null, normalize null -> undefined
+    email_address: z.string().email().nullable().optional()
+      .transform((v) => (v == null || v.trim() === '' ? undefined : v)),
+    // upstream may include this; allow it (and even null) without breaking
+    service_id: z.string().uuid().nullable().optional(),
+  })
+  .passthrough();
+
 export const VerifyOtpOnboardSenderRequestSchema = z
   .object({
     mobile_no: z.string().min(1).optional(),
@@ -99,7 +109,7 @@ export const VerifyOtpOnboardSenderResponseSchema = z
   .object({
     message: z.string(),
     sender_id: z.string().uuid(),
-    sender: SenderSchema,
+    sender: SenderForOnboardSchema,
     beneficiaries: z.array(OnboardBeneficiarySchema),
     status: z.union([z.number().int(), z.string()]).transform((s) => Number(s)),
   })

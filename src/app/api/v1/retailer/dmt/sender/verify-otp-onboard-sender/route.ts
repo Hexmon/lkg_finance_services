@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { retailerFetch } from '@/app/api/_lib/http-retailer';
-import { VerifyOtpOnboardSenderRequestSchema, VerifyOtpOnboardSenderResponseSchema } from '@/features/retailer/dmt/sender';
+import { VerifyOtpOnboardSenderRequest, VerifyOtpOnboardSenderRequestSchema, VerifyOtpOnboardSenderResponse, VerifyOtpOnboardSenderResponseSchema } from '@/features/retailer/dmt/sender';
 import { RETAILER_ENDPOINTS } from '@/config/endpoints';
 
 /**
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   // NOTE: Upstream docs say some fields are "required" but their example omits them.
   // Schema below keeps ref_id + otp required; others optional to match real-world payloads.
-  let validated: unknown;
+  let validated: VerifyOtpOnboardSenderRequest;
   try {
     validated = VerifyOtpOnboardSenderRequestSchema.parse(body);
   } catch (zerr: any) {
@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    console.log("qwerty inside try");
+
     // Upstream: /secure/retailer/verify-otp-onboard-sender
     const raw = await retailerFetch<unknown>(
       RETAILER_ENDPOINTS.DMT.SENDER.REGISTER_SENDERVERIFY_OTP,
@@ -52,9 +54,10 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    const parsed = VerifyOtpOnboardSenderResponseSchema.parse(raw);
+    const parsed: VerifyOtpOnboardSenderResponse = VerifyOtpOnboardSenderResponseSchema.parse(raw);
+
     // Normalize to 200 at BFF even if upstream returns 201 in payload.status; UI reads message/status from JSON.
-    return NextResponse.json(parsed, { status: 200 });
+    return NextResponse.json<VerifyOtpOnboardSenderResponse>(parsed, { status: 200 });
   } catch (err: any) {
     // Surface upstream error payload when possible
     return NextResponse.json(err?.data ?? { error: err.message }, { status: err.status ?? 502 });

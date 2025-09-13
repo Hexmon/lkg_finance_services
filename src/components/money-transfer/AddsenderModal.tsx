@@ -23,7 +23,7 @@ export default function AddsenderModal({
 }: Props) {
     const router = useRouter();
     const { error, info, success } = useMessage()
-    const { addSender, addSenderAsync, data: { aadhaar_required, bio_required, message, ref_id } = {}, error: addErr, isLoading: addLoading } = useAddSender();
+    const { addSenderAsync, data: { aadhaar_required, bio_required, message, ref_id } = {}, error: addErr, isLoading: addLoading } = useAddSender();
     const { verifyOtpOnboardSenderAsync, isLoading: verifyLoading, error: verifyErr } = useVerifyOtpOnboardSender();
     const [form] = Form.useForm();
     console.log({ outside: form.getFieldsValue() });

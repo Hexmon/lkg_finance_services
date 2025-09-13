@@ -34,7 +34,9 @@ export default function TransactionsPaged() {
     order: "desc",
   });
 
-  const rows: TransactionSummaryItem[] = data?.data ?? [];
+  const rows: TransactionSummaryItem[] = (data?.data ?? []).filter(
+    (row) => row.service === "DMT"
+  );
   const total = data?.total ?? 0;
 
   const columns: SmartTableColumn<TransactionSummaryItem>[] = useMemo(

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
-import { Typography, Button, Input, Modal, Form, Tag } from "antd";
+import React, { useState } from "react";
+import { Typography, Button, Input, Modal, Form } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
@@ -13,21 +13,23 @@ import { useMessage } from "@/hooks/useMessage";
 import AddsenderModal from "@/components/money-transfer/AddsenderModal";
 import { useTransactionSummaryQuery } from "@/features/retailer/general";
 import TransactionsPaged from "@/components/money-transfer/Transaction";
+import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
+import SenderCheckFormBillAvenue, { SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
 
 const { Title } = Typography;
 
 export default function MoneyTransferServicePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
-  const [senderMobile, setSenderMobile] = useState("");
   const router = useRouter();
-  const [form] = Form.useForm();
+  // const [form] = Form.useForm();
   type RouteParams = { service_id: string };
   const { service_id } = useParams<RouteParams>();
-  const { error, info, success } = useMessage()
+  const { error, info } = useMessage()
+  const isBillAvenure = "2bd71f0c-6894-4024-8497-6c45bb3eb11f" === service_id
 
-  const { checkSender, checkSenderAsync, data: { status: checkSenderRegStatus, message: checkSenderRegMsg } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
-  const { data: { data: transactionData } = {}, isLoading: transactionLoading } = useTransactionSummaryQuery({
+  const { checkSenderAsync, data: { status: checkSenderRegStatus, message: checkSenderRegMsg } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
+  const { isLoading: transactionLoading } = useTransactionSummaryQuery({
     page: 1,
     per_page: 5,
     order: "desc",
@@ -37,6 +39,35 @@ export default function MoneyTransferServicePage() {
     try {
       const res = await checkSenderAsync({
         mobile_no: values.senderMobile,
+        service_id,
+      });
+
+      // Open onboarding modal when no sender present
+      if (!res?.sender) {
+        info(res?.message ?? "Sender not found. Please verify to onboard.");
+        setIsModalOpen(true);
+        return;
+      }
+
+      // else: you have a sender; proceed (e.g., navigate or load beneficiaries)
+      // success("Sender verified");
+    } catch (err: any) {
+      const status = err?.status ?? err?.response?.status;
+      if (status === 400) {
+        info(err?.message ?? "Sender not found. Please verify to onboard.");
+        setIsModalOpen(true);
+      } else {
+        error(err?.message ?? "Something went wrong while checking sender.");
+      }
+    }
+  };
+
+  const onSubmitWithOptions = async (values: SenderCheckWithOptionsValues) => {
+    try {
+      const res = await checkSenderAsync({
+        mobile_no: values.senderMobile,
+        bankId: values.bankId,
+        txnType: values.txnType,
         service_id,
       });
 
@@ -83,54 +114,20 @@ export default function MoneyTransferServicePage() {
           }
           body={
             <>
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={onSubmit}
-              >
-                <div className="mb-2 flex items-start gap-3">
-                  <Form.Item
-                    name="senderMobile"
-                    className="mb-0 flex-1"
-                    rules={[
-                      { required: true, message: "Enter mobile number" },
-                      { pattern: /^[6-9]\d{9}$/, message: "Enter valid 10-digit number starting with 6–9" },
-                    ]}
-                  >
-                    <Input
-                      placeholder="Enter Sender Mobile Number"
-                      className="!h-[52px] flex-1"
-                      maxLength={10}
-                      inputMode="numeric"
-                      pattern="\d*"
-                      allowClear
-                      disabled={checkSenderRegLoading}
-                      prefix={<span className="text-gray-500 mr-1">+91</span>}
-                    />
-                  </Form.Item>
-
-                  <Form.Item shouldUpdate noStyle>
-                    {({ getFieldValue }) => {
-                      const valid = /^[6-9]\d{9}$/.test(getFieldValue("senderMobile") || "");
-                      return (
-                        <Button
-                          htmlType="submit"
-                          type="primary"
-                          className="!bg-[#3386FF] !h-[52px] !w-[155px] !rounded-[12px] !text-white"
-                          disabled={!valid}
-                          loading={checkSenderRegLoading}
-                        >
-                          Continue
-                        </Button>
-                      );
-                    }}
-                  </Form.Item>
-                </div>
-              </Form>
-              <>
-                <h2 className="font-medium text-[20px]">Recent Transactions</h2>
-                <TransactionsPaged />
-              </>
+              {/* 🔀 Conditional forms */}
+              {!isBillAvenure ? (
+                <SenderCheckFormPaypoint
+                  onSubmit={onSubmit}
+                  loading={checkSenderRegLoading}
+                />
+              ) : (
+                <SenderCheckFormBillAvenue
+                  onSubmit={onSubmitWithOptions}
+                  loading={checkSenderRegLoading}
+                />
+              )}
+              <h2 className="font-medium text-[20px]">Recent Transactions</h2>
+              <TransactionsPaged />
             </>
           }
           footer={
@@ -147,7 +144,7 @@ export default function MoneyTransferServicePage() {
         />
 
         {/* Add Beneficiary Modal */}
-        <Modal
+        {/* <Modal
           title="Add Beneficiary"
           open={isBeneficiaryModalOpen}
           footer={null}
@@ -244,7 +241,7 @@ export default function MoneyTransferServicePage() {
               </Button>
             </div>
           </Form>
-        </Modal>
+        </Modal> */}
 
         {/* Add Sender Modal */}
         <AddsenderModal
