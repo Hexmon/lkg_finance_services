@@ -99,7 +99,7 @@ export const TransactionSummaryItemSchema = z
   .object({
     name: z.string().min(1),
     registered_name: z.string().min(1),
-    user_type: z.string().min(1), // e.g., "RETAILER"
+    user_type: z.string().min(1),
     api_partner: z.string().min(1).optional(),
     service: z.string().min(1).optional(),
 
@@ -107,9 +107,13 @@ export const TransactionSummaryItemSchema = z
     txn_id: z.string().min(1),
     service_id: z.string().uuid().nullable(),
     user_id: z.string().uuid(),
+
+    // ✅ Add this line to match API
+    customer_id: z.string().uuid().nullable().optional(),
+
     wallet_id: z.string().uuid(),
-    txn_type: z.string().min(1),       // e.g., "SUBSCRIPTION", "FUND_REQUEST"
-    txn_status: z.string().min(1),     // e.g., "SUCCESS"
+    txn_type: z.string().min(1),
+    txn_status: z.string().min(1),
     txn_reference_id: z.union([z.string(), z.number()]).nullable(),
 
     txn_amount: z.number(),
@@ -123,14 +127,15 @@ export const TransactionSummaryItemSchema = z
     commission: z.unknown().nullable(),
     revenue: z.array(TxnRevenueItemSchema).nullable(),
 
-    mode: z.string().min(1),       // e.g., "WALLET"
-    txn_subtype: z.string().min(1), // "CR" | "DR"
+    mode: z.string().min(1),
+    txn_subtype: z.string().min(1),
     txn_metadata: z.union([JsonSchema, z.null()]).optional(),
 
-    created_at: z.string().min(1), // ISO timestamp
-    updated_at: z.string().min(1), // ISO timestamp
+    created_at: z.string().min(1),
+    updated_at: z.string().min(1),
   })
   .strict();
+
 
 export type TransactionSummaryItem = z.infer<
   typeof TransactionSummaryItemSchema

@@ -41,6 +41,13 @@ export const RETAILER_ENDPOINTS = {
             },
         },
     },
+    DMT: {
+        SENDER: {
+            CHECK_SENDER_REGISTER: "/secure/retailer/checksender",
+            REGISTER_SENDERVERIFY_OTP: "/secure/retailer/verify-otp-onboard-sender",
+            ADD_SENDER: "secure/retailer/addSender"
+        },
+    },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",
         SERVICE_SUBSCRIPTION_LIST: "secure/retailer/service-subscription-list",

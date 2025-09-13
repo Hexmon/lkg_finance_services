@@ -136,3 +136,27 @@ export const services = [
     icon: "/mini-stmt.svg",
   },
 ];
+
+export const accounts = [
+  {
+    id: 1,
+    name: "Rajesh Kumar",
+    bank: "SBI",
+    account: "*****1234",
+    ifsc: "SBIFN89",
+  },
+  {
+    id: 2,
+    name: "Rajesh Kumar",
+    bank: "SBI",
+    account: "*****5678",
+    ifsc: "SBIFN89",
+  },
+  {
+    id: 3,
+    name: "Rajesh Kumar",
+    bank: "SBI",
+    account: "*****9012",
+    ifsc: "SBIFN89",
+  },
+];
