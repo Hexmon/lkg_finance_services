@@ -48,7 +48,7 @@ export default function Services({ quick_link }: { quick_link: QuickLink[] }) {
           </span>
         </div>
 
-        <Button
+        {/* <Button
           type="default"
           aria-label={showAll ? "Show less services" : "View all services"}
           onClick={() => setShowAll((s) => !s)}
@@ -56,7 +56,7 @@ export default function Services({ quick_link }: { quick_link: QuickLink[] }) {
           icon={<EyeOutlined />}
         >
           {showAll ? "Show Less" : "View All"}
-        </Button>
+        </Button> */}
       </div>
 
       {/* Grid */}

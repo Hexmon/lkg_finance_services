@@ -12,21 +12,18 @@ type Props = {
     open: boolean;
     onClose: () => void;
     service_id: string,
-    onFinishRedirectPath?: string;
 };
 
 export default function AddsenderModal({
     open,
     service_id,
     onClose,
-    onFinishRedirectPath = "/money_transfer/service/sender_onboarding",
 }: Props) {
     const router = useRouter();
     const { error, info, success } = useMessage()
-    const { addSenderAsync, data: { aadhaar_required, bio_required, message, ref_id } = {}, error: addErr, isLoading: addLoading } = useAddSender();
+    const { addSenderAsync, data: { bio_required, message, ref_id } = {}, error: addErr, isLoading: addLoading } = useAddSender();
     const { verifyOtpOnboardSenderAsync, isLoading: verifyLoading, error: verifyErr } = useVerifyOtpOnboardSender();
     const [form] = Form.useForm();
-    console.log({ outside: form.getFieldsValue() });
 
     const handleSendOtp = useCallback(async () => {
         try {
@@ -35,7 +32,7 @@ export default function AddsenderModal({
                 ...values,
                 service_id,
             });
-            info("OTP request sent. Enter the OTP to continue.");
+            info(message ?? "OTP request sent. Enter the OTP to continue.");
         } catch (err: any) {
             error(err || "Failed to send OTP.");
         }
@@ -57,9 +54,11 @@ export default function AddsenderModal({
         try {
             await verifyOtpOnboardSenderAsync({ ref_id, otp, sender_name, pincode, email_address, mobile_no, service_id });
             if (bio_required) {
-                router.push(onFinishRedirectPath);
+                router.push(`/money_transfer/service/${service_id}/sender_onboarding`);
+            } else {
+                router.push(`/money_transfer/service/${service_id}/${mobile_no}`);
+                success("User Added Succesfully !!")
             }
-            success("User Added Succesfully !!")
         } catch {
             error("OTP verification failed. Please try again.");
         }

@@ -47,6 +47,9 @@ export const RETAILER_ENDPOINTS = {
             REGISTER_SENDERVERIFY_OTP: "/secure/retailer/verify-otp-onboard-sender",
             ADD_SENDER: "secure/retailer/addSender"
         },
+        BENEFICIARIES: {
+            VERIFY_IFSC: "/secure/retailer/verify_ifsc"
+        }
     },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",

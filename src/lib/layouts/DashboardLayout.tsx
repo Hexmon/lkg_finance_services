@@ -1,17 +1,46 @@
 'use client';
 
 import React from 'react';
-import { Layout, Spin } from 'antd';
+import { Alert, Layout, Spin } from 'antd';
 
 import Sidebar, { SidebarSection } from '@/components/ui/Sidebar';
 import Topbar from '@/components/ui/Topbar';
+import { ApiError } from '@/features/retailer/client';
 
 const { Content } = Layout;
 
-type Props = { children: React.ReactNode; activePath?: string, sections: SidebarSection[], pageTitle: string, isLoading?: boolean };
+type Props = { children: React.ReactNode; activePath?: string, sections: SidebarSection[], pageTitle: string, isLoading?: boolean, error?: unknown | unknown[]; };
 
-export default function DashboardLayout({ children, activePath = '/dashboard', sections, pageTitle, isLoading }: Props) {
+function getErrorMessage(e: unknown): string {
+  if (!e) return "";
+
+  // Our custom ApiError
+  if (e instanceof ApiError) {
+    if (typeof e.data === "string") return e.data;
+    if (e.data && typeof e.data === "object") {
+      const d = e.data as Record<string, unknown>;
+      if (typeof d.message === "string") return d.message;
+      if (d.error && typeof (d.error as any).message === "string") {
+        return (d.error as any).message;
+      }
+    }
+    return e.message;
+  }
+
+  // Generic Error
+  if (e instanceof Error) return e.message;
+
+  // Fallback
+  return String(e);
+}
+
+export default function DashboardLayout({ children, activePath = '/dashboard', sections, pageTitle, isLoading, error }: Props) {
   const [collapsed, setCollapsed] = React.useState(false);
+
+  const errors: unknown[] = React.useMemo(() => {
+    if (!error) return [];
+    return Array.isArray(error) ? error.filter(Boolean) : [error];
+  }, [error]);
 
   return (
     <Layout className="h-screen bg-slate-50 overflow-hidden p-1">
@@ -36,13 +65,23 @@ export default function DashboardLayout({ children, activePath = '/dashboard', s
           />
         </div>
         <Content className="overflow-y-auto p-4 !bg-[#ececec] sm:p-6">
-          {
-            isLoading ? (
-              <Spin size="large" tip="Loading..." fullscreen />
-            ) : (
-              children
-            )
-          }
+          {isLoading ? (
+            <Spin size="large" tip="Loading..." fullscreen />
+          ) : errors.length > 0 ? (
+            <div className="space-y-3">
+              {errors.map((e, i) => (
+                <Alert
+                  key={i}
+                  type="error"
+                  message="Something went wrong"
+                  description={getErrorMessage(e)}
+                  showIcon
+                />
+              ))}
+            </div>
+          ) : (
+            children
+          )}
         </Content>
       </Layout>
     </Layout>

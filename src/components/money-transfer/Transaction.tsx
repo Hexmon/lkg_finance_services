@@ -24,20 +24,14 @@ function formatDateParts(iso: string) {
   return { date: dd, time: tt };
 }
 
-export default function TransactionsPaged() {
+export default function TransactionsPaged({ transactionData, isLoading }: { transactionData: TransactionSummaryItem[], isLoading: boolean }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(5);
 
-  const { data, isLoading } = useTransactionSummaryQuery({
-    page,
-    per_page: perPage,
-    order: "desc",
-  });
-
-  const rows: TransactionSummaryItem[] = (data?.data ?? []).filter(
+  const rows: TransactionSummaryItem[] = (transactionData ?? []).filter(
     (row) => row.service === "DMT"
   );
-  const total = data?.total ?? 0;
+  const total = (transactionData ?? []).length ?? 0;
 
   const columns: SmartTableColumn<TransactionSummaryItem>[] = useMemo(
     () => [

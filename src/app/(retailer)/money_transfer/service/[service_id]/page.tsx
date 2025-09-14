@@ -15,6 +15,7 @@ import { useTransactionSummaryQuery } from "@/features/retailer/general";
 import TransactionsPaged from "@/components/money-transfer/Transaction";
 import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
 import SenderCheckFormBillAvenue, { SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
+import AddBeneficiariesModal from "@/components/money-transfer/AddBeneficiariesModal";
 
 const { Title } = Typography;
 
@@ -28,28 +29,30 @@ export default function MoneyTransferServicePage() {
   const { error, info } = useMessage()
   const isBillAvenure = "2bd71f0c-6894-4024-8497-6c45bb3eb11f" === service_id
 
-  const { checkSenderAsync, data: { status: checkSenderRegStatus, message: checkSenderRegMsg } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
-  const { isLoading: transactionLoading } = useTransactionSummaryQuery({
-    page: 1,
-    per_page: 5,
-    order: "desc",
-  })
+  const { checkSenderAsync, data: { message: checkSenderRegMsg, bio_required } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
+  const { data: { data: transactionData } = {}, isLoading: transactionLoading, error: transactionError } = useTransactionSummaryQuery({ page: 1, per_page: 5, order: "desc" })
 
   const onSubmit = async (values: { senderMobile: string }) => {
     try {
-      const res = await checkSenderAsync({
-        mobile_no: values.senderMobile,
-        service_id,
-      });
-
-      // Open onboarding modal when no sender present
-      if (!res?.sender) {
-        info(res?.message ?? "Sender not found. Please verify to onboard.");
-        setIsModalOpen(true);
+      if ((service_id ?? "").length === 0) {
+        error('Missing Service Id!! Retry after selectin DMT servie')
         return;
+      } else {
+        const res = await checkSenderAsync({
+          mobile_no: values.senderMobile,
+          service_id,
+        });
+        const mobile_no = values.senderMobile
+        if (res?.status === 400) {
+          info(checkSenderRegMsg ?? "Sender not found. Please verify to onboard.");
+          setIsModalOpen(true);
+          return;
+        } else {
+          info(checkSenderRegMsg ?? "Sender already exists.");
+          router.replace(`/money_transfer/service/${service_id}/${mobile_no}`)
+        }
       }
 
-      // else: you have a sender; proceed (e.g., navigate or load beneficiaries)
       // success("Sender verified");
     } catch (err: any) {
       const status = err?.status ?? err?.response?.status;
@@ -91,8 +94,15 @@ export default function MoneyTransferServicePage() {
     }
   };
 
+  const handleAddBeneficiary = async () => {
+    // TODO: call your API here
+    // await addBeneficiaryAsync({ ...values, service_id });
+    // success("Beneficiary added!");
+    setIsBeneficiaryModalOpen(false);
+  };
+
   return (
-    <DashboardLayout sections={moneyTransferSidebarConfig} activePath="" pageTitle="Dashboards" isLoading={transactionLoading}>
+    <DashboardLayout sections={moneyTransferSidebarConfig} activePath="" pageTitle="Dashboards" error={[checkSenderRegError, transactionError]} isLoading={transactionLoading}>
       <DashboardSectionHeader
         title="Money Transfer Service"
         titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"
@@ -127,7 +137,7 @@ export default function MoneyTransferServicePage() {
                 />
               )}
               <h2 className="font-medium text-[20px]">Recent Transactions</h2>
-              <TransactionsPaged />
+              <TransactionsPaged isLoading={transactionLoading} transactionData={transactionData ?? []} />
             </>
           }
           footer={
@@ -144,104 +154,12 @@ export default function MoneyTransferServicePage() {
         />
 
         {/* Add Beneficiary Modal */}
-        {/* <Modal
-          title="Add Beneficiary"
+        <AddBeneficiariesModal
           open={isBeneficiaryModalOpen}
-          footer={null}
-          onCancel={() => setIsBeneficiaryModalOpen(false)}
-          className="custom-modal"
-        >
-          <Form layout="vertical" className="w-[527px]">
-            <Form.Item
-              label="Beneficiary Account No *"
-              name="beneficiaryAccountNo"
-              rules={[{ required: true, message: "Please enter Beneficiary Account Number" }]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter Beneficiary Account Number" />
-            </Form.Item>
-
-            <Form.Item
-              label="Confirm Account No *"
-              name="confirmAccountNo"
-              dependencies={["beneficiaryAccountNo"]}
-              rules={[
-                { required: true, message: "Please confirm Account Number" },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || value === getFieldValue("beneficiaryAccountNo")) return Promise.resolve();
-                    return Promise.reject(new Error("Account numbers do not match"));
-                  },
-                }),
-              ]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Confirm Account Number" />
-            </Form.Item>
-
-            <Form.Item
-              label="Bank Name *"
-              name="bankName"
-              rules={[{ required: true, message: "Please enter Bank Name" }]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter Bank Name" />
-            </Form.Item>
-
-            <Form.Item
-              label="IFSC Code *"
-              name="ifscCode"
-              rules={[
-                { required: true, message: "Please enter IFSC Code" },
-                { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: "Enter valid IFSC (e.g., HDFC0001234)" },
-              ]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter IFSC Code" />
-            </Form.Item>
-
-            <Form.Item
-              label="Mobile No *"
-              name="mobileNo"
-              rules={[
-                { required: true, message: "Please enter Mobile Number" },
-                { pattern: /^[6-9]\d{9}$/, message: "Enter valid 10-digit mobile number" },
-              ]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter Mobile Number" maxLength={10} inputMode="numeric" />
-            </Form.Item>
-
-            <Form.Item
-              label="Address *"
-              name="address"
-              rules={[{ required: true, message: "Please enter Address" }]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter Address" />
-            </Form.Item>
-
-            <Form.Item
-              label="Beneficiary Name *"
-              name="beneficiaryName"
-              rules={[{ required: true, message: "Please enter Beneficiary Name" }]}
-              className="w-[444px] h-[39px]"
-            >
-              <Input placeholder="Enter Beneficiary Name" />
-            </Form.Item>
-
-            <div className="flex justify-center">
-              <Button
-                type="primary"
-                block
-                className="!bg-blue-600 mt-2 !w-[155px] !h-[37px] !rounded-[10px]"
-                htmlType="submit"
-              >
-                Submit
-              </Button>
-            </div>
-          </Form>
-        </Modal> */}
+          onClose={() => setIsBeneficiaryModalOpen(false)}
+          onSubmit={handleAddBeneficiary}
+        // loading={isAddingBeneficiary}
+        />
 
         {/* Add Sender Modal */}
         <AddsenderModal
