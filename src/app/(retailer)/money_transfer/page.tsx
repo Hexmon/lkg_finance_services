@@ -58,7 +58,7 @@ export default function MoneyTransferServicePage() {
                     return (
                         <div
                             key={service_id}
-                            className="cursor-pointer"
+                            className="cursor-pointer w-full"
                             onClick={() => {
                                 if (is_subscribed || is_blocked) {
                                     router.push(`/money_transfer/service/${service_id}`);
@@ -71,7 +71,7 @@ export default function MoneyTransferServicePage() {
                                 elevation={2}
                                 hoverable
                                 rounded="rounded-2xl"
-                                className="rounded-2xl mx-auto"
+                                className="rounded-2xl mx-auto w-full"
                                 header={
                                     is_subscribed && (
                                         <div className="flex justify-end">
