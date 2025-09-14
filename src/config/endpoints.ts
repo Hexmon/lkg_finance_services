@@ -51,6 +51,11 @@ export const RETAILER_ENDPOINTS = {
             VERIFY_IFSC: "/secure/retailer/verify_ifsc"
         }
     },
+    CASH_WITHDRAWL: {
+        CHECK_AUTHENTICATION: "/secure/paypoint/aeps/check_authentication",
+        TWO_FACTOR_AUTHENTICATION: "/secure/paypoint/aeps/two_factor_authentication",
+        AEPS_TRANSACTION: "/secure/paypoint/aeps/aeps_transaction"
+    },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",
         SERVICE_SUBSCRIPTION_LIST: "secure/retailer/service-subscription-list",
