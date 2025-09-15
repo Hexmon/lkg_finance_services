@@ -11,6 +11,7 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
 import TransactionHistory from "@/components/cash-withdraw/TransactionHistory";
 import NewTransaction from "@/components/cash-withdraw/NewTransaction";
+import { DEFAULT_DASHBOARD, useRetailerDashboardQuery } from "@/features/retailer/general";
 
 
 const { Title, Text } = Typography;
@@ -18,30 +19,30 @@ const { Option } = Select;
 
 export default function CashWithdrawPage() {
     const [activeTab, setActiveTab] = useState<string | number>("newtransaction");
-
+    const { data: { balances: { MAIN, AEPS } = {}, commissions, name, profile, transactions: { success_rate = 0, growth, overall_transaction, success_rate_ratio = 0, total_transaction: { ratio: totalTxnRatio = 0, total_count: totalTxnCount = 0 } = {} } = {}, user_id, username, virtual_account } = DEFAULT_DASHBOARD ?? {}, isLoading, error: dashboardError } = useRetailerDashboardQuery();
     const stats = [
         {
             icon: "/heart-line.svg",
             badge: "/fif.svg",
-            value: "₹1,25,000",
+            value: overall_transaction?.total_count ?? "",
             label: "Today's Transactions",
         },
         {
             icon: "/circle.svg",
             badge: "/fif.svg",
-            value: "99.5%",
+            value: success_rate_ratio ?? "",
             label: "Success Rate",
         },
         {
             icon: "/star.svg",
             badge: "/fif.svg",
-            value: "156",
+            value: commissions.overall,
             label: "Commission Earned",
         },
         {
             icon: "/users.svg",
             badge: "/fif.svg",
-            value: "89",
+            value: totalTxnCount,
             label: "Total Customers",
         },
     ];
@@ -95,14 +96,12 @@ export default function CashWithdrawPage() {
     ];
 
 
-
-
-
     return (
         <DashboardLayout
             sections={cashWithdrawSidebarConfig}
             activePath="/cash-withdraw"
             pageTitle="Cash Withdrawal"
+            isLoading={isLoading}
         >
             <DashboardSectionHeader
                 title="AEPS Service"
