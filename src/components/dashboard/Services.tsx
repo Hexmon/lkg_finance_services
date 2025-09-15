@@ -62,7 +62,7 @@ export default function Services({ quick_link }: { quick_link: QuickLink[] }) {
       {/* Grid */}
       <div
         key={showAll ? "all" : "four"}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#f8f8f8] mt-4"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#f8f8f890] mt-4"
       >
         {visibleItems.map((data, index) => {
           const delay = `${(index % 8) * 50}ms`;
