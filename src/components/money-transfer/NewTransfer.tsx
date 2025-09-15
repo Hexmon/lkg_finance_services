@@ -37,6 +37,13 @@ export default function NewTransfer() {
     },
   ];
 
+  const purposeOptions: SmartOption<string>[] = [
+    { value: "family", label: "Family Support" },
+    { value: "business", label: "Business" },
+    { value: "education", label: "Education" },
+    { value: "others", label: "Others" },
+  ];
+
   return (
     <div className=" min-h-screen w-full">
 
@@ -130,15 +137,14 @@ export default function NewTransfer() {
         {/* Purpose of Transfer */}
         <div className="mb-6">
           <Text className="text-[#232323] font-semibold">Purpose of Transfer</Text>
-          <Select
+          <SmartSelect
             placeholder="Select Purpose.."
-            className="w-full mt-1"
-            options={[
-              { value: "family", label: "Family Support" },
-              { value: "business", label: "Business" },
-              { value: "education", label: "Education" },
-              { value: "others", label: "Others" },
-            ]}
+            className="w-full"
+            options={purposeOptions}
+            allowClear
+            onChange={(val, option) => {
+              console.log("Purpose:", val, option);
+            }}
           />
         </div>
 

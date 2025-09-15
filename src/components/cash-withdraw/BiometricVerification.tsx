@@ -186,38 +186,50 @@ export default function BiometricVerification({
             </div>
 
             {/* Aadhaar number input */}
-            <div className="w-full px-5 flex flex-col">
-              <label htmlFor="aadhaar" className="text-xs text-[#6b6b6b] mb-1">
-                Aadhaar Number
-              </label>
-              <Input
-                id="aadhaar"
-                name="aadhaar"
-                type="tel"
-                placeholder="Enter 12-digit Aadhaar number"
-                value={aadhaar}
-                onChange={handleChange}
-                onBlur={() => setTouched(true)}
-                maxLength={12}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                aria-invalid={showError}
-                aria-describedby="aadhaar-help"
-                status={showError ? "error" : undefined}
-                autoComplete="off"
-                allowClear
-              />
+            <div className="w-full flex flex-col justify-center items-center !h-[30px]">
+              <div className="!relative !bg-[#6E6E6E1C] !rounded-xl !px-4 !py-2 !flex !items-center !shadow-sm h-[30px] w-[286px]">
+                {/* Left side label (50%) */}
+                <div className="w-2/3 text-sm text-[#B6B6B6] font-medium text-center">
+                  Aadhaar No.
+                </div>
+
+                {/* Right side input (50%) */}
+                <div className="">
+                  <Input
+                    id="aadhaar"
+                    name="aadhaar"
+                    type="tel"
+                    placeholder=""
+                    value={aadhaar}
+                    onChange={handleChange}
+                    onBlur={() => setTouched(true)}
+                    maxLength={12}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-invalid={showError}
+                    aria-describedby="aadhaar-help"
+                    status={showError ? "error" : undefined}
+                    autoComplete="off"
+                    allowClear
+                    className="!h-[30px] !bg-transparent !border-none !shadow-none !text-base !font-medium !tracking-wider"
+                  />
+                </div>
+              </div>
+
+              {/* Helper text */}
               <div
                 id="aadhaar-help"
-                className={`mt-1 text-[11px] ${
-                  showError ? "text-red-500" : "text-[#9A9595]"
-                }`}
+                className={`mt-1 text-[11px] ${showError ? "text-red-500" : "text-[#9A9595]"
+                  }`}
               >
                 {showError
                   ? "Please enter a valid 12-digit Aadhaar number."
                   : "Enter digits only."}
               </div>
             </div>
+
+
+
 
             {geoError && (
               <div className="text-[11px] text-amber-600 px-5">
