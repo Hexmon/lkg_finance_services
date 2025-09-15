@@ -5,7 +5,13 @@ import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { bbpsFetch } from '@/app/api/_lib/http-bbps';
-import { BillPaymentPathParamsSchema, BillPaymentRequest, BillPaymentRequestSchema, BillPaymentResponse, BillPaymentResponseSchema } from '@/features/retailer/retailer_bbps/bbps-online/bill_avenue';
+import {
+  BillPaymentPathParamsSchema,
+  BillPaymentRequest,
+  BillPaymentRequestSchema,
+  BillPaymentResponse,
+  BillPaymentResponseSchema,
+} from '@/features/retailer/retailer_bbps/bbps-online/bill_avenue';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +22,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(
   req: NextRequest,
-  ctx: { params: { service_id: string } }
+  ctx: { params: Promise<{ service_id: string }> } // 👈 Next 15 expects Promise here
 ) {
   // ---- Auth (HttpOnly cookie -> Bearer) ----
   const jar = await cookies();
@@ -26,7 +32,8 @@ export async function POST(
   }
 
   // ---- Validate path param ----
-  const pathParsed = BillPaymentPathParamsSchema.safeParse(ctx.params);
+  const params = await ctx.params; // 👈 await the params
+  const pathParsed = BillPaymentPathParamsSchema.safeParse(params);
   if (!pathParsed.success) {
     return NextResponse.json(
       { error: 'Invalid path params', issues: pathParsed.error.issues },
@@ -67,9 +74,6 @@ export async function POST(
     const parsed: BillPaymentResponse = BillPaymentResponseSchema.parse(raw);
     return NextResponse.json<BillPaymentResponse>(parsed, { status: 200 });
   } catch (err: any) {
-    return NextResponse.json(
-      err?.data ?? { error: err.message },
-      { status: err?.status ?? 502 }
-    );
+    return NextResponse.json(err?.data ?? { error: err.message }, { status: err?.status ?? 502 });
   }
 }
