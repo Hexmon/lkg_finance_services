@@ -75,9 +75,9 @@ export default function WalletOverview({
           header={
             <div className="flex justify-between items-start w-full">
               <div className="bg-blue-500 p-2 rounded-full w-12 h-12 flex items-center justify-center">
-                <Image src="/icons/cashfree-payment.svg" alt="" width={35} height={35} />
+                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} />
               </div>
-              <Image src="/icons/cashfree-payment.svg" alt="growth" width={30} height={13} className="mt-3" />
+              {/* <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="growth" width={30} height={13} className="mt-3" /> */}
             </div>
           }
           body={
