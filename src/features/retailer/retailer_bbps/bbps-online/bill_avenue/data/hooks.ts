@@ -18,26 +18,26 @@ const qk = {
     [...qk.base, "txn-status", service_id, body] as QueryKey,
 };
 
-/** ---------------------- Bill Payment (Mutation) ---------------------- **/
-export function useBillPayment(
-  service_id: string,
-  opts?: UseMutationOptions<BillPaymentResponse, Error, BillPaymentRequest, unknown>
-) {
-  const m = useMutation<BillPaymentResponse, Error, BillPaymentRequest>({
-    mutationKey: qk.billPayment(service_id),
-    mutationFn: (body) => apiBillPayment({ service_id }, body),
-    ...opts,
+type BillPaymentVars = {
+  service_id: string;
+  body: BillPaymentRequest;
+};
+
+export function useBillPayment() {
+  const mutation = useMutation<BillPaymentResponse, unknown, BillPaymentVars>({
+    mutationFn: ({ service_id, body }) => apiBillPayment(service_id, body),
   });
 
   return {
-    data: m.data,
-    payBill: m.mutateAsync,
-    isLoading: m.isPending,
-    error: m.error,
-    reset: m.reset,
-    status: m.status,
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    billPayment: mutation.mutate,            // sync-call style
+    billPaymentAsync: mutation.mutateAsync,  // async/await style
+    reset: mutation.reset,
   };
 }
+
 
 /** ---------------------- Txn Status (Query) ---------------------- **/
 /**

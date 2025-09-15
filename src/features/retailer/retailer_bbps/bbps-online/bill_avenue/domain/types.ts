@@ -40,81 +40,125 @@ export const BAAmountInfoSchema = z.object({
 });
 export type BAAmountInfo = z.infer<typeof BAAmountInfoSchema>;
 
-/* ======================================================================
- * Bill Payment
- * POST /secure/bbps/bills/bill-payment/{tenantId}
- * ==================================================================== */
+/* ============================
+ * BBPS: Bill Payment (POST)
+ * Upstream: /secure/bbps/bills/bill-payment/{service_id}
+ * ============================ */
 
-export const BAPaymentMethodSchema = z.object({
-  paymentMode: z.string(),           // e.g. Cash, UPI, Card
-  quickPay: z.enum(["Y", "N"]),      // Y for recharge-type
-  splitPay: z.enum(["Y", "N"]).optional(),
+/** Path params */
+export const BillPaymentPathParamsSchema = z.object({
+  service_id: z.string().uuid({ message: "service_id must be a UUID" }),
 });
-export type BAPaymentMethod = z.infer<typeof BAPaymentMethodSchema>;
+export type BillPaymentPathParams = z.infer<typeof BillPaymentPathParamsSchema>;
 
-export const BAPaymentInfoSchema = z.object({
+/** Helpers */
+const digitsString = z.string().regex(/^\d+$/, "Must be digits string");
+const ynFlag = z.enum(["Y", "N"]);
+const emailOpt = z.string().email().optional();
+
+/** customerInfo */
+export const CustomerInfoSchema = z.object({
+  customerMobile: z.string().min(1, "customerMobile is required"),
+  customerEmail: emailOpt,
+  customerAdhaar: z.string().regex(/^\d{12}$/, "customerAdhaar must be 12 digits").optional(),
+  REMITTER_NAME: z.string().min(1, "REMITTER_NAME is required"),
+  customerPan: z
+    .string()
+    .regex(/^[A-Z]{5}\d{4}[A-Z]$/, "Invalid PAN format")
+    .optional(),
+}).strict();
+export type CustomerInfo = z.infer<typeof CustomerInfoSchema>;
+
+/** inputParams — provider samples show { input: { paramName, paramValue } } */
+export const InputParamEntrySchema = z.object({
+  paramName: z.string().min(1),
+  paramValue: z.string().min(1),
+}).strict();
+
+export const InputParamsSchema = z.object({
+  input: InputParamEntrySchema, // keep 1-entry structure as per examples
+}).strict();
+
+export type InputParams = z.infer<typeof InputParamsSchema>;
+
+/** billerResponse (presentment flow) */
+export const BillerResponseSchema = z.object({
+  billAmount: digitsString,            // paise as string
+  billDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  billNumber: z.string().min(1),
+  billPeriod: z.string().optional(),
+  customerName: z.string().min(1),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+}).strict();
+export type BillerResponse = z.infer<typeof BillerResponseSchema>;
+
+/** amountInfo */
+export const AmountInfoSchema = z.object({
+  amount: digitsString,    // paise as string
+  currency: digitsString,  // "356" for INR
+  custConvFee: digitsString.optional(),
+}).strict();
+export type AmountInfo = z.infer<typeof AmountInfoSchema>;
+
+/** paymentMethod */
+export const PaymentMethodSchema = z.object({
+  paymentMode: z.string().min(1), // Cash / UPI / Card / etc.
+  quickPay: ynFlag,               // Y for recharge-type
+  splitPay: ynFlag.optional(),
+}).strict();
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
+
+/** paymentInfo */
+export const PaymentInfoSchema = z.object({
   info: z.object({
-    infoName: z.string(),
-    infoValue: z.string(),
-  }),
-});
-export type BAPaymentInfo = z.infer<typeof BAPaymentInfoSchema>;
+    infoName: z.string().min(1),
+    infoValue: z.string().min(1),
+  }).strict(),
+}).strict();
+export type PaymentInfo = z.infer<typeof PaymentInfoSchema>;
 
+/** Request body */
 export const BillPaymentRequestSchema = z.object({
-  requestId: z.string(),
-  billerId: z.string(),
-  customerInfo: BACustomerInfoSchema,
-  inputParams: BAInputParamsSchema,
-  billerResponse: BABillerResponseSchema.optional(), // required if quickPay = "N"
-  amountInfo: BAAmountInfoSchema,
-  paymentMethod: BAPaymentMethodSchema,
-  paymentInfo: BAPaymentInfoSchema.optional(),
-}).passthrough(); // tolerate extra fields from caller if needed
+  requestId: z.string().min(1),
+  billerId: z.string().min(1),
+  customerInfo: CustomerInfoSchema,
+  inputParams: InputParamsSchema,
+  billerResponse: BillerResponseSchema.optional(), // required only for presentment flow
+  planId: z.string().optional(),
+  amountInfo: AmountInfoSchema,
+  paymentMethod: PaymentMethodSchema,
+  paymentInfo: PaymentInfoSchema.optional(),
+}).strict();
+
 export type BillPaymentRequest = z.infer<typeof BillPaymentRequestSchema>;
 
-/** ---- Response variants --------------------------------------------------
- * Some providers return:
- *   { status: "200", data: { ...fields... } }
- * Others (BillAvenue style) return:
- *   { ExtBillPayResponse: { ...fields... }, requestId?: string }
- * We accept both and offer a normalizer below.
- * ----------------------------------------------------------------------- */
-
-const BillPaymentCoreSchema = z.object({
-  responseCode: z.string(),
+/** Response */
+export const BillPaymentResponseDataSchema = z.object({
+  responseCode: z.string().optional(),
   responseReason: z.string().optional(),
   txnRefId: z.string().optional(),
   requestId: z.string().optional(),
   approvalRefNumber: z.string().optional(),
   txnRespType: z.string().optional(),
-  inputParams: z.object({ input: BAInputParamSchema }).optional(),
+  inputParams: z
+    .object({ input: InputParamEntrySchema })
+    .strict()
+    .optional(),
   CustConvFee: z.string().optional(),
-  RespAmount: z.string().optional(),       // paise (string)
-  RespBillDate: z.string().optional(),
+  RespAmount: digitsString.optional(),
+  RespBillDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   RespBillNumber: z.string().optional(),
   RespBillPeriod: z.string().optional(),
   RespCustomerName: z.string().optional(),
-  RespDueDate: z.string().optional(),
+  RespDueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).passthrough();
 
-/** Variant A: { status?, data: {...} } */
-const BillPaymentResponseVariantA = z.object({
-  status: z.union([z.string(), z.number()]).optional(),
+export const BillPaymentResponseSchema = z.object({
+  status: z.union([z.number(), z.string().regex(/^\d+$/)]).transform((n) => Number(n)),
   requestId: z.string().optional(),
-  data: BillPaymentCoreSchema.optional(),
+  data: BillPaymentResponseDataSchema.optional(),
 }).passthrough();
 
-/** Variant B: { ExtBillPayResponse: {...}, requestId? } */
-const BillPaymentResponseVariantB = z.object({
-  ExtBillPayResponse: BillPaymentCoreSchema,
-  requestId: z.string().optional(),
-}).passthrough();
-
-/** Final union (either A or B) */
-export const BillPaymentResponseSchema = z.union([
-  BillPaymentResponseVariantA,
-  BillPaymentResponseVariantB,
-]);
 export type BillPaymentResponse = z.infer<typeof BillPaymentResponseSchema>;
 
 /* ======================================================================
@@ -272,46 +316,46 @@ export type NormalizedBillPayment = {
   RespDueDate?: string;
 };
 
-export function normalizeBillPaymentResponse(
-  res: BillPaymentResponse
-): NormalizedBillPayment {
-  const core =
-    "ExtBillPayResponse" in res
-      ? res.ExtBillPayResponse
-      : (res as z.infer<typeof BillPaymentResponseVariantA>).data ?? {};
+// export function normalizeBillPaymentResponse(
+//   res: BillPaymentResponse
+// ): NormalizedBillPayment {
+//   const core =
+//     "ExtBillPayResponse" in res
+//       ? res.ExtBillPayResponse
+//       : (res as z.infer<typeof BillPaymentResponseVariantA>).data ?? {};
 
-  const {
-    responseCode,
-    responseReason,
-    txnRefId,
-    requestId,
-    approvalRefNumber,
-    txnRespType,
-    CustConvFee,
-    RespAmount,
-    RespBillDate,
-    RespBillNumber,
-    RespBillPeriod,
-    RespCustomerName,
-    RespDueDate,
-  } = (core as z.infer<typeof BillPaymentCoreSchema>) || {};
+//   const {
+//     responseCode,
+//     responseReason,
+//     txnRefId,
+//     requestId,
+//     approvalRefNumber,
+//     txnRespType,
+//     CustConvFee,
+//     RespAmount,
+//     RespBillDate,
+//     RespBillNumber,
+//     RespBillPeriod,
+//     RespCustomerName,
+//     RespDueDate,
+//   } = (core as z.infer<typeof BillPaymentCoreSchema>) || {};
 
-  return {
-    responseCode,
-    responseReason,
-    txnRefId,
-    requestId,
-    approvalRefNumber,
-    txnRespType,
-    CustConvFee,
-    RespAmount,
-    RespBillDate,
-    RespBillNumber,
-    RespBillPeriod,
-    RespCustomerName,
-    RespDueDate,
-  };
-}
+//   return {
+//     responseCode,
+//     responseReason,
+//     txnRefId,
+//     requestId,
+//     approvalRefNumber,
+//     txnRespType,
+//     CustConvFee,
+//     RespAmount,
+//     RespBillDate,
+//     RespBillNumber,
+//     RespBillPeriod,
+//     RespCustomerName,
+//     RespDueDate,
+//   };
+// }
 
 /** Money helpers for paise/rupees (UI-friendly) */
 export const fromPaise = (p?: string | number | null) =>
