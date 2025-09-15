@@ -87,7 +87,7 @@ export default function MoneyTransferPage() {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
-                    <Image src="/rocket.svg" alt="New" width={16} height={16} />
+                    <Image src="/beneficiary.svg" alt="New" width={16} height={16} />
                     <span>Beneficiaries</span>
                 </div>
             ),

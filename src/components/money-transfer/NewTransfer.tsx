@@ -2,10 +2,41 @@
 
 import { Card, Button, Input, Select, Typography } from "antd";
 import Image from "next/image";
+import SmartSelect, { SmartOption } from "../ui/SmartSelect";
 
 const { Text, Title } = Typography;
 
 export default function NewTransfer() {
+  const options: SmartOption<string>[] = [
+    {
+      value: "imps",
+      label: (
+        <div className="flex justify-between w-full">
+          <span>IMPS - Instant Transfer (24*7)</span>
+          <span className="text-gray-500">Fee ₹5 | Time Instant</span>
+        </div>
+      ),
+    },
+    {
+      value: "neft",
+      label: (
+        <div className="flex justify-between w-full">
+          <span>NEFT - Working Hours Only</span>
+          <span className="text-gray-500">Fee ₹2.5 | Time 30min</span>
+        </div>
+      ),
+    },
+    {
+      value: "rtgs",
+      label: (
+        <div className="flex justify-between w-full">
+          <span>RTGS</span>
+          <span className="text-gray-500">Fee ₹25 | Time 30min</span>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className=" min-h-screen w-full">
 
@@ -70,44 +101,14 @@ export default function NewTransfer() {
         {/* Mode of Transfer */}
         <div className="mb-6 mt-6">
           <Text className="text-[#232323] font-semibold">Mode of Transfer</Text>
-          <Select
+          <SmartSelect
             placeholder="Select Mode.."
             className="w-full mt-1"
-            options={[
-              {
-                value: "imps",
-                label: (
-                  <div className="flex justify-between">
-                    <span>IMPS - Instant Transfer (24*7)</span>
-                    <span className="text-gray-500">
-                      Fee ₹5 | Time Instant
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                value: "neft",
-                label: (
-                  <div className="flex justify-between">
-                    <span>NEFT - Working Hours Only</span>
-                    <span className="text-gray-500">
-                      Fee ₹2.5 | Time 30min
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                value: "rtgs",
-                label: (
-                  <div className="flex justify-between">
-                    <span>RTGS</span>
-                    <span className="text-gray-500">
-                      Fee ₹25 | Time 30min
-                    </span>
-                  </div>
-                ),
-              },
-            ]}
+            options={options}
+            allowClear
+            onChange={(val, option) => {
+              console.log("Selected:", val, option);
+            }}
           />
         </div>
 
