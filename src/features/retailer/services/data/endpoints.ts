@@ -26,8 +26,6 @@ import {
 import { retailerRequest } from "../../client";
 import { getJSON, postJSON } from "@/lib/api/client";
 
-/** Paths (const string paths only) */
-const SERVICE_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_LIST;
 const SUBSCRIPTIONS_LIST_PATH = RETAILER_ENDPOINTS.SERVICE.SUBSCRIPTIONS;
 const SERVICE_CHARGES_PATH = RETAILER_ENDPOINTS.SERVICE.SERVICE_CHARGES;
 
@@ -35,27 +33,34 @@ const p = {
   subscribe: '/retailer/service/subscribe',
 }
 
-/**
- * GET /secure/retailer/service-list
- */
-export async function apiServiceList(
-  input: ServiceListQuery = {},
-  opts?: { signal?: AbortSignal }
-): Promise<ServiceListResponse> {
-  const params = ServiceListQuerySchema.parse(input);
+const SERVICE_LIST_PATH = '/retailer/service/service-list';
 
-  const res = await retailerRequest<ServiceListResponse>({
-    method: "GET",
-    path: SERVICE_LIST_PATH,
-    query: params,
-    headers: {},
-    auth: true,
-    apiKey: false,
-    signal: opts?.signal,
+function buildQueryPath(path: string, query?: ServiceListQuery) {
+  if (!query) return path;
+  const qs = new URLSearchParams();
+  if (query.category) qs.set('category', query.category);
+  if (query.status) qs.set('status', query.status);
+  if (typeof query.per_page === 'number') qs.set('per_page', String(query.per_page));
+  if (typeof query.page === 'number') qs.set('page', String(query.page));
+  const s = qs.toString();
+  return s ? `${path}?${s}` : path;
+}
+
+export async function apiGetServiceList(
+  query?: ServiceListQuery
+): Promise<ServiceListResponse> {
+  // Validate incoming query (optional but keeps the caller honest)
+  const parsed = query ? ServiceListQuerySchema.parse(query) : undefined;
+
+  const path = buildQueryPath(SERVICE_LIST_PATH, parsed);
+  const res = await getJSON<unknown>(path, {
+    redirectOn401: true,
+    redirectPath: '/signin',
   });
 
   return ServiceListResponseSchema.parse(res);
 }
+
 
 export async function apiServiceSubscriptionList(
   input: ServiceSubscriptionListQuery,

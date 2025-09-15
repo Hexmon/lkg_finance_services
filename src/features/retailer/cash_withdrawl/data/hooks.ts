@@ -1,6 +1,8 @@
-import { useMutation } from '@tanstack/react-query';
-import { apiAepsCheckAuthentication, apiAepsTransaction, apiAepsTwoFactorAuthentication } from './endpoints';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
+import { apiAepsBankList, apiAepsCheckAuthentication, apiAepsTransaction, apiAepsTwoFactorAuthentication } from './endpoints';
 import type {
+    AEPSBankListQuery,
+    AEPSBankListResponse,
     AEPSCheckAuthRequest,
     AEPSCheckAuthResponse,
     AEPSTransactionRequest,
@@ -52,4 +54,18 @@ export function useAepsTransaction() {
     aepsTransactionAsync: mutation.mutateAsync,
     reset: mutation.reset,
   };
+}
+
+export const aepsBankListKeys = {
+  all: ['retailer', 'aeps', 'bankList'] as const,
+  list: (q: AEPSBankListQuery) => [...aepsBankListKeys.all, q] as const,
+};
+
+export function useAepsBankList(query: AEPSBankListQuery, enabled = true) {
+  return useQuery<AEPSBankListResponse>({
+    queryKey: aepsBankListKeys.list(query),
+    queryFn: () => apiAepsBankList(query),
+    enabled: Boolean(enabled && query?.service_id),
+    placeholderData: keepPreviousData,
+  });
 }

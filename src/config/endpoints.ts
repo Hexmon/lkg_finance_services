@@ -54,7 +54,8 @@ export const RETAILER_ENDPOINTS = {
     CASH_WITHDRAWL: {
         CHECK_AUTHENTICATION: "/secure/paypoint/aeps/check_authentication",
         TWO_FACTOR_AUTHENTICATION: "/secure/paypoint/aeps/two_factor_authentication",
-        AEPS_TRANSACTION: "/secure/paypoint/aeps/aeps_transaction"
+        AEPS_TRANSACTION: "/secure/paypoint/aeps/aeps_transaction",
+        BANK_LIST: "/secure/paypoint/aeps/banklist"
     },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",

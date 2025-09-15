@@ -191,3 +191,48 @@ export const AEPSTransactionResponseSchema = z
   .passthrough();
 
 export type AEPSTransactionResponse = z.infer<typeof AEPSTransactionResponseSchema>;
+
+/* ========================================= */
+/*            AEPS: Bank List (GET)          */
+/* Upstream: /secure/paypoint/aeps/banklist  */
+/* ========================================= */
+
+/** Query schema: service_id required */
+export const AEPSBankListQuerySchema = z
+  .object({
+    service_id: z.string().uuid({ message: 'service_id must be a UUID' }),
+  })
+  .strict();
+
+export type AEPSBankListQuery = z.infer<typeof AEPSBankListQuerySchema>;
+
+/**
+ * Sample entries include keys with spaces & dots (e.g., "Sr. No.", "Bank Code").
+ * We keep those keys verbatim to match the provider and avoid lossy mapping.
+ */
+export const AEPSBankListItemSchema = z
+  .object({
+    'Sr. No.': numberLike.optional(),
+    'Bank Code': z.string().optional(),
+    'Bank Name': z.string().optional(),
+    MICR: numberLike.optional(),
+    IFSC: z.string().optional(),
+    IIN: numberLike.optional(),
+    'ACH CR': z.string().optional(), // "Yes" / "No"
+    'ACH DR': z.string().optional(),
+    APBS: z.string().optional(),
+    DSA: z.string().optional(),
+    'Bank Type': z.string().optional(), // "Direct" / "Indirect"
+  })
+  .passthrough();
+
+export type AEPSBankListItem = z.infer<typeof AEPSBankListItemSchema>;
+
+export const AEPSBankListResponseSchema = z
+  .object({
+    status: z.union([z.number().int(), z.string().regex(/^\d+$/)]).transform((s) => Number(s)),
+    bankList: z.array(AEPSBankListItemSchema),
+  })
+  .passthrough();
+
+export type AEPSBankListResponse = z.infer<typeof AEPSBankListResponseSchema>;

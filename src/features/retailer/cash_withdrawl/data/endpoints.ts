@@ -1,5 +1,9 @@
-import { postJSON } from '@/lib/api/client';
+import { getJSON, postJSON } from '@/lib/api/client';
 import {
+  AEPSBankListQuery,
+  AEPSBankListQuerySchema,
+  AEPSBankListResponse,
+  AEPSBankListResponseSchema,
     AEPSCheckAuthRequestSchema,
     AEPSCheckAuthResponseSchema,
     AEPSTransactionRequest,
@@ -60,4 +64,27 @@ export async function apiAepsTransaction(
   });
 
   return AEPSTransactionResponseSchema.parse(res);
+}
+
+const AEPS_BANK_LIST_PATH = '/retailer/aeps/bank-list';
+
+function buildQueryPath(path: string, query: AEPSBankListQuery) {
+  const qs = new URLSearchParams();
+  qs.set('service_id', query.service_id);
+  const s = qs.toString();
+  return s ? `${path}?${s}` : path;
+}
+
+export async function apiAepsBankList(
+  query: AEPSBankListQuery
+): Promise<AEPSBankListResponse> {
+  const parsed = AEPSBankListQuerySchema.parse(query);
+
+  const path = buildQueryPath(AEPS_BANK_LIST_PATH, parsed);
+  const res = await getJSON<unknown>(path, {
+    redirectOn401: true,
+    redirectPath: '/signin',
+  });
+
+  return AEPSBankListResponseSchema.parse(res);
 }
