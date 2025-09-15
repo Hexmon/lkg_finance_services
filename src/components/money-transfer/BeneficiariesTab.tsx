@@ -37,10 +37,10 @@ export default function BeneficiaryManagementPage({ service_id, beneficiaries, s
             padding="p-0"
             bgColor="bg-transparent"
             elevation={0}
-            className="px-5 pb-14 pt-6"
+            className="px-5 pb-14 pt-6 !bg-[#FFFFFF]"
             header={
                 <div className="flex items-start justify-between">
-                    <div>
+                    <div className="mb-6">
                         <Title level={4} className="!mb-1 !text-[20px] !font-semibold !leading-6">
                             Beneficiary Management
                         </Title>
