@@ -7,10 +7,11 @@ import {
   QueryKey,
   UseQueryOptions,
   useMutation,
+  keepPreviousData,
 } from '@tanstack/react-query';
 
 import {
-  apiServiceList,
+  apiGetServiceList,
   apiServiceSubscriptionList,
   apiServiceSubscriptionsList,
   apiServiceSubscribe,
@@ -53,18 +54,16 @@ export const keyStartsWithServiceBase = (key: readonly unknown[]) =>
 /** Queries                                                            */
 /** ------------------------------------------------------------------ */
 
-/** GET /secure/retailer/service-list */
-export function useServiceListQuery(
-  params: ServiceListQuery = {},
-  options?: Omit<
-    UseQueryOptions<ServiceListResponse, Error, ServiceListResponse, QueryKey>,
-    'queryKey' | 'queryFn'
-  >
-) {
-  return useQuery({
-    queryKey: qk.list(params),
-    queryFn: ({ signal }) => apiServiceList(params, { signal }),
-    ...options,
+export const serviceListKeys = {
+  all: ['serviceList'] as const,
+  list: (q?: ServiceListQuery) => [...serviceListKeys.all, q ?? {}] as const,
+};
+
+export function useServiceList(query?: ServiceListQuery) {
+  return useQuery<ServiceListResponse>({
+    queryKey: serviceListKeys.list(query),
+    queryFn: () => apiGetServiceList(query),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -157,33 +156,33 @@ export function useServiceCharges() {
 /** ------------------------------------------------------------------ */
 /** Optional: imperative aggregator                                    */
 /** ------------------------------------------------------------------ */
-export function useServiceApi() {
-  const qc = useQueryClient();
+// export function useServiceApi() {
+//   const qc = useQueryClient();
 
-  return {
-    /** Imperative fetch with caching for service list */
-    getServiceList: (params: ServiceListQuery = {}) =>
-      qc.fetchQuery({
-        queryKey: qk.list(params),
-        queryFn: ({ signal }) => apiServiceList(params, { signal }),
-      }),
+//   return {
+//     /** Imperative fetch with caching for service list */
+//     getServiceList: (params: ServiceListQuery = {}) =>
+//       qc.fetchQuery({
+//         queryKey: qk.list(params),
+//         queryFn: ({ signal }) => apiGetServiceList(params, { signal }),
+//       }),
 
-    /** Imperative fetch with caching for subscription list (by service_name) */
-    getServiceSubscriptionList: (params: ServiceSubscriptionListQuery) => {
-      if (!params?.service_name) {
-        return Promise.reject(new Error('service_name is required'));
-      }
-      return qc.fetchQuery({
-        queryKey: qk.subscriptionList(params),
-        queryFn: ({ signal }) => apiServiceSubscriptionList(params, { signal }),
-      });
-    },
+//     /** Imperative fetch with caching for subscription list (by service_name) */
+//     getServiceSubscriptionList: (params: ServiceSubscriptionListQuery) => {
+//       if (!params?.service_name) {
+//         return Promise.reject(new Error('service_name is required'));
+//       }
+//       return qc.fetchQuery({
+//         queryKey: qk.subscriptionList(params),
+//         queryFn: ({ signal }) => apiServiceSubscriptionList(params, { signal }),
+//       });
+//     },
 
-    /** Imperative fetch with caching for subscriptions (paginated) */
-    getServiceSubscriptionsList: (params: SubscriptionsListQuery = {}) =>
-      qc.fetchQuery({
-        queryKey: qk.subscriptions(params),
-        queryFn: ({ signal }) => apiServiceSubscriptionsList(params, { signal }),
-      }),
-  };
-}
+//     /** Imperative fetch with caching for subscriptions (paginated) */
+//     getServiceSubscriptionsList: (params: SubscriptionsListQuery = {}) =>
+//       qc.fetchQuery({
+//         queryKey: qk.subscriptions(params),
+//         queryFn: ({ signal }) => apiServiceSubscriptionsList(params, { signal }),
+//       }),
+//   };
+// }
