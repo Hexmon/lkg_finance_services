@@ -60,10 +60,10 @@ export default function CommissionSummary() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 mb-6">
       {/* Commission Summary Table */}
       <div className="lg:col-span-2">
-        <Card className="rounded-2xl shadow-md bg-[#FEFAF6]">
+        <Card className="!rounded-2xl !shadow-md !bg-[#FEFAF6]">
           <div className="flex justify-between items-center p-4 mb-3">
             <Text className="!text-[20px] !font-medium">Commission Summary</Text>
-            <Button className="bg-white shadow px-4 rounded-lg flex items-center">
+            <Button className="!bg-white !shadow-2xl !px-4 !rounded-md !flex !items-center">
               <DownloadOutlined />
               <span className="!ml-2 !rounded-xl !shadow-2xl !font-medium">Export</span>
             </Button>

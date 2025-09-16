@@ -70,7 +70,7 @@ export default function AddBeneficiariesModal({
                     <Form.Item
                         label="Beneficiary Account No *"
                         name="beneficiaryAccountNo"
-                        rules={[{ required: true, message: "Please enter Beneficiary Account Number" }]}
+                        rules={[{ message: "Please enter Beneficiary Account Number" }]}
                         className="w-[444px] h-[39px]"
                     >
                         <Input
@@ -85,7 +85,7 @@ export default function AddBeneficiariesModal({
                         name="confirmAccountNo"
                         dependencies={["beneficiaryAccountNo"]}
                         rules={[
-                            { required: true, message: "Please confirm Account Number" },
+                            { message: "Please confirm Account Number" },
                             ({ getFieldValue }) => ({
                                 validator(_, value) {
                                     if (!value || value === getFieldValue("beneficiaryAccountNo")) {
@@ -103,7 +103,7 @@ export default function AddBeneficiariesModal({
                     <Form.Item
                         label="Bank Name *"
                         name="bankName"
-                        rules={[{ required: true, message: "Please enter Bank Name" }]}
+                        rules={[{ message: "Please enter Bank Name" }]}
                         className="w-[444px] h-[39px]"
                     >
                         <Input placeholder="Enter Bank Name" />
@@ -114,7 +114,7 @@ export default function AddBeneficiariesModal({
                         name="ifscCode"
                         normalize={(v) => (typeof v === "string" ? v.toUpperCase() : v)}
                         rules={[
-                            { required: true, message: "Please enter IFSC Code" },
+                            { message: "Please enter IFSC Code" },
                             { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: "Enter valid IFSC (e.g., HDFC0001234)" },
                         ]}
                         className="w-[444px] h-[39px]"
@@ -126,7 +126,7 @@ export default function AddBeneficiariesModal({
                         label="Mobile No *"
                         name="mobileNo"
                         rules={[
-                            { required: true, message: "Please enter Mobile Number" },
+                            { message: "Please enter Mobile Number" },
                             { pattern: /^[6-9]\d{9}$/, message: "Enter valid 10-digit mobile number" },
                         ]}
                         className="w-[444px] h-[39px]"
@@ -137,7 +137,7 @@ export default function AddBeneficiariesModal({
                     <Form.Item
                         label="Address *"
                         name="address"
-                        rules={[{ required: true, message: "Please enter Address" }]}
+                        rules={[{ message: "Please enter Address" }]}
                         className="w-[444px] h-[39px]"
                     >
                         <Input placeholder="Enter Address" />
@@ -146,7 +146,7 @@ export default function AddBeneficiariesModal({
                     <Form.Item
                         label="Beneficiary Name *"
                         name="beneficiaryName"
-                        rules={[{ required: true, message: "Please enter Beneficiary Name" }]}
+                        rules={[{message: "Please enter Beneficiary Name" }]}
                         className="w-[444px] h-[39px]"
                     >
                         <Input placeholder="Enter Beneficiary Name" />
