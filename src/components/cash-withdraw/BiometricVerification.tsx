@@ -34,8 +34,7 @@ export default function BiometricVerification({
   const isValidAadhaar = /^\d{12}$/.test(aadhaar);
   const showError = touched && !isValidAadhaar;
 
-  const { aepsTwoFactorAuthenticateAsync, isLoading: isVerifying } =
-    useAepsTwoFactorAuthentication();
+  const { aepsTwoFactorAuthenticateAsync, isLoading: isVerifying } = useAepsTwoFactorAuthentication();
 
   const {
     subscribeAsync,

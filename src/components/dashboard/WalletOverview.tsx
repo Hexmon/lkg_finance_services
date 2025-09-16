@@ -3,6 +3,7 @@
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { Card, Typography } from "antd";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
@@ -49,7 +50,7 @@ export default function WalletOverview({
       currency: "INR",
       maximumFractionDigits: 2,
     });
-
+  const router = useRouter();
   return (
     <Card className="!rounded-2xl !shadow-sm !w-full !mb-10">
       <div className="flex justify-between items-start w-full mb-4">
@@ -63,7 +64,9 @@ export default function WalletOverview({
         </div>
 
         {/* use a button later if you want onClick */}
-        <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
+        <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center"
+        onClick={() => router.push('/reports_analysis')}
+        >
           <Image src="/eye.svg" alt="eye icon" width={15} height={15} />
           <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
         </div>

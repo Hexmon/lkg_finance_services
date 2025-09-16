@@ -4,6 +4,7 @@ import { Badge, Typography } from "antd";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useRouter } from "next/navigation";
 
 dayjs.extend(relativeTime);
 
@@ -22,6 +23,8 @@ export default function RecentActivity({ transactionData }: { transactionData: T
     return date.format("DD MMM YYYY, h:mm A"); // e.g., "14 Sep 2025, 3:15 PM"
   };
 
+  const router = useRouter();
+
   return (
     <CardLayout
       className="!rounded-2xl !shadow-sm !w-full !mb-10"
@@ -33,7 +36,9 @@ export default function RecentActivity({ transactionData }: { transactionData: T
               <Text className="!font-light !text-sm !text-[13px]">Manage Your Financial Account</Text>
             </div>
 
-            <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
+            <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center"
+              onClick={() => router.push('/reports_analysis')}
+            >
               <Image src="/eye.svg" alt="eye icon" width={15} height={15} />
               <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
             </div>
