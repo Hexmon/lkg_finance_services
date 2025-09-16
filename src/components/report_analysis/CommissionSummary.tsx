@@ -3,83 +3,48 @@
 import { Card, Table, Button, Typography } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 import Image from "next/image";
+import { useEffect } from "react";
+
+// ⬇️ import the hook
+import { useCommissionSummaryQuery } from "@/features/retailer/wallet/data/hooks";
 
 const { Text } = Typography;
 
 export default function CommissionSummary() {
+  // 🔔 Call the API (background only). Keep your UI fully static.
+  const { data, error, isLoading } = useCommissionSummaryQuery(
+    {
+      page: 1,
+      per_page: 10,
+      order: "desc",
+      sort_by: "created_at",
+      // start_date: "2025-05-27",
+      // end_date: "2025-05-27",
+      // user_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    },
+    true // enabled
+  );
+
+  // Optional: observe what's coming back without rendering it
+  useEffect(() => {
+    if (data) console.log("[commission-summary] fetched:", data);
+    if (error) console.error("[commission-summary] error:", error);
+  }, [data, error]);
+
+  // ---- Your existing static data (unchanged) ----
   const commissionData = [
-    {
-      key: 1,
-      service: "Electricity",
-      transactions: "₹150",
-      volume: "₹5,2000",
-      commission: "₹2.5",
-      rate: "0.5%",
-    },
-    {
-      key: 2,
-      service: "DTH",
-      transactions: "₹89",
-      volume: "₹7,2000",
-      commission: "₹2.5",
-      rate: "0.5%",
-    },
-    {
-      key: 3,
-      service: "Mobile Recharge",
-      transactions: "₹799",
-      volume: "₹7,8000",
-      commission: "₹2.5",
-      rate: "0.5%",
-    },
-    {
-      key: 4,
-      service: "Gas",
-      transactions: "₹1,100",
-      volume: "₹9,2000",
-      commission: "₹2.5",
-      rate: "0.5%",
-    },
+    { key: 1, service: "Electricity", transactions: "₹150", volume: "₹5,2000", commission: "₹2.5", rate: "0.5%" },
+    { key: 2, service: "DTH", transactions: "₹89", volume: "₹7,2000", commission: "₹2.5", rate: "0.5%" },
+    { key: 3, service: "Mobile Recharge", transactions: "₹799", volume: "₹7,8000", commission: "₹2.5", rate: "0.5%" },
+    { key: 4, service: "Gas", transactions: "₹1,100", volume: "₹9,2000", commission: "₹2.5", rate: "0.5%" },
   ];
 
   const columns = [
-    {
-      title: "Service",
-      dataIndex: "service",
-      render: (text: string) => (
-        <Text className="!text-[14px] !font-medium">{text}</Text>
-      ),
-    },
-    {
-      title: "Transactions",
-      dataIndex: "transactions",
-      render: (text: string) => (
-        <Text className="!text-[14px] !font-medium">{text}</Text>
-      ),
-    },
-    {
-      title: "Volume",
-      dataIndex: "volume",
-      render: (text: string) => (
-        <Text className="!text-[14px] !font-medium">{text}</Text>
-      ),
-    },
-    {
-      title: "Commission",
-      dataIndex: "commission",
-      render: (text: string) => (
-        <Text className="!text-[#0BA82F] !font-medium">{text}</Text>
-      ),
-    },
-    {
-      title: "Rate",
-      dataIndex: "rate",
-      render: (text: string) => (
-        <span className="!px-2 !py-[1px] !bg-[#E6F0FF] !text-[#3386FF] !rounded-md !text-[12px] !font-medium">
-          {text}
-        </span>
-      ),
-    },
+    { title: "Service", dataIndex: "service", render: (text: string) => <Text className="!text-[14px] !font-medium">{text}</Text> },
+    { title: "Transactions", dataIndex: "transactions", render: (text: string) => <Text className="!text-[14px] !font-medium">{text}</Text> },
+    { title: "Volume", dataIndex: "volume", render: (text: string) => <Text className="!text-[14px] !font-medium">{text}</Text> },
+    { title: "Commission", dataIndex: "commission", render: (text: string) => <Text className="!text-[#0BA82F] !font-medium">{text}</Text> },
+    { title: "Rate", dataIndex: "rate", render: (text: string) => <span className="!px-2 !py-[1px] !bg-[#E6F0FF] !text-[#3386FF] !rounded-md !text-[12px] !font-medium">{text}</span> },
   ];
 
   const chartData = [
@@ -104,44 +69,24 @@ export default function CommissionSummary() {
             </Button>
           </div>
 
-          <Table
-            columns={columns}
-            dataSource={commissionData}
-            pagination={false}
-            bordered={false}
-          />
+          {/* ✅ Still rendering static data only */}
+          <Table columns={columns} dataSource={commissionData} pagination={false} bordered={false} />
         </Card>
       </div>
 
       {/* Right Side */}
       <div className="flex flex-col gap-6">
-        {/* Commission Distribution */}
         <Card className="rounded-2xl shadow-md p-4">
-          <Text className="!text-[16px] !font-medium">
-            Commission Distribution
-          </Text>
+          <Text className="!text-[16px] !font-medium">Commission Distribution</Text>
         </Card>
 
-        {/* Monthly Summary */}
         <Card className="rounded-2xl shadow-md p-4">
           <Text className="!text-[16px] !font-medium">Monthly Summary</Text>
           <div className="mt-4 space-y-2 text-[14px]">
-            <div className="flex justify-between">
-              <Text className="!text-[12px] !font-medium">Opening Balance</Text>
-              <Text className="!text-[12px] !font-medium">₹15,000</Text>
-            </div>
-            <div className="flex justify-between">
-              <Text className="!text-[12px] !font-medium">Credits</Text>
-              <Text className="!text-[#0BA82F] !text-[12px] !font-medium">+₹10,045</Text>
-            </div>
-            <div className="flex justify-between">
-              <Text className="!text-[12px] !font-medium">Debits</Text>
-              <Text className="!text-[#FF4D4F] !text-[12px] !font-medium">-₹2,819</Text>
-            </div>
-            <div className="flex justify-between font-medium">
-              <Text className="!text-[12px] !font-medium">Closing Balance</Text>
-              <Text className="!text-[12px] !font-medium">₹26,000</Text>
-            </div>
+            <div className="flex justify-between"><Text className="!text-[12px] !font-medium">Opening Balance</Text><Text className="!text-[12px] !font-medium">₹15,000</Text></div>
+            <div className="flex justify-between"><Text className="!text-[12px] !font-medium">Credits</Text><Text className="!text-[#0BA82F] !text-[12px] !font-medium">+₹10,045</Text></div>
+            <div className="flex justify-between"><Text className="!text-[12px] !font-medium">Debits</Text><Text className="!text-[#FF4D4F] !text-[12px] !font-medium">-₹2,819</Text></div>
+            <div className="flex justify-between font-medium"><Text className="!text-[12px] !font-medium">Closing Balance</Text><Text className="!text-[12px] !font-medium">₹26,000</Text></div>
           </div>
         </Card>
       </div>
