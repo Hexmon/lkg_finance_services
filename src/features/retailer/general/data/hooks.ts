@@ -38,6 +38,11 @@ export const DEFAULT_DASHBOARD: DashboardDetailsResponse = {
     current_month_ratio: 0,
     last_month: 0,
   },
+  customers: {
+    last_month_count: 0,
+    last_month_ratio: 0,
+    total_users_count: 0
+  }
 } as const;
 
 /** ---------- Dashboard ---------- */
@@ -56,7 +61,7 @@ export function useRetailerDashboardQuery() {
 }
 
 /** ---------- Transaction Summary (pagination-friendly) ---------- */
-export function useTransactionSummaryQuery(query: TransactionSummaryQuery) {
+export function useTransactionSummaryQuery(query: TransactionSummaryQuery,  _opts?: { refetchOnMountOrArgChange: boolean; }) {
   // Sensible empty page while fetching/transitioning
   const emptyPage: TransactionSummaryResponse = {
     total: 0,

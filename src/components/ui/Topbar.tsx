@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { useAppSelector } from '@/lib/store';
 import { selectProfileLoaded, selectUserType, selectProfileCore, selectBalances } from '@/lib/store/slices/profileSlice';
+import { useRouter } from "next/navigation";
 
 export type TopbarProps = {
   title?: string;
@@ -42,6 +43,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const isVerified = aadhaar_verified && accepted_terms && email_verified && pan_verified
   const balanceAmount = balances[0]?.balance ?? 0
 
+  const router = useRouter();
   return (
     <div
       className={`w-full rounded-2xl bg-white/90 shadow-md border border-slate-100 px-4 sm:px-6 py-3 flex items-center justify-between ${className}`}
@@ -78,7 +80,9 @@ const Topbar: React.FC<TopbarProps> = ({
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer"
+          onClick={() => router.push("/profile")}
+        >
           <Avatar
             size={36}
             src={profile}
