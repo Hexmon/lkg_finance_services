@@ -98,7 +98,7 @@ export default function MoneyTransferServicePage() {
                                 body={
                                     <div className="relative w-full flex flex-col items-center text-center space-y-3">
                                         <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-100">
-                                            <Image src='/icons/money-transfer.png' alt="money-transfer" width={48} height={48} className="mx-auto p-2" />
+                                            <Image src='/bill.svg' alt="money-transfer" width={48} height={48} className="mx-auto p-2" />
                                         </div>
                                         <Title level={4} className="!mb-0">
                                             {service_name}
