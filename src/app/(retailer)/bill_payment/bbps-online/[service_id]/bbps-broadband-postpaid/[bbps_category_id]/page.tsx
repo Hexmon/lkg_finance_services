@@ -8,6 +8,7 @@ import Image from "next/image";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { useRouter } from "next/navigation";
+import { selectCustomer, useAppSelector } from "@/lib/store";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -16,6 +17,10 @@ export default function BillDetailsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentMode, setPaymentMode] = useState<"Wallet" | "Cashfree">("Wallet");
   const router = useRouter();
+  const customer = useAppSelector(selectCustomer);
+
+  console.log({customer});
+  
 
   return (
     <DashboardLayout

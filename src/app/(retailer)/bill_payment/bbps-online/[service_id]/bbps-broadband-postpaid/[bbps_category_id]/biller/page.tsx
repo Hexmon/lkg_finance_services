@@ -4,7 +4,7 @@
 import React, { useEffect } from "react";
 import { Card, Typography, Button, Alert } from "antd";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
@@ -31,6 +31,7 @@ import PlanMDMFullScreenModal from "@/components/bbps/PlanMDMFullScreenModal";
 const { Title } = Typography;
 
 export default function BillerPage() {
+    const router = useRouter()
     /** ── route params ─────────────────────────────── */
     const { service_id, bbps_category_id } = useParams() as {
         service_id: string;
@@ -203,17 +204,23 @@ export default function BillerPage() {
             paramValue: formValues[p.param_name] ?? "",
         }));
 
-        billFetch({
-            service_id,
-            mode: "ONLINE",
-            body: {
-                billerId: selectedBiller.biller_id,
-                customerInfo: { customerMobile },
-                inputParams: {
-                    input: payloadInputs.length === 1 ? payloadInputs[0] : payloadInputs,
+        try {
+            billFetch({
+                service_id,
+                mode: "ONLINE",
+                body: {
+                    billerId: selectedBiller.biller_id,
+                    customerInfo: { customerMobile },
+                    inputParams: {
+                        input: payloadInputs.length === 1 ? payloadInputs[0] : payloadInputs,
+                    },
                 },
-            },
-        });
+            });
+            router.push(`http://localhost:3000/bill_payment/bbps-online/${service_id}/bbps-broadband-postpaid/{}/biller`)
+        } catch (error) {
+            
+        }
+
     }, [billFetch, inputs, formValues, selectedBiller, service_id, customerMobile]);
 
     /** ── CTA behavior ────────────────────────────── */

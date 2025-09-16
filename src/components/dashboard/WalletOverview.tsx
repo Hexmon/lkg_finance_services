@@ -14,12 +14,12 @@ type BalancesInput =
 type CommissionsInput =
   | { overall: string }
   | {
-      overall: number;
-      overall_ratio?: number;
-      current_month?: number;
-      current_month_ratio?: number;
-      last_month?: number;
-    };
+    overall: number;
+    overall_ratio?: number;
+    current_month?: number;
+    current_month_ratio?: number;
+    last_month?: number;
+  };
 
 export default function WalletOverview({
   balances,
@@ -62,7 +62,7 @@ export default function WalletOverview({
           </Text>
         </div>
 
-      {/* use a button later if you want onClick */}
+        {/* use a button later if you want onClick */}
         <div className="w-[111px] h-[29px] flex items-center cursor-pointer shadow-[0px_4px_8.9px_rgba(0,0,0,0.1)] rounded-[9px] justify-center">
           <Image src="/eye.svg" alt="eye icon" width={15} height={15} />
           <Text className="!font-normal !text-[10px] ml-2 mt-[2px]">View All</Text>
@@ -74,10 +74,13 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="bg-blue-500 p-2 rounded-full w-12 h-12 flex items-center justify-center">
-                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} />
+              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
+                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
               </div>
-              {/* <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="growth" width={30} height={13} className="mt-3" /> */}
+              <div className="flex justify-center items-center space-x-1">
+                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
+              </div>
             </div>
           }
           body={
@@ -94,7 +97,13 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="bg-blue-500 p-2 rounded-full w-12 h-12 flex items-center justify-center" />
+              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
+                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
+              </div>
+              <div className="flex justify-center items-center space-x-1">
+                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
+              </div>
             </div>
           }
           body={
@@ -111,7 +120,13 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="bg-blue-500 p-2 rounded-full w-12 h-12 flex items-center justify-center" />
+              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
+                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
+              </div>
+              <div className="flex justify-center items-center space-x-1">
+                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
+              </div>
             </div>
           }
           body={

@@ -14,17 +14,17 @@ export default function ProfileTabsDemo() {
     const items: TabItem[] = [
         {
             key: 'personal',
-            label: <span>Personal Details</span>,
+            label: <span className='mx-3'>Personal Details</span>,
             content: <ProfileDetailsTab />,
         },
         {
             key: 'bank',
-            label: <span>Banking Details</span>,
+            label: <span className='mx-3'>Banking Details</span>,
             content: <BankingDetailsTab />,
         },
         {
             key: 'address',
-            label: <span>Address</span>,
+            label: <span className='mx-3'>Address</span>,
             content: <AddressTab />,
         },
     ];

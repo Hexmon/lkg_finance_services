@@ -227,6 +227,14 @@ export const CommissionsSchema = z
   })
   .strict();
 
+export const CustomersSchema = z
+  .object({
+    total_users_count: z.number(),
+    last_month_count: z.number(),
+    last_month_ratio: z.number(),
+  })
+  .strict();
+
 /** Final dashboard response */
 export const DashboardDetailsResponseSchema = z
   .object({
@@ -239,6 +247,7 @@ export const DashboardDetailsResponseSchema = z
     transactions: TransactionsBlockSchema,
     virtual_account: VirtualAccountSchema,
     commissions: CommissionsSchema,
+    customers: CustomersSchema
   })
   .passthrough(); // keep tolerant to extra vendor fields
 

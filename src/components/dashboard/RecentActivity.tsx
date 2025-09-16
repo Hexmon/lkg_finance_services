@@ -2,10 +2,25 @@ import { TransactionSummaryItem } from "@/features/retailer/general";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { Badge, Typography } from "antd";
 import Image from "next/image";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
-const { Text } = Typography
+dayjs.extend(relativeTime);
+
+const { Text } = Typography;
 
 export default function RecentActivity({ transactionData }: { transactionData: TransactionSummaryItem[] }) {
+  const formatTime = (timestamp?: string) => {
+    if (!timestamp) return "";
+    const date = dayjs(timestamp);
+    const now = dayjs();
+    const diffInHours = now.diff(date, "hour");
+
+    if (diffInHours < 24) {
+      return date.fromNow(); // e.g., "2 hours ago"
+    }
+    return date.format("DD MMM YYYY, h:mm A"); // e.g., "14 Sep 2025, 3:15 PM"
+  };
 
   return (
     <CardLayout
@@ -25,40 +40,44 @@ export default function RecentActivity({ transactionData }: { transactionData: T
           </div>
 
           <div className="flex flex-col gap-3">
-            {
-              (transactionData ?? []).map((data) => {
-                const { id, service, name, created_at, net_amount, txn_status } = data || {}
-                return (
-                  <div
-                    key={id}
-                    className="flex justify-between items-center bg-[#FFFFFF] rounded-xl px-4 py-3 shadow-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-500 p-3 rounded-full flex items-center justify-center w-[55px] h-[55px]">
-                        <Image src="/heart-line.svg" alt="heart line" width={26} height={30} />
-                      </div>
-
-                      <div>
-                        <Text strong className="block">{service ?? ""}</Text>
-                        <div className="text-sm text-gray-500">{name ?? ""}</div>
-                        <div className="text-[10px] text-gray-400">{created_at ?? ""} min</div>
-                      </div>
+            {(transactionData ?? []).map((data) => {
+              const { id, service, name, created_at, net_amount, txn_status } = data || {};
+              return (
+                <div
+                  key={id}
+                  className="flex justify-between items-center bg-[#FFFFFF] rounded-xl px-4 py-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500 p-3 rounded-full flex items-center justify-center w-[55px] h-[55px]">
+                      <Image src="/heart-line.svg" alt="heart line" width={26} height={30} />
                     </div>
 
-                    <div className="flex flex-col items-end gap-[6px]">
-                      <Text strong className="text-[#000000]">
-                        {net_amount ?? ""}
-                      </Text>
-
-                      <Badge className="">{txn_status ?? ""}</Badge>
+                    <div>
+                      <Text strong className="block">{service ?? ""}</Text>
+                      <div className="text-sm text-gray-500">{name ?? ""}</div>
+                      <div className="text-[10px] text-gray-400">
+                        {formatTime(created_at)}
+                      </div>
                     </div>
                   </div>
-                )
-              })
-            }
+
+                  <div className="flex flex-col items-end gap-[6px]">
+                    <Text strong className="text-[#000000]">
+                      ₹{net_amount ?? ""}
+                    </Text>
+
+                    <Badge className="!shadow !rounded-2xl !px-2 !py-1 !flex !justify-center !items-center !bg-[#0BA82F36]">
+                      <span className="text-[#0BA82F] !text-[8px] !font-medium">
+                        {txn_status ?? ""}
+                      </span>
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       }
     />
-  )
+  );
 }

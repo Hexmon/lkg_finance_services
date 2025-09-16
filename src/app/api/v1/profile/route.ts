@@ -9,6 +9,7 @@ import {
   type GetProfileResponse,
 } from '@/features/profile';
 import { authFetch } from '../../_lib/http-profile';
+import { AUTHERIZATION_ENDPOINT } from '@/config/endpoints';
 
 export async function GET() {
   // 1) Pull Bearer from HttpOnly cookie
@@ -20,7 +21,7 @@ export async function GET() {
 
   try {
     // 2) Call upstream
-    const upstream = await authFetch<unknown>('/secure/profile', {
+    const upstream = await authFetch<unknown>(AUTHERIZATION_ENDPOINT.PROFILE_GET_PATH, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });
