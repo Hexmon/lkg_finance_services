@@ -86,7 +86,7 @@ export default function SupportTickets() {
                     {tickets.map((ticket, index) => (
                         <Card
                             key={index}
-                            className="rounded-2xl shadow-md bg-[#FFF9F0] border-none"
+                            className="!rounded-2xl !shadow-md !bg-[#FFFFFF] !border-none !mb-5"
                         >
                             <div className="flex justify-between items-start">
                                 {/* Ticket Info */}
@@ -94,7 +94,7 @@ export default function SupportTickets() {
                                     <div className="flex items-center gap-2">
                                         {/* Wallet Icon with Circle Background */}
                                         <div
-                                            className={`w-7 h-7 flex items-center justify-center rounded-full ${ticket.status === "Active"
+                                            className={`!w-[30px] !h-[30px] !flex !items-center !justify-center !rounded-2xl ${ticket.status === "Active"
                                                 ? "bg-[#DFF5DD]"
                                                 : ticket.status === "Closed"
                                                     ? "bg-[#E6F4FF]"
@@ -110,14 +110,14 @@ export default function SupportTickets() {
                                                             : "/wallet-orange.svg"
                                                 }
                                                 alt="wallet status"
-                                                width={16}
-                                                height={16}
+                                                width={18}
+                                                height={18}
                                             />
                                         </div>
 
                                         {/* Status Text Tag */}
                                         <Tag
-                                            className="rounded-full px-3 py-1 font-medium"
+                                            className="!rounded-2xl !px-3 !py-1 !font-medium !w-[45px] !h-[14px] !text-[8px] !flex !items-center !text-center"
                                             style={{
                                                 backgroundColor:
                                                     ticket.status === "Active"
@@ -137,7 +137,7 @@ export default function SupportTickets() {
                                             {ticket.status}
                                         </Tag>
                                     </div>
-                                    <div className="mt-2 space-y-1 text-sm">
+                                    <div className="mt-2 ml-9 space-y-1 text-sm">
                                         <Text className="!block !font-medium !text-[#232323]">
                                             Transaction ID - {ticket.id}
                                         </Text>

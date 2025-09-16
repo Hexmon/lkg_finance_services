@@ -33,8 +33,8 @@ export default function ReportAnalyticsPage() {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
-                    <Image src="/credit-card.svg" alt="New" width={16} height={16} />
-                    <span>Wallet Statement</span>
+                    <Image src={activeTab === "walletstatement" ? "/credit-card.svg" : "/credit-card-black.svg"} alt="New" width={16} height={17} />
+                    <span className="ml-2">Wallet Statement</span>
                 </div>
             ),
             content: <WalletStatement />,
@@ -48,8 +48,8 @@ export default function ReportAnalyticsPage() {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
-                    <Image src="/transaction-bill.svg" alt="History" width={16} height={16} />
-                    <span>Transaction History</span>
+                    <Image src={activeTab === "transactionhistory" ? "/transaction-bill-white.svg" : "/transaction-bill.svg"} alt="History" width={16} height={16} />
+                    <span className="ml-2">Transaction History</span>
                 </div>
             ),
             content: <ReportTransactionHistory />,
@@ -63,8 +63,8 @@ export default function ReportAnalyticsPage() {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
-                    <Image src="/line-blk.svg" alt="History" width={16} height={16} />
-                    <span>Commission Summary</span>
+                    <Image src={activeTab === "commissionsummary" ?"/heart-line.svg" :"/line-blk.svg"} alt="History" width={22} height={26} />
+                    <span className="ml-2">Commission Summary</span>
                 </div>
             ),
             content: <CommissionSummary />,

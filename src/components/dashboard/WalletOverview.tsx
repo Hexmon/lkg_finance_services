@@ -77,8 +77,8 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
-                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
+              <div className="p-2 rounded-full w-[55px] h-[55px] flex items-center justify-center bg-[#3386FF]">
+                <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
                 <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
@@ -100,8 +100,8 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
-                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
+              <div className="p-2 rounded-full w-[55px] h-[55px] flex items-center justify-center bg-[#3386FF]">
+                <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
                 <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
@@ -123,8 +123,8 @@ export default function WalletOverview({
           className="!min-h-[130px] !p-4 bg-[#FFF7EC] rounded-xl shadow-sm"
           header={
             <div className="flex justify-between items-start w-full">
-              <div className="p-2 rounded-full w-18 h-18 flex items-center justify-center">
-                <Image src="https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/abaa6a2f7f1645db801a0c67acec528f.png" alt="" width={35} height={35} className="size-full" />
+              <div className="p-2 rounded-full w-[55px] h-[55px] flex items-center justify-center bg-[#3386FF]">
+                <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
                 <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
