@@ -28,7 +28,22 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                         </div>
                         <div className="font-semibold text-[32px]">{totalTxnCount}</div>
                         <Text type="success" className="text-black text-[10px] font-light">
-                            <CaretUpOutlined /> {totalTxnRatio} Since Last Month
+                            <div className="flex gap-1">
+                                <Image
+                                    src="/up-arrow.svg"
+                                    alt=""
+                                    width={15.58}
+                                    height={8.5}
+                                    className="object-contain"
+                                />
+                                {/* <Image
+                                src="/3.2.svg"
+                                alt=""
+                                width={24}
+                                height={13}
+                                className="object-contain"
+                            /> */}
+                                {totalTxnRatio} Since Last Month </div>
                         </Text>
                     </div>
                 }
@@ -53,7 +68,15 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                         </div>
                         <div className="font-semibold text-[32px]">{success_rate}%</div>
                         <Text type="success" className="text-black text-[10px] font-light">
-                            <CaretUpOutlined /> {success_rate_ratio} Since Last Month
+                            <div className="flex gap-1">
+                                <Image
+                                    src="/up-arrow.svg"
+                                    alt=""
+                                    width={15.58}
+                                    height={8.5}
+                                    className="object-contain"
+                                /> {success_rate_ratio} Since Last Month
+                            </div>
                         </Text>
                     </div>
                 }
@@ -78,7 +101,21 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                         </div>
                         <div className="font-semibold text-[32px]">{total_users_count}</div>
                         <Text type="success" className="text-black text-[10px] font-light">
-                            <CaretUpOutlined /> 3.2 Since Last Month
+                            <div className="flex gap-1">
+                                <Image
+                                    src="/up-arrow.svg"
+                                    alt=""
+                                    width={15.58}
+                                    height={8.5}
+                                    className="object-contain"
+                                /> <Image
+                                src="/3.2.svg"
+                                alt=""
+                                width={24}
+                                height={13}
+                                className="object-contain"
+                            /> Since Last Month
+                            </div>
                         </Text>
                     </div>
                 }
@@ -103,7 +140,15 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                         </div>
                         <div className="font-semibold text-[32px]">{commissions.overall}</div>
                         <Text type="success" className="text-black text-[10px] font-light">
-                            <CaretUpOutlined /> {commissions.overall_ratio} Since Last Month
+                                                        <div className="flex gap-1">
+                                <Image
+                                src="/up-arrow.svg"
+                                alt=""
+                                width={15.58}
+                                height={8.5}
+                                className="object-contain"
+                            /> {commissions.overall_ratio} Since Last Month
+                            </div>
                         </Text>
                     </div>
                 }
