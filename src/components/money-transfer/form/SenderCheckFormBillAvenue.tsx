@@ -27,12 +27,14 @@ export default function SenderCheckFormBillAvenue({
   initialMobile,
   defaultTxnType = "IMPS",
   defaultBankId = "ARTL",
+  setBankType
 }: {
   onSubmit: (values: SenderCheckWithOptionsValues) => void | Promise<void>;
   loading?: boolean;
   initialMobile?: string;
   defaultTxnType?: TxnType;
   defaultBankId?: BankId;
+  setBankType: (bank: BankId) => void
 }) {
   const [form] = Form.useForm<SenderCheckWithOptionsValues>();
 
@@ -100,6 +102,7 @@ export default function SenderCheckFormBillAvenue({
               { label: "FINO", value: "FINO" },
             ]}
             disabled={loading}
+            onChange={(value: BankId) => setBankType?.(value)}
             className="w-full"
           />
         </Form.Item>

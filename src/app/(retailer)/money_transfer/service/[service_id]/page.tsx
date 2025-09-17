@@ -13,8 +13,8 @@ import { useMessage } from "@/hooks/useMessage";
 import AddsenderModal from "@/components/money-transfer/AddsenderModal";
 import { useTransactionSummaryQuery } from "@/features/retailer/general";
 import TransactionsPaged from "@/components/money-transfer/Transaction";
-import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
-import SenderCheckFormBillAvenue, { SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
+// import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
+import SenderCheckFormBillAvenue, { BankId, SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
 import AddBeneficiariesModal from "@/components/money-transfer/AddBeneficiariesModal";
 
 const { Title } = Typography;
@@ -23,47 +23,14 @@ export default function MoneyTransferServicePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
   const router = useRouter();
-  // const [form] = Form.useForm();
+  const [bankType, setBankType] = useState<BankId | undefined>('ARTL')
+  
   type RouteParams = { service_id: string };
   const { service_id } = useParams<RouteParams>();
   const { error, info } = useMessage()
-  const isBillAvenure = "2bd71f0c-6894-4024-8497-6c45bb3eb11f" === service_id
 
   const { checkSenderAsync, data: { message: checkSenderRegMsg, bio_required } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
   const { data: { data: transactionData } = {}, isLoading: transactionLoading, error: transactionError } = useTransactionSummaryQuery({ page: 1, per_page: 5, order: "desc" })
-
-  const onSubmit = async (values: { senderMobile: string }) => {
-    try {
-      if ((service_id ?? "").length === 0) {
-        error('Missing Service Id!! Retry after selectin DMT servie')
-        return;
-      } else {
-        const res = await checkSenderAsync({
-          mobile_no: values.senderMobile,
-          service_id,
-        });
-        const mobile_no = values.senderMobile
-        if (res?.status === 400) {
-          info(checkSenderRegMsg ?? "Sender not found. Please verify to onboard.");
-          setIsModalOpen(true);
-          return;
-        } else {
-          info(checkSenderRegMsg ?? "Sender already exists.");
-          router.replace(`/money_transfer/service/${service_id}/${mobile_no}`)
-        }
-      }
-
-      // success("Sender verified");
-    } catch (err: any) {
-      const status = err?.status ?? err?.response?.status;
-      if (status === 400) {
-        info(err?.message ?? "Sender not found. Please verify to onboard.");
-        setIsModalOpen(true);
-      } else {
-        error(err?.message ?? "Something went wrong while checking sender.");
-      }
-    }
-  };
 
   const onSubmitWithOptions = async (values: SenderCheckWithOptionsValues) => {
     try {
@@ -124,18 +91,11 @@ export default function MoneyTransferServicePage() {
           }
           body={
             <>
-              {/* 🔀 Conditional forms */}
-              {!isBillAvenure ? (
-                <SenderCheckFormPaypoint
-                  onSubmit={onSubmit}
-                  loading={checkSenderRegLoading}
-                />
-              ) : (
-                <SenderCheckFormBillAvenue
-                  onSubmit={onSubmitWithOptions}
-                  loading={checkSenderRegLoading}
-                />
-              )}
+              <SenderCheckFormBillAvenue
+                onSubmit={onSubmitWithOptions}
+                loading={checkSenderRegLoading}
+                setBankType={(bank) => setBankType(bank)}
+              />
               <h2 className="font-medium text-[20px]">Recent Transactions</h2>
               <TransactionsPaged isLoading={transactionLoading} transactionData={transactionData ?? []} />
             </>
@@ -166,6 +126,7 @@ export default function MoneyTransferServicePage() {
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           service_id={service_id}
+          bankType={bankType || ""}
         />
 
       </div>
