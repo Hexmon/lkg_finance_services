@@ -6,6 +6,7 @@ import {
   PlusOutlined,
   MinusOutlined,
   CrownOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import { useAppSelector } from '@/lib/store';
 import { selectProfileLoaded, selectUserType, selectProfileCore, selectBalances } from '@/lib/store/slices/profileSlice';
@@ -45,7 +46,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const balanceAmount = balances[0]?.balance ?? 0
 
   const router = useRouter();
-    const [role, setRole] = useState("Distributor");
+  const [role, setRole] = useState("Distributor");
 
   // Popover Content
   const content = (
@@ -77,21 +78,19 @@ const Topbar: React.FC<TopbarProps> = ({
       <div className="flex gap-3 mb-5">
         <button
           onClick={() => setRole("Distributor")}
-          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${
-            role === "Distributor"
-              ? "bg-[#3386FF] text-white"
-              : "border-[#3386FF] text-[#3386FF]"
-          }`}
+          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${role === "Distributor"
+            ? "bg-[#3386FF] text-white"
+            : "border-[#3386FF] text-[#3386FF]"
+            }`}
         >
           Distributor
         </button>
         <button
           onClick={() => setRole("Super Distributor")}
-          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${
-            role === "Super Distributor"
-              ? "bg-[#FCFCFC] text-white"
-              : "border-blue-400 text-[#3386FF]"
-          }`}
+          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${role === "Super Distributor"
+            ? "bg-[#FCFCFC] text-white"
+            : "border-blue-400 text-[#3386FF]"
+            }`}
         >
           Super Distributor
         </button>
@@ -100,14 +99,83 @@ const Topbar: React.FC<TopbarProps> = ({
       {/* Upgrade Button */}
       <div className='flex justify-center items-center'>
         <button className="w-[136px] h-[32px] bg-[#3386FF] text-white py-2 rounded-lg font-medium shadow hover:bg-blue-600 transition text-[12px] ">
-        Upgrade
-      </button>
+          Upgrade
+        </button>
       </div>
     </div>
   );
+
+  const money_drp_dwn = (
+    <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
+      <div className="flex justify-between text-[13px] mb-2">
+        <span className="text-gray-700">Main Wallet</span>
+        <span className="font-medium">₹15,000</span>
+      </div>
+      <div className="flex justify-between text-[13px]">
+        <span className="text-gray-700">AEPS Wallet</span>
+        <span className="font-medium">₹10,000</span>
+      </div>
+    </div>
+  );
+
+  const pg_drp_dwn = (
+  <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[180px]">
+    <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+      <Image 
+      src="/bank-black.svg"
+      alt="bank imgae"
+      width={15.91}
+      height={15}
+      />
+      <span className="text-[13px] text-gray-700">Payment Gateway (PG)</span>
+    </div>
+    <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+      <Image 
+      src="/rocket-black.svg"
+      alt="bank imgae"
+      width={15.91}
+      height={15}
+      />
+      <span className="text-[13px] text-gray-700">Fund Request</span>
+    </div>
+  </div>
+);
+
+  const debit_funds_drp_dwn = (
+    <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
+      {/* Move to Wallet */}
+      <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-100 cursor-pointer">
+        <Image
+          src="/credit-card-blue.svg"
+          alt="credit card"
+          width={16}
+          height={17}
+          className='object-contain'
+        />
+        <span className="text-[14px] text-gray-700 font-medium"
+        onClick={()=> router.push("/money_transfer/move_to_wallet")}
+        >Move to Wallet</span>
+      </div>
+
+      {/* Move to Bank */}
+      <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+        <Image
+          src="/bank-black.svg"
+          alt="credit card"
+          width={16}
+          height={17}
+          className='object-contain'
+        />
+        <span className="text-[14px] text-gray-700 font-medium"
+        onClick={()=> router.push("/money_transfer/bank_withdrawl")}
+        >Move To Bank</span>
+      </div>
+    </div>
+  );
+
   return (
     <div
-      className={`w-full rounded-2xl bg-white/90 shadow-md border border-slate-100 px-4 sm:px-6 py-3 flex items-center justify-between ${className}`}
+      className={`w-full rounded-2xl bg-white/90 shadow-md border border-slate-100 px-4 sm:px-6 py-3 flex items-center justify-between ${className} top-[13px]`}
     >
       {/* Left: Title */}
       <div className="text-sky-600 text-lg sm:text-xl font-semibold">{title}</div>
@@ -115,21 +183,43 @@ const Topbar: React.FC<TopbarProps> = ({
       {/* Center: Balance + actions */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Balance pill */}
-        <div className="px-3 sm:px-4 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs sm:text-sm font-semibold">
-          {formatINR(balanceAmount)}
+        <div className="">
+          <Popover
+            content={money_drp_dwn}
+            trigger="click"
+            placement="bottomRight"
+            overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
+          >
+            <button className="flex items-center gap-1 px-3 py-1 bg-[#EBEBEB] rounded-lg font-semibold shadow-sm">
+              {formatINR(balanceAmount)}
+            </button>
+          </Popover>
         </div>
 
         {/* Add Funds */}
+        <Popover
+      content={pg_drp_dwn}
+      trigger="click"
+      placement="bottomRight"
+      overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
+    >
         <Button
           type="primary"
           icon={<PlusOutlined className='!border-1 !border-white rounded-full ' />}
           onClick={onAddFunds}
           className="!bg-emerald-500 hover:!bg-emerald-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
         >
+              
           Add Funds
         </Button>
-
+</Popover>
         {/* Debit Funds */}
+    <Popover
+      content={debit_funds_drp_dwn}
+      trigger="click"
+      placement="bottomRight"
+      overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
+    >
         <Button
           danger
           icon={<MinusOutlined className='!border-1 !border-white rounded-full' />}
@@ -138,6 +228,7 @@ const Topbar: React.FC<TopbarProps> = ({
         >
           Debit Funds
         </Button>
+    </Popover>
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
@@ -164,29 +255,29 @@ const Topbar: React.FC<TopbarProps> = ({
 
         {/* Blue verify/“badge” button */}
         {isVerified && (
-<div className="relative flex items-center">
-      <Popover
-        content={content}
-        trigger="click"
-        placement="bottomRight"
-        overlayInnerStyle={{ padding: 0, borderRadius: "16px" }}
-      >
-        {/* Blue verify/“badge” button */}
-        <Tooltip title="Verified">
-          <div className="w-[23px] h-[23px] rounded-full bg-[#3386FF] place-items-center shadow-sm flex items-center justify-center cursor-pointer">
-            <CrownOutlined
-              style={{
-                color: "white",
-                fontSize: "16px",
-                width: "18px",
-                height: "18px",
-                marginLeft: "1px",
-              }}
-            />
+          <div className="relative flex items-center">
+            <Popover
+              content={content}
+              trigger="click"
+              placement="bottomRight"
+              overlayInnerStyle={{ padding: 0, borderRadius: "16px" }}
+            >
+              {/* Blue verify/“badge” button */}
+              <Tooltip title="Verified">
+                <div className="w-[23px] h-[23px] rounded-full bg-[#3386FF] place-items-center shadow-sm flex items-center justify-center cursor-pointer">
+                  <CrownOutlined
+                    style={{
+                      color: "white",
+                      fontSize: "16px",
+                      width: "18px",
+                      height: "18px",
+                      marginLeft: "1px",
+                    }}
+                  />
+                </div>
+              </Tooltip>
+            </Popover>
           </div>
-        </Tooltip>
-      </Popover>
-    </div>
         )}
       </div>
     </div>
