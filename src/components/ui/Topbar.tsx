@@ -119,27 +119,31 @@ const Topbar: React.FC<TopbarProps> = ({
   );
 
   const pg_drp_dwn = (
-  <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[180px]">
-    <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-      <Image 
-      src="/bank-black.svg"
-      alt="bank imgae"
-      width={15.91}
-      height={15}
-      />
-      <span className="text-[13px] text-gray-700">Payment Gateway (PG)</span>
+    <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[180px]">
+      <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+        <Image
+          src="/bank-black.svg"
+          alt="bank imgae"
+          width={15.91}
+          height={15}
+        />
+        <span className="text-[13px] text-gray-700"
+        onClick={()=> router.push("/money_transfer/payment_gateway")}
+        >Payment Gateway (PG)</span>
+      </div>
+      <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+        <Image
+          src="/rocket-black.svg"
+          alt="bank imgae"
+          width={15.91}
+          height={15}
+        />
+        <span className="text-[13px] text-gray-700"
+        onClick={()=> router.push("/money_transfer/fund_request")}
+        >Fund Request</span>
+      </div>
     </div>
-    <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-      <Image 
-      src="/rocket-black.svg"
-      alt="bank imgae"
-      width={15.91}
-      height={15}
-      />
-      <span className="text-[13px] text-gray-700">Fund Request</span>
-    </div>
-  </div>
-);
+  );
 
   const debit_funds_drp_dwn = (
     <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
@@ -153,7 +157,7 @@ const Topbar: React.FC<TopbarProps> = ({
           className='object-contain'
         />
         <span className="text-[14px] text-gray-700 font-medium"
-        onClick={()=> router.push("/money_transfer/move_to_wallet")}
+          onClick={() => router.push("/money_transfer/move_to_wallet")}
         >Move to Wallet</span>
       </div>
 
@@ -167,7 +171,7 @@ const Topbar: React.FC<TopbarProps> = ({
           className='object-contain'
         />
         <span className="text-[14px] text-gray-700 font-medium"
-        onClick={()=> router.push("/money_transfer/bank_withdrawl")}
+          onClick={() => router.push("/money_transfer/bank_withdrawl")}
         >Move To Bank</span>
       </div>
     </div>
@@ -188,7 +192,9 @@ const Topbar: React.FC<TopbarProps> = ({
             content={money_drp_dwn}
             trigger="click"
             placement="bottomRight"
-            overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
+            styles={{
+              body: { padding: 0, borderRadius: "12px" },
+            }}
           >
             <button className="flex items-center gap-1 px-3 py-1 bg-[#EBEBEB] rounded-lg font-semibold shadow-sm">
               {formatINR(balanceAmount)}
@@ -198,37 +204,41 @@ const Topbar: React.FC<TopbarProps> = ({
 
         {/* Add Funds */}
         <Popover
-      content={pg_drp_dwn}
-      trigger="click"
-      placement="bottomRight"
-      overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
-    >
-        <Button
-          type="primary"
-          icon={<PlusOutlined className='!border-1 !border-white rounded-full ' />}
-          onClick={onAddFunds}
-          className="!bg-emerald-500 hover:!bg-emerald-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
+          content={pg_drp_dwn}
+          trigger="click"
+          placement="bottomRight"
+          styles={{
+            body: { padding: 0, borderRadius: "12px" },
+          }}
         >
-              
-          Add Funds
-        </Button>
-</Popover>
+          <Button
+            type="primary"
+            icon={<PlusOutlined className='!border-1 !border-white rounded-full ' />}
+            onClick={onAddFunds}
+            className="!bg-emerald-500 hover:!bg-emerald-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
+          >
+
+            Add Funds
+          </Button>
+        </Popover>
         {/* Debit Funds */}
-    <Popover
-      content={debit_funds_drp_dwn}
-      trigger="click"
-      placement="bottomRight"
-      overlayInnerStyle={{ padding: 0, borderRadius: "12px" }}
-    >
-        <Button
-          danger
-          icon={<MinusOutlined className='!border-1 !border-white rounded-full' />}
-          onClick={onDebitFunds}
-          className="!bg-red-500 hover:!bg-red-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
+        <Popover
+          content={debit_funds_drp_dwn}
+          trigger="click"
+          placement="bottomRight"
+          styles={{
+            body: { padding: 0, borderRadius: "12px" },
+          }}
         >
-          Debit Funds
-        </Button>
-    </Popover>
+          <Button
+            danger
+            icon={<MinusOutlined className='!border-1 !border-white rounded-full' />}
+            onClick={onDebitFunds}
+            className="!bg-red-500 hover:!bg-red-600 !border-none !text-white !rounded-xl !h-8 sm:!h-9 !px-3 sm:!px-4"
+          >
+            Debit Funds
+          </Button>
+        </Popover>
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
@@ -260,7 +270,9 @@ const Topbar: React.FC<TopbarProps> = ({
               content={content}
               trigger="click"
               placement="bottomRight"
-              overlayInnerStyle={{ padding: 0, borderRadius: "16px" }}
+              styles={{
+                body: { padding: 0, borderRadius: "16px" },
+              }}
             >
               {/* Blue verify/“badge” button */}
               <Tooltip title="Verified">

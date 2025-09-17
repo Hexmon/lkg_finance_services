@@ -16,6 +16,7 @@ import TransactionsPaged from "@/components/money-transfer/Transaction";
 import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
 import SenderCheckFormBillAvenue, { SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
 import AddBeneficiariesModal from "@/components/money-transfer/AddBeneficiariesModal";
+import SmartModal from "@/components/ui/SmartModal";
 
 const { Title } = Typography;
 
@@ -65,6 +66,7 @@ export default function MoneyTransferServicePage() {
     }
   };
 
+
   const onSubmitWithOptions = async (values: SenderCheckWithOptionsValues) => {
     try {
       const res = await checkSenderAsync({
@@ -100,6 +102,7 @@ export default function MoneyTransferServicePage() {
     // success("Beneficiary added!");
     setIsBeneficiaryModalOpen(false);
   };
+   
 
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="" pageTitle="Dashboards" error={[checkSenderRegError, transactionError]} isLoading={transactionLoading}>
@@ -169,7 +172,9 @@ export default function MoneyTransferServicePage() {
         />
 
       </div>
+      
       <div className="bg-transparent"></div>
     </DashboardLayout>
+    
   );
 }
