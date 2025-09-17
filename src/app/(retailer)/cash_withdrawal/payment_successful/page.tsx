@@ -25,7 +25,7 @@ export default function PaymentSuccess() {
                 width="w-full"
                 height="min-h-[380px]"
                 divider={false}
-                className="mx-auto bg-[#0BA82F] shadow-xl rounded-xl"
+                className="mx-auto !bg-[#F0FDF4] shadow-xl rounded-xl"
                 body={
                     <div className="grid place-items-center gap-6 py-8">
                         {/* Success Icon */}
@@ -50,7 +50,7 @@ export default function PaymentSuccess() {
                         </div>
 
                         {/* Transaction Details */}
-                        <div className="w-full bg-[#FFF9F2] rounded-lg shadow-sm px-6 py-6 text-sm flex items-center justify-center">
+                        <div className="w-full bg-[#FFFFFF] rounded-lg shadow-sm px-6 py-6 text-sm flex items-center justify-center">
                             <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-center">
                                 {/* Transaction ID */}
                                 <div className="flex flex-col">

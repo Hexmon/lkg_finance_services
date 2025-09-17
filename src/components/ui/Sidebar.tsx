@@ -156,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         transition: 'width 220ms ease',
         height: '99vh',
         position: 'sticky',
-        top: 0,
+        top: '!13px',
         left: 0,
         overflow: 'hidden',
       }}
