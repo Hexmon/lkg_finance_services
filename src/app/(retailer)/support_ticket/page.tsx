@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Button, Typography, Tag, Modal, Form, Select, Input,  } from "antd";
+import { Card, Button, Typography, Tag, Modal, Form, Select, Input, } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
@@ -43,10 +43,10 @@ const tickets: Ticket[] = [
 ];
 
 interface TicketFormValues {
-  transactionId: string;
-  subject: string;
-  description: string;
-  priority: "low" | "medium" | "high";
+    transactionId: string;
+    subject: string;
+    description: string;
+    priority: "low" | "medium" | "high";
 }
 
 export default function SupportTickets() {
@@ -154,7 +154,7 @@ export default function SupportTickets() {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex space-x-2">
+                                {/* <div className="flex space-x-2">
                                     <Button
                                         shape="circle"
                                         icon={<Image
@@ -176,7 +176,7 @@ export default function SupportTickets() {
                                         className="!border-none !shadow-md"
                                         danger
                                     />
-                                </div>
+                                </div> */}
                             </div>
                         </Card>
                     ))}
@@ -222,14 +222,15 @@ export default function SupportTickets() {
 
                     <Form.Item label="Priority" name="priority">
                         <Select
-                            defaultValue="Low"
+                            defaultValue="low"
                             className="!rounded-xl !bg-[#F5F5F5]"
                         >
-                            <Option value="low">Low</Option>
-                            <Option value="medium">Medium</Option>
-                            <Option value="high">High</Option>
+                            <Select.Option value="low">Low</Select.Option>
+                            <Select.Option value="medium">Medium</Select.Option>
+                            <Select.Option value="high">High</Select.Option>
                         </Select>
                     </Form.Item>
+
 
                     {/* Action Buttons */}
                     <div className="flex justify-center gap-4 mt-6">

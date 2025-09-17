@@ -6,6 +6,8 @@ import { EyeOutlined, DownloadOutlined } from "@ant-design/icons";
 import type { TransactionSummaryItem } from "@/features/retailer/general/domain/types";
 import { Spin, Tag } from "antd";
 import { useTransactionSummaryQuery } from "@/features/retailer/general/data/hooks"; // adjust path
+import { Router } from "next/router";
+import SmartModal from "../ui/SmartModal";
 
 function StatusPill({ status }: { status: string }) {
   const s = status.toUpperCase();
@@ -115,7 +117,7 @@ export default function TransactionsPaged({ transactionData, isLoading }: { tran
         align: "center",
         render: ({ record }) => (
           <div className="flex items-center gap-2 justify-center">
-            <IconCircleButton title="View" icon={<EyeOutlined />} onClick={() => console.log("view", record.id)} />
+            <IconCircleButton title="View" icon={<EyeOutlined />} onClick={() => setOpen(true)} />
             <IconCircleButton title="Download" icon={<DownloadOutlined />} onClick={() => console.log("download", record.id)} />
           </div>
         ),
@@ -123,6 +125,15 @@ export default function TransactionsPaged({ transactionData, isLoading }: { tran
     ],
     []
   );
+      const transactionDataModal = {
+      sender: "Rahul",
+      beneficiary: "Rahul",
+      transactionId: "BAL1758029150976",
+      bank: "Airtel Payments Bank Limited",
+      accountNumber: "XXXX5413",
+      dateTime: "9/16/2025, 6:55:50",
+    };
+    const [open, setOpen] = useState(false);
 
   return (
     <div className="p-4">
@@ -159,6 +170,56 @@ export default function TransactionsPaged({ transactionData, isLoading }: { tran
           }}
         />
       </Spin>
+      <SmartModal
+        open={open}
+        onClose={() => setOpen(false)}
+        ariaLabel="Transaction Details"
+        animation="scale"
+        centered
+        contentClassName="max-w-[500px]"
+      >
+        <SmartModal.Header>
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold">Transaction Details</span>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-xl font-bold px-2 hover:bg-gray-100 rounded-full"
+            >
+              ×
+            </button>
+          </div>
+        </SmartModal.Header>
+
+        <SmartModal.Body>
+          <div className="bg-[#F1F1F18C] p-4 rounded-lg space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Sender:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.sender}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Beneficiary:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.beneficiary}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Transaction ID:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.transactionId}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Bank:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.bank}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Account Number:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.accountNumber}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Date &amp; Time:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.dateTime}</span>
+            </div>
+          </div>
+        </SmartModal.Body>
+      </SmartModal>
     </div>
+    
   );
 }

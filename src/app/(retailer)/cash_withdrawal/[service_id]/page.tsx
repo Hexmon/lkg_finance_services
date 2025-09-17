@@ -116,7 +116,7 @@ export default function CashWithdrawPage() {
                             variant="default"
                             elevation={2}
                             rounded="rounded-xl"
-                            className="!bg-[#ffffff] text-center relative !w-[240px] !h-[136px] !rounded-[15px]"
+                            className="!bg-[#ffffff] text-center relative !w-2xl !h-[136px] !rounded-[15px]"
                             width="240px"
                             height="136px"
                             body={
