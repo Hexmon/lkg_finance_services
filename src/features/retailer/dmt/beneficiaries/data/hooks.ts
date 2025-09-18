@@ -1,6 +1,9 @@
+// src\features\retailer\dmt\beneficiaries\data\hooks.ts
 import { useMutation } from '@tanstack/react-query';
-import { apiVerifyIfsc } from './endpoints';
+import { apiAddBeneficiary, apiVerifyIfsc } from './endpoints';
 import type {
+    AddBeneficiaryRequest,
+    AddBeneficiaryResponse,
     VerifyIfscRequest,
     VerifyIfscResponse,
 } from '@/features/retailer/dmt/beneficiaries/domain/types';
@@ -18,4 +21,19 @@ export function useVerifyIfsc() {
         verifyIfscAsync: mutation.mutateAsync,
         reset: mutation.reset,
     };
+}
+
+export function useAddBeneficiary() {
+  const mutation = useMutation<AddBeneficiaryResponse, unknown, AddBeneficiaryRequest>({
+    mutationFn: apiAddBeneficiary,
+  });
+
+  return {
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    addBeneficiary: mutation.mutate,
+    addBeneficiaryAsync: mutation.mutateAsync,
+    reset: mutation.reset,
+  };
 }

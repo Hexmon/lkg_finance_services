@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
@@ -65,7 +66,7 @@ export default function AEPSFormPage() {
     const cleaned = term.trim().toLowerCase();
     if (!cleaned) return [];
     if (!banksCacheRef.current) {
-      const resp = await apiAepsBankList({ service_id: AEPS_SERVICE_ID });
+      const resp = await apiAepsBankList({ service_id: AEPS_SERVICE_ID, bank_name: "" });
       const mapped: SmartOption<string>[] = (resp.bankList ?? [])
         .map((row: any) => {
           const bankName = String(row["Bank Name"] ?? "").trim();
@@ -240,9 +241,8 @@ export default function AEPSFormPage() {
         {/* Process Button → calls AEPS transaction hook */}
         <Button
           block
-          className={`!mt-6 h-12 !rounded-lg ${
-            canProcess ? "!bg-[#3386FF] !text-white" : "!bg-[#5298FF54] !text-white"
-          }`}
+          className={`!mt-6 h-12 !rounded-lg ${canProcess ? "!bg-[#3386FF] !text-white" : "!bg-[#5298FF54] !text-white"
+            }`}
           disabled={!canProcess || isLoading}
           onClick={handleProcess}
         >

@@ -194,13 +194,14 @@ export type AEPSTransactionResponse = z.infer<typeof AEPSTransactionResponseSche
 
 /* ========================================= */
 /*            AEPS: Bank List (GET)          */
-/* Upstream: /secure/paypoint/aeps/banklist  */
+/* Upstream: /secure/retailer/bank_info      */
 /* ========================================= */
 
-/** Query schema: service_id required */
+/** Query schema: service_id + bank_name required */
 export const AEPSBankListQuerySchema = z
   .object({
     service_id: z.string().uuid({ message: 'service_id must be a UUID' }),
+    bank_name: z.string().min(1, 'bank_name is required'),
   })
   .strict();
 
@@ -209,6 +210,7 @@ export type AEPSBankListQuery = z.infer<typeof AEPSBankListQuerySchema>;
 /**
  * Sample entries include keys with spaces & dots (e.g., "Sr. No.", "Bank Code").
  * We keep those keys verbatim to match the provider and avoid lossy mapping.
+ * Keep this permissive. Adjust keys only if you know the exact shape.
  */
 export const AEPSBankListItemSchema = z
   .object({

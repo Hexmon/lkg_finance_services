@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// src/components/money-transfer/AddsenderModal.tsx
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Form, Input, Button, Select } from "antd";
 import { useRouter } from "next/navigation";
 import SmartModal from "@/components/ui/SmartModal";
 import { useAddSender, useVerifyOtpOnboardSender } from "@/features/retailer/dmt/sender";
 import { useMessage } from "@/hooks/useMessage";
 
+type BankType = "ARTL" | "FINO";
+
 type Props = {
     open: boolean;
     onClose: () => void;
     service_id: string;
-    bankType: string; // "ARTL" | "FINO"
+    bankType: BankType; // strictly typed
 };
 
 const TXN_OPTIONS = [
@@ -25,6 +28,8 @@ const BANK_OPTIONS = [
     { label: "FINO", value: "FINO" },
 ] as const;
 
+const draftKey = (service_id: string) => `sender:onboard:draft:${service_id}`;
+
 export default function AddsenderModal({
     open,
     service_id,
@@ -33,19 +38,23 @@ export default function AddsenderModal({
 }: Props) {
     const router = useRouter();
     const { error, info, success } = useMessage();
+
+    // Avoid destructuring nested data properties directly (can be undefined mid-flight)
     const {
         addSenderAsync,
-        data: { bio_required, message, ref_id } = {},
+        data: addData,
         error: addErr,
         isLoading: addLoading,
     } = useAddSender();
 
     const {
         verifyOtpOnboardSenderAsync,
-        isLoading: verifyLoading,
+        data: verifyData,
         error: verifyErr,
+        isLoading: verifyLoading,
     } = useVerifyOtpOnboardSender();
 
+    const ref_id = addData?.ref_id; // for ARTL OTP flow only
     const [form] = Form.useForm();
 
     // ---------- Error normalizer (prevents React from rendering Error objects) ----------
@@ -61,11 +70,13 @@ export default function AddsenderModal({
         }
     };
 
-    // ---------- Send OTP ----------
+    const hasMutationError = useMemo(() => Boolean(addErr) || Boolean(verifyErr), [addErr, verifyErr]);
+
+    // ---------- Send OTP / or redirect for FINO ----------
     const handleSendOtp = useCallback(async () => {
         try {
-            // ✅ make all fields mandatory here
-            const values = await form.validateFields([
+            // Validate common (non-biometric) fields
+            const baseFields = [
                 "sender_name",
                 "mobile_no",
                 "address",
@@ -73,37 +84,39 @@ export default function AddsenderModal({
                 "pincode",
                 "txnType",
                 "bankId",
-                "aadharNumber",
-                "bioPid",
-            ]);
+            ] as const;
 
-            // In case parent passed a bankType, lock it in
-            const payload = {
+            const values = await form.validateFields(baseFields as any);
+
+            // Lock bank type from prop
+            const draft = {
                 ...values,
-                bankId: bankType || values.bankId,
+                bankId: bankType,
                 service_id,
             };
 
-            console.log({bankType});
-            const res = await addSenderAsync(payload);
-
-            // If ARTL needs onboarding immediately, route accordingly
-            if (bankType === "ARTL") {
+            if (bankType === "FINO") {
+                // Save draft and go to onboarding to collect Aadhaar + BioPID
+                if (typeof window !== "undefined") {
+                    sessionStorage.setItem(draftKey(service_id), JSON.stringify(draft));
+                }
                 router.push(`/money_transfer/service/${service_id}/sender_onboarding`);
                 return;
             }
 
-            // Otherwise show success info (keep string-only)
-            // info(res?.message ?? "OTP request sent. Enter the OTP to continue.");
+            // ARTL flow → call API here to send OTP
+            const res = await addSenderAsync(draft);
+            info(res?.message ?? "OTP request sent. Enter the OTP to continue.");
         } catch (err: any) {
             error(getErrorMessage(err) || "Failed to send OTP.");
         }
     }, [addSenderAsync, form, service_id, bankType, router, info, error]);
 
-    // ---------- Verify OTP (Next) ----------
+    // ---------- Verify OTP (Next) for ARTL ----------
     const handleFinish = async () => {
-        const { otp, sender_name, pincode, email_address, mobile_no } =
-            form.getFieldsValue(true);
+        const { otp, sender_name, pincode, email_address, mobile_no } = form.getFieldsValue(true);
+
+        if (bankType !== "ARTL") return; // FINO doesn't verify OTP here
 
         if (!ref_id) {
             error("Please send OTP first.");
@@ -125,11 +138,7 @@ export default function AddsenderModal({
                 service_id,
             });
 
-            if (bankType === "ARTL") {
-                router.push(`/money_transfer/service/${service_id}/sender_onboarding`);
-            } else {
-                success("OTP Verified!");
-            }
+            success("OTP Verified!");
         } catch (e) {
             error("OTP verification failed. Please try again.");
         }
@@ -185,10 +194,7 @@ export default function AddsenderModal({
                         name="mobile_no"
                         rules={[
                             { required: true, message: "Please enter Mobile No" },
-                            {
-                                pattern: /^[6-9]\d{9}$/,
-                                message: "Enter valid 10-digit mobile number",
-                            },
+                            { pattern: /^[6-9]\d{9}$/, message: "Enter valid 10-digit mobile number" },
                         ]}
                     >
                         <Input placeholder="Enter Sender Mobile No" maxLength={10} inputMode="numeric" />
@@ -229,10 +235,7 @@ export default function AddsenderModal({
                         name="txnType"
                         rules={[{ required: true, message: "Please select Transaction Type" }]}
                     >
-                        <Select
-                            placeholder="Select Txn Type"
-                            options={TXN_OPTIONS as any}
-                        />
+                        <Select placeholder="Select Txn Type" options={TXN_OPTIONS as any} />
                     </Form.Item>
 
                     <Form.Item
@@ -240,96 +243,71 @@ export default function AddsenderModal({
                         name="bankId"
                         rules={[{ required: true, message: "Please select Bank" }]}
                     >
-                        <Select
-                            placeholder="Select Bank"
-                            options={BANK_OPTIONS as any}
-                        />
+                        <Select placeholder="Select Bank" options={BANK_OPTIONS as any} />
                     </Form.Item>
 
-                    {
-                        bankType === "FINO" && (
-                            <>
+                    {/* FINO biometric fields are moved to onboarding page */}
+                    {/* OTP area only relevant for ARTL */}
+                    {bankType !== "FINO" && (
+                        <Form.Item label="OTP" style={{ marginBottom: 0 }}>
+                            <div className="flex items-center gap-3 w-full">
                                 <Form.Item
-                                    label="Aadhaar Number"
-                                    name="aadharNumber"
+                                    name="otp"
                                     rules={[
-                                        { required: true, message: "Please enter Aadhaar number" },
-                                        { pattern: /^\d{12}$/, message: "Enter 12-digit Aadhaar number" },
+                                        { required: true, message: "Please enter OTP" },
+                                        { pattern: /^\d{4,6}$/, message: "Enter 4–6 digit OTP" },
                                     ]}
+                                    style={{ marginBottom: 0 }}
+                                    className="flex-1"
                                 >
-                                    <Input placeholder="12-digit Aadhaar number" maxLength={12} inputMode="numeric" />
+                                    <Input placeholder="Enter OTP" maxLength={6} inputMode="numeric" className="!h-[42px]" />
                                 </Form.Item>
 
-                                <Form.Item
-                                    label="Bio PID"
-                                    name="bioPid"
-                                    rules={[{ required: true, message: "Please enter Bio PID" }]}
+                                <Button
+                                    type="default"
+                                    size="large"
+                                    style={{ height: 42 }}
+                                    disabled={addLoading}
+                                    loading={addLoading}
+                                    onClick={handleSendOtp}
                                 >
-                                    <Input placeholder="Enter Bio PID" />
-                                </Form.Item>
-                            </>
-                        )
-                    }
+                                    Send OTP
+                                </Button>
+                            </div>
+                        </Form.Item>
+                    )}
 
-                    <Form.Item label="OTP" style={{ marginBottom: 0 }}>
-                        <div className="flex items-center gap-3 w-full">
-                            <Form.Item
-                                name="otp"
-                                rules={[
-                                    { required: true, message: "Please enter OTP" },
-                                    { pattern: /^\d{4,6}$/, message: "Enter 4–6 digit OTP" },
-                                ]}
-                                style={{ marginBottom: 0 }}
-                                className="flex-1"
-                            >
-                                <Input
-                                    placeholder="Enter OTP"
-                                    maxLength={6}
-                                    inputMode="numeric"
-                                    className="!h-[42px]"
-                                />
-                            </Form.Item>
-
-                            <Form.Item shouldUpdate noStyle>
-                                {({ getFieldValue }) => {
-                                    const mobile = getFieldValue("mobile_no");
-                                    const canSend = /^[6-9]\d{9}$/.test(mobile || "");
-                                    return (
-                                        <Button
-                                            type="default"
-                                            size="large"
-                                            style={{ height: 42 }}
-                                            disabled={!canSend || addLoading}
-                                            loading={addLoading}
-                                            onClick={handleSendOtp}
-                                        >
-                                            Send OTP
-                                        </Button>
-                                    );
-                                }}
-                            </Form.Item>
-                        </div>
-                    </Form.Item>
-
-                    {(addErr || verifyErr || "") && (
+                    {hasMutationError && (
                         <div className="mt-2 text-sm text-red-500">
-                            {getErrorMessage(addErr) || getErrorMessage(verifyErr)}
+                            {getErrorMessage(addErr ?? verifyErr)}
                         </div>
                     )}
                 </Form>
             </SmartModal.Body>
 
             <SmartModal.Footer>
-                <Button
-                    type="primary"
-                    htmlType="submit"
-                    form="add-sender-form"
-                    size="large"
-                    className="!bg-[#3386FF] w-[30%] !mx-auto"
-                    loading={verifyLoading}
-                >
-                    Next
-                </Button>
+                {bankType !== "FINO" ? (
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        form="add-sender-form"
+                        size="large"
+                        className="!bg-[#3386FF] w-[30%] !mx-auto"
+                        loading={verifyLoading}
+                    >
+                        Next
+                    </Button>
+                ) : (
+                    <Button
+                        type="primary"
+                        size="large"
+                        className="!bg-[#3386FF] w-[30%] !mx-auto"
+                        onClick={handleSendOtp}
+                        loading={addLoading}
+                    >
+                        Continue
+                    </Button>
+                )}
             </SmartModal.Footer>
         </SmartModal>
     );
