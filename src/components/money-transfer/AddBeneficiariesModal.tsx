@@ -3,11 +3,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Form, Input, Button, Alert } from "antd";
+import { Form, Input, Button, Alert, message } from "antd"; // <-- message for quick toasts
 import SmartModal from "@/components/ui/SmartModal";
 import { debounce } from "@/utils/debounce";
 import { useVerifyIfsc } from "@/features/retailer/dmt/beneficiaries/data/hooks";
 import { useAepsBankList } from "@/features/retailer/cash_withdrawl/data/hooks";
+import { useAddBeneficiary } from "@/features/retailer/dmt/beneficiaries/data/hooks"; // <-- ADD THIS
+import type { AddBeneficiaryRequest } from "@/features/retailer/dmt/beneficiaries/domain/types";
 
 export type AddBeneficiaryFormValues = {
   beneficiaryAccountNo: string;
@@ -22,10 +24,11 @@ export type AddBeneficiaryFormValues = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (values: AddBeneficiaryFormValues) => void | Promise<void>;
+  onSubmit?: (values: AddBeneficiaryFormValues) => void | Promise<void>; // keep if parent still needs it
   initialValues?: Partial<AddBeneficiaryFormValues>;
-  loading?: boolean;
+  loading?: boolean; // deprecated by hook loading, but we’ll respect it if passed
   service_id: string;
+  sender_id: string; // <-- ADD THIS (required by API)
 };
 
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
@@ -37,6 +40,7 @@ export default function AddBeneficiariesModal({
   initialValues,
   loading,
   service_id,
+  sender_id, // <-- ADD THIS
 }: Props) {
   const [form] = Form.useForm<AddBeneficiaryFormValues>();
 
@@ -48,6 +52,14 @@ export default function AddBeneficiariesModal({
     error: verifyErr,
   } = useVerifyIfsc();
 
+  // ADD: add beneficiary hook
+  const {
+    addBeneficiaryAsync,
+    isLoading: isAdding,
+    error: addError,
+    data: addResult,
+  } = useAddBeneficiary();
+
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "ok" | "fail">("idle");
   const lastVerifiedIfscRef = useRef<string>("");
 
@@ -55,28 +67,40 @@ export default function AddBeneficiariesModal({
   const ifsc: string | undefined = Form.useWatch("ifscCode", form);
   const bankNameField: string | undefined = Form.useWatch("bankName", form);
 
-  // --- NEW: controlled query value for bank list (derived from Bank Name field)
+  // Bank list query trigger
   const [bankQuery, setBankQuery] = useState<string>("");
 
-  // --- NEW: keep bankQuery in sync with Bank Name field
   useEffect(() => {
     const v = (bankNameField ?? "").trim();
-    // only fire queries when we have at least 2 chars to avoid noisy upstream calls
     setBankQuery(v.length >= 2 ? v : "");
   }, [bankNameField]);
 
-  // --- NEW: call useAepsBankList with { service_id, bank_name }
+  // Fetch bank list using service_id + bank_name
   const {
     data: bankListData,
     error: bankListError,
     isLoading: bankListLoading,
   } = useAepsBankList(
-    {
-      service_id,
-      bank_name: bankQuery, // required by your updated schema
-    },
-    Boolean(service_id && bankQuery) // enable only when both present
+    { service_id, bank_name: bankQuery },
+    Boolean(service_id && bankQuery)
   );
+
+  // Track matched bank object so we can send bank_id/bank_code if available
+  const [matchedBank, setMatchedBank] = useState<any | null>(null);
+
+  useEffect(() => {
+    const bn = (bankNameField ?? "").trim();
+    if (!bn || !bankListData?.bankList?.length) {
+      setMatchedBank(null);
+      return;
+    }
+    const match = bankListData.bankList.find(
+      (it: any) => (it?.["Bank Name"] ?? it?.bank_name ?? "").toLowerCase() === bn.toLowerCase()
+    );
+    setMatchedBank(match ?? null);
+    // eslint-disable-next-line no-console
+    console.log("[AEPS bank match]", match ?? "No exact match");
+  }, [bankListData, bankNameField]);
 
   // debounced IFSC verify
   const debouncedVerify = useMemo(
@@ -85,30 +109,26 @@ export default function AddBeneficiariesModal({
         try {
           const payload = await verifyIfscAsync({ ifsc_code: code });
 
-          // Be defensive about shape: some hooks return {data,...}, some return raw
+          // normalize shape (works with your sample)
           const root = (payload as any) ?? {};
           const data = root.data ?? root;
 
-          // Determine success using real fields from your sample response
           const ok =
             data?.responseCode === "000" ||
             data?.success === true ||
             /success/i.test(String(data?.respDesc ?? data?.responseReason ?? ""));
 
-          const bankFromApi =
-            data?.bankName ?? data?.bank ?? ""; // prefer bankName as per your sample
+          const bankFromApi = data?.bankName ?? data?.bank ?? "";
 
           if (form.getFieldValue("ifscCode") === code) {
             lastVerifiedIfscRef.current = code;
             setVerifyStatus(ok ? "ok" : "fail");
 
             if (ok && bankFromApi) {
-              // Fill Bank Name -> also triggers bank list fetch
               form.setFieldsValue({ bankName: bankFromApi });
             }
           }
-        } catch (e) {
-          // only flip to fail if user hasn't changed IFSC in the meantime
+        } catch {
           if (form.getFieldValue("ifscCode") === code) {
             setVerifyStatus("fail");
           }
@@ -116,7 +136,6 @@ export default function AddBeneficiariesModal({
       }, 500),
     [form, verifyIfscAsync]
   );
-
 
   // trigger on valid IFSC
   useEffect(() => {
@@ -130,32 +149,59 @@ export default function AddBeneficiariesModal({
     }
   }, [ifsc, debouncedVerify]);
 
-  // --- NEW: when bank list arrives, find and log the exact matching bank object
-  useEffect(() => {
-    const bn = (bankNameField ?? "").trim();
-    if (!bn || !bankListData?.bankList?.length) return;
+  // Disable input fields while verifying IFSC or while submitting
+  const disableOthers = isVerifying || isAdding;
 
-    // Upstream item key is "Bank Name"
-    const match = bankListData.bankList.find(
-      (it: any) => (it?.["Bank Name"] ?? "").toLowerCase() === bn.toLowerCase()
-    );
-
-    if (match) {
-      // For now, just log the matched object as requested
-      // You can extend this to set hidden fields like IIN, etc., later.
-      // eslint-disable-next-line no-console
-      console.log("[AEPS bank match]", match);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log("[AEPS bank match] No exact match for:", bn);
-    }
-  }, [bankListData, bankNameField]);
-
-  // Disable other fields while verifying
-  const disableOthers = isVerifying;
-
+  // SUBMIT: build AddBeneficiaryRequest and call hook
   const handleFinish = async (values: AddBeneficiaryFormValues) => {
-    await Promise.resolve(onSubmit?.(values));
+    // Optionally let parent observe raw form values
+    if (onSubmit) {
+      await Promise.resolve(onSubmit(values));
+    }
+
+    // Map form -> AddBeneficiaryRequest
+    const payload: AddBeneficiaryRequest = {
+      sender_id,
+      service_id,
+      b_mobile: values.mobileNo,
+      b_name: values.beneficiaryName,
+      b_account_number: values.beneficiaryAccountNo,
+      ifsc_code: values.ifscCode,
+      address: values.address,
+      bankname: values.bankName,
+      account_verification: "N", // default (change to "Y" if you add a toggle)
+      // Optional enrichments from matched bank:
+      bank_id:
+        matchedBank?.id ??
+        matchedBank?.BankId ??
+        undefined,
+      bank_code:
+        matchedBank?.["Bank Code"] ??
+        matchedBank?.bank_code ??
+        undefined,
+      // lat/lng optional—add if you have them
+      // lat: '...',
+      // lng: '...',
+    };
+
+    try {
+      const res = await addBeneficiaryAsync(payload);
+      message.success(res?.message ?? "Beneficiary added successfully");
+
+      // Reset form, close modal
+      form.resetFields();
+      setMatchedBank(null);
+      onClose?.();
+    } catch (e: any) {
+      // show a friendly error
+      const msg =
+        e?.data?.message ??
+        e?.message ??
+        "Failed to add beneficiary. Please check details and try again.";
+      message.error(msg);
+      // eslint-disable-next-line no-console
+      console.error("[addBeneficiary error]", e);
+    }
   };
 
   return (
@@ -224,7 +270,6 @@ export default function AddBeneficiariesModal({
             />
           )}
 
-
           <Form.Item
             label="Beneficiary Account No *"
             name="beneficiaryAccountNo"
@@ -265,7 +310,7 @@ export default function AddBeneficiariesModal({
             />
           </Form.Item>
 
-          {/* Auto-filled from IFSC verify response OR typed by user; drives bank list fetch */}
+          {/* Bank Name drives bank list fetch; matchedBank harvested in effect */}
           <Form.Item
             label="Bank Name *"
             name="bankName"
@@ -276,7 +321,9 @@ export default function AddBeneficiariesModal({
                 ? "Fetching bank list..."
                 : bankListError
                   ? "Could not fetch bank list"
-                  : null) as React.ReactNode
+                  : matchedBank
+                    ? `Matched: ${matchedBank?.["Bank Name"] ?? matchedBank?.bank_name ?? ""}`
+                    : null) as React.ReactNode
             }
           >
             <Input placeholder="Enter Bank Name" className="h-[39px]" disabled={disableOthers} />
@@ -322,13 +369,24 @@ export default function AddBeneficiariesModal({
             <Button
               type="primary"
               htmlType="submit"
-              loading={loading}
+              loading={loading || isAdding}
               className="!bg-blue-600 mt-2 !w-[155px] !h-[37px] !rounded-[10px]"
-              disabled={isVerifying}
+              disabled={isVerifying || isAdding}
             >
               Submit
             </Button>
           </div>
+
+          {!!addError && (
+            <Alert
+              type="error"
+              showIcon
+              message="Failed to add beneficiary"
+              description={String((addError as any)?.message ?? "Please try again.")}
+              style={{ marginTop: 12 }}
+            />
+          )}
+
         </Form>
       </SmartModal.Body>
     </SmartModal>
