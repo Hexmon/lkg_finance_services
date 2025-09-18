@@ -47,71 +47,74 @@ export default function MoneyTransferServicePage() {
 
     return (
         <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/money_transfer" pageTitle="Money Transfer" isLoading={isLoading || subscribeLoading}>
-            <DashboardSectionHeader
-                title="Money Transfer Service"
-                titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"
-                arrowClassName="!text-[#3386FF]"
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-                {(cardData || []).map((data) => {
-                    const { api_partner, is_blocked, is_subscribed, service_id, service_name } = data || {};
-                    return (
-                        <div
-                            key={service_id}
-                            className="cursor-pointer w-full"
-                            onClick={() => {
-                                if (is_subscribed || is_blocked) {
-                                    router.push(`/money_transfer/service/${service_id}`);
-                                }
-                            }}
-                        >
-                            <CardLayout
-                                as="section"
-                                size="lg"
-                                elevation={2}
-                                hoverable
-                                rounded="rounded-2xl"
-                                className="rounded-2xl mx-auto w-full"
-                                header={
-                                    is_subscribed && (
-                                        <div className="flex justify-end">
-                                            <span className="!bg-[#0BA82F] !rounded-md !text-white px-4 py-1">Active</span>
+            <div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ml-0 ">
+                    {(cardData || []).map((data) => {
+                        const { api_partner, is_blocked, is_subscribed, service_id, service_name } = data || {};
+                        return (
+                            <div
+                                key={service_id}
+                                className="cursor-pointer w-full"
+                                onClick={() => {
+                                    if (is_subscribed || is_blocked) {
+                                        router.push(`/money_transfer/service/${service_id}`);
+                                    }
+                                }}
+                            >
+                                <DashboardSectionHeader
+                                    title="Money Transfer Service"
+                                    titleClassName="!text-[#3386FF] !font-semibold !text-[32px]"
+                                    arrowClassName="!text-[#3386FF]"
+                                />
+                                <CardLayout
+                                    as="section"
+                                    size="lg"
+                                    elevation={2}
+                                    hoverable
+                                    rounded="rounded-2xl"
+                                    className="rounded-2xl mx-auto w-full ml-3"
+                                    header={
+                                        is_subscribed && (
+                                            <div className="flex justify-end">
+                                                <span className="!bg-[#0BA82F] !rounded-md !text-white px-4 py-1">Active</span>
+                                            </div>
+                                        )
+                                    }
+                                    footer={
+                                        !is_subscribed && (
+                                            <div className="flex justify-center">
+                                                <Button
+                                                    onClick={(e) => handleSubscribeFor(e, service_id)}
+                                                    loading={subscribeLoading}
+                                                    type="primary"
+                                                    className="!text-white !bg-[#0BA82F] w-[70%]"
+                                                    size="middle"
+                                                    disabled={!!is_blocked}
+                                                >
+                                                    Subscribe
+                                                </Button>
+                                            </div>
+                                        )
+                                    }
+                                    body={
+                                        <div className="relative w-full flex flex-col items-center text-center space-y-3">
+                                            <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-100">
+                                                <Image src='/bill.svg' alt="money-transfer" width={48} height={48} className="mx-auto p-2" />
+                                            </div>
+                                            <Title level={4} className="!mb-0">
+                                                {service_name}
+                                            </Title>
+                                            <Text className="font-[500] text-[14px] leading-[141%] font-[Poppins,sans-serif] text-center !text-gray-500">
+                                                {api_partner}
+                                            </Text>
                                         </div>
-                                    )
-                                }
-                                footer={
-                                    !is_subscribed && (
-                                        <div className="flex justify-center">
-                                            <Button
-                                                onClick={(e) => handleSubscribeFor(e, service_id)}
-                                                loading={subscribeLoading}
-                                                type="primary"
-                                                className="!text-white !bg-[#0BA82F] w-[70%]"
-                                                size="middle"
-                                                disabled={!!is_blocked}
-                                            >
-                                                Subscribe
-                                            </Button>
-                                        </div>
-                                    )
-                                }
-                                body={
-                                    <div className="relative w-full flex flex-col items-center text-center space-y-3">
-                                        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-100">
-                                            <Image src='/bill.svg' alt="money-transfer" width={48} height={48} className="mx-auto p-2" />
-                                        </div>
-                                        <Title level={4} className="!mb-0">
-                                            {service_name}
-                                        </Title>
-                                        <Text className="font-[500] text-[14px] leading-[141%] font-[Poppins,sans-serif] text-center !text-gray-500">
-                                            {api_partner}
-                                        </Text>
-                                    </div>
-                                }
-                            />
-                        </div>
-                    );
-                })}
+                                    }
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
             <div className="bg-transparent"></div>
         </DashboardLayout>

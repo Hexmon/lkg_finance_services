@@ -119,9 +119,9 @@ export default function AEPSFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-6 space-y-3">
+    <div className=" bg-transparent space-y-3 ml-0">
       {/* AEPS Services */}
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6 !w-full">
         <Title level={5}>Select AEPS Service</Title>
         <Text type="secondary">Choose the service you want to provide</Text>
 

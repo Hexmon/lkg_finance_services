@@ -1,11 +1,13 @@
 "use client";
 
 import { useTransactionSummaryQuery } from "@/features/retailer/general";
-import { Card, Table, Typography, Empty } from "antd";
+import { Card, Table, Typography, Empty, Dropdown, Select } from "antd";
 import Title from "antd/es/typography/Title";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useState } from "react";
+import SmartModal from "../ui/SmartModal";
 
 dayjs.extend(relativeTime);
 
@@ -59,6 +61,47 @@ export default function TransactionHistory() {
     }
   };
 
+  const transactionDataModal = {
+    sender: "Rahul",
+    beneficiary: "Rahul",
+    transactionId: "BAL1758029150976",
+    bank: "Airtel Payments Bank Limited",
+    accountNumber: "XXXX5413",
+    dateTime: "9/16/2025, 6:55:50",
+  };
+  const [open, setOpen] = useState(false);
+  const dropdownContent = (
+    <div className="w-60 p-3 space-y-3 bg-white rounded-xl shadow-md">
+      {/* Status Filter */}
+      <div>
+        <label className="block text-xs text-gray-500 mb-1">Status</label>
+        <Select
+          placeholder="Select Status"
+          className="w-full"
+          options={[
+            { value: "success", label: "Success" },
+            { value: "pending", label: "Pending" },
+            { value: "failed", label: "Failed" },
+          ]}
+        />
+      </div>
+
+      {/* Service Filter */}
+      <div>
+        <label className="block text-xs text-gray-500 mb-1">Service</label>
+        <Select
+          placeholder="Select Service"
+          className="w-full"
+          options={[
+            { value: "dmt", label: "Money Transfer" },
+            { value: "aeps", label: "AEPS" },
+            { value: "recharge", label: "Recharge" },
+          ]}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Card className="rounded-2xl shadow-md">
@@ -73,16 +116,22 @@ export default function TransactionHistory() {
           </div>
 
           <div className="flex gap-3">
-            <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
-              <Image
-                src="/filter.svg"
-                alt="filter"
-                width={15}
-                height={15}
-                className="object-contain"
-              />
-              <Text>Filter</Text>
-            </div>
+            <Dropdown
+              dropdownRender={() => dropdownContent}
+              trigger={["click"]}
+              placement="bottomRight"
+            >
+              <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
+                <Image
+                  src="/filter.svg"
+                  alt="filter"
+                  width={15}
+                  height={15}
+                  className="object-contain"
+                />
+                <span className="text-sm">Filter</span>
+              </div>
+            </Dropdown>
 
             <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
               <Image
@@ -181,7 +230,9 @@ export default function TransactionHistory() {
                   title: "Actions",
                   key: "actions",
                   render: () => (
-                    <button className="text-gray-600 hover:text-black flex items-center ml-2">
+                    <button className="text-gray-600 hover:text-black flex items-center ml-2"
+                      onClick={() => setOpen(true)}
+                    >
                       <Image src="/eye.svg" alt="view" width={18} height={18} />
                     </button>
                   ),
@@ -192,6 +243,55 @@ export default function TransactionHistory() {
           )}
         </div>
       </Card>
+      <SmartModal
+        open={open}
+        onClose={() => setOpen(false)}
+        ariaLabel="Transaction Details"
+        animation="scale"
+        centered
+        contentClassName="max-w-[500px]"
+      >
+        <SmartModal.Header>
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold">Transaction Details</span>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-xl font-bold px-2 hover:bg-gray-100 rounded-full"
+            >
+              ×
+            </button>
+          </div>
+        </SmartModal.Header>
+
+        <SmartModal.Body>
+          <div className="bg-[#F1F1F18C] p-4 rounded-lg space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Sender:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.sender}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Beneficiary:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.beneficiary}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Transaction ID:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.transactionId}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Bank:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.bank}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Account Number:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.accountNumber}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 text-[12px] font-medium">Date &amp; Time:</span>
+              <span className="text-[12px] font-medium">{transactionDataModal.dateTime}</span>
+            </div>
+          </div>
+        </SmartModal.Body>
+      </SmartModal>
     </>
   );
 }
