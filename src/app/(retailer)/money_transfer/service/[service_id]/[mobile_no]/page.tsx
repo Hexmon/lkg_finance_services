@@ -91,8 +91,8 @@ export default function MoneyTransferPage() {
                     <span>Beneficiaries</span>
                 </div>
             ),
-            content: <BeneficiariesTab service_id={service_id} beneficiaries={uiBeneficiaries} sender={uiSender} />,
-            // content: <BeneficiariesTab service_id={service_id} beneficiaries={beneficiaries ?? []} sender={sender} />,
+            // content: <BeneficiariesTab service_id={service_id} beneficiaries={uiBeneficiaries} sender={uiSender} />,
+            content: <BeneficiariesTab service_id={service_id} beneficiaries={beneficiaries ?? []} sender={sender} />,
         },
         {
             key: "transaction",

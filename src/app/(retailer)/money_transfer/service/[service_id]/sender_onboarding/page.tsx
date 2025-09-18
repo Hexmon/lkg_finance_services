@@ -1,21 +1,81 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/app/money_transfer/service/[service_id]/sender_onboarding/page.tsx (or your current path)
 "use client";
 
-import { Button } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { Button, Input, message } from "antd";
 import Image from "next/image";
-import { ArrowLeftOutlined, CloseOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
+import { useAddSender } from "@/features/retailer/dmt/sender";
+import { useMessage } from "@/hooks/useMessage";
+import { useParams, useRouter } from "next/navigation";
+import { biometricString } from "@/config/app.config";
 
-type SenderOnboardingProps = {
-    onStart?: () => void;
-    userName?: string;
-};
+const DRAFT_KEY = (service_id: string) => `sender:onboard:draft:${service_id}`;
 
-export default function SenderOnboarding({
-    onStart,
-    userName = "Rajesh Kumar",
-}: SenderOnboardingProps) {
+export default function SenderOnboarding() {
+    const router = useRouter();
+    const { service_id } = useParams<{ service_id: string }>();
+    const { error, info, success } = useMessage();
+    const { addSenderAsync, isLoading } = useAddSender();
+
+    const [draft, setDraft] = useState<any | null>(null);
+
+    // Aadhaar state (UI like BiometricVerification example)
+    const [aadhaar, setAadhaar] = useState("");
+    const [touched, setTouched] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && service_id) {
+            const raw = sessionStorage.getItem(DRAFT_KEY(service_id));
+            if (raw) {
+                try {
+                    setDraft(JSON.parse(raw));
+                } catch {
+                    // ignore parse errors
+                }
+            }
+        }
+    }, [service_id]);
+
+    const userName = draft?.sender_name ?? "User";
+    const isValidAadhaar = useMemo(() => /^\d{12}$/.test(aadhaar), [aadhaar]);
+    const showError = touched && !isValidAadhaar;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 12);
+        setAadhaar(digitsOnly);
+    };
+
+    const onSubmit = async () => {
+        setTouched(true);
+        if (!isValidAadhaar) return;
+
+        try {
+            if (!draft) {
+                error("Missing draft data. Please restart onboarding.");
+                return;
+            }
+
+            // FINO call happens here with combined payload
+            const res = await addSenderAsync({
+                ...draft,
+                aadharNumber: aadhaar,
+                bioPid: biometricString, 
+            });
+
+            success(res?.message ?? "Verification started. OTP sent if required.");
+
+            // Decide your next step:
+            // - If you want a different route after starting verification, change this line.
+            router.push(`/money_transfer/service/${service_id}/${draft.mobile_no}`);
+        } catch (e: any) {
+            error(e?.message ?? "Failed to start verification.");
+        }
+    };
+
     return (
         <DashboardLayout
             sections={moneyTransferSidebarConfig}
@@ -24,35 +84,29 @@ export default function SenderOnboarding({
         >
             <div className="max-w-[450px] mx-auto mb-[7px]">
                 <div className="flex justify-between">
-                    <Button size="middle" className="!text-[10px] !border-0 !bg-[#5298FF54] rounded-[9px] !text-[#3386FF] ml-84">Secure Verification</Button>
+                    <Button
+                        size="middle"
+                        className="!text-[10px] !border-0 !bg-[#5298FF54] rounded-[9px] !text-[#3386FF] ml-84"
+                    >
+                        Secure Verification
+                    </Button>
                 </div>
             </div>
 
-            {/* Card */}
             <CardLayout
                 variant="info"
                 size="lg"
                 width="w-full max-w-md"
-                height="min-h-[340px]"
+                height="min-h-[440px]"
                 divider
                 className="mx-auto bg-white shadow-xl"
                 header={
                     <div className="text-center">
-                        <div className="relative text-center">
-                            {/* Cross button fixed top-right */}
-                            <button className="absolute top-0 right-0 text-black hover:text-gray-600">
-                                <CloseOutlined className="!font-bold"/>
-                            </button>
-
-                            {/* Title centered */}
-                            <h2 className="text-xl text-black font-medium">Sender Onboarding</h2>
-
-                            <span className="text-xs text-[#9A9595] block mt-1">
-                                Verification session timed out. Please start again.
-                            </span>
-                        </div>
-
-                        <div className="!text-center h-6 flex items-center !mx-auto shadow mt-3 w-fit bg-white rounded-xl">
+                        <h2 className="text-xl text-black font-medium">Sender Onboarding</h2>
+                        <span className="text-xs text-[#9A9595]">
+                            Verification session timed out. Please start again.
+                        </span>
+                        <div className="!text-center h-6 flex items-center !mx-auto shadow mt-1 w-fit bg-white rounded-xl">
                             <Image
                                 src="/remaining.svg"
                                 alt="time remaining"
@@ -77,18 +131,62 @@ export default function SenderOnboarding({
 
                         <div className="flex items-center gap-2 bg-[#E6F0FF] text-[#3386FF] font-medium text-sm rounded-full px-4 py-2 w-[164px] h-[24px]">
                             <Image src="/person.svg" alt="person logo" height={16} width={16} />
-                            <span className="text-[10px]">Ready for Verification </span>
+                            <span className="text-[10px]">Ready for Verification</span>
                         </div>
 
                         <div className="text-[12px] text-[#9A9595]">
                             Verifying: <strong className="text-[#232323]">{userName}</strong>
                         </div>
 
+                        {/* Aadhaar number input (same visual as sample) */}
+                        <div className="w-full flex flex-col justify-center items-center !h-[30px]">
+                            <div className="!relative !bg-[#6E6E6E1C] !rounded-xl !px-4 !py-2 !flex !items-center !shadow-sm h-[30px] w-[286px]">
+                                {/* Left side label */}
+                                <div className="w-2/3 text-sm text-[#B6B6B6] font-medium text-center">
+                                    Aadhaar No.
+                                </div>
+
+                                {/* Right side input */}
+                                <div className="">
+                                    <Input
+                                        id="aadhaar"
+                                        name="aadhaar"
+                                        type="tel"
+                                        placeholder=""
+                                        value={aadhaar}
+                                        onChange={handleChange}
+                                        onBlur={() => setTouched(true)}
+                                        maxLength={12}
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        aria-invalid={showError}
+                                        aria-describedby="aadhaar-help"
+                                        status={showError ? "error" : undefined}
+                                        autoComplete="off"
+                                        allowClear
+                                        className="!h-[30px] !bg-transparent !border-none !shadow-none !text-base !font-medium !tracking-wider"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Helper text */}
+                            <div
+                                id="aadhaar-help"
+                                className={`mt-1 text-[11px] ${showError ? "text-red-500" : "text-[#9A9595]"
+                                    }`}
+                            >
+                                {showError
+                                    ? "Please enter a valid 12-digit Aadhaar number."
+                                    : "Enter digits only."}
+                            </div>
+                        </div>
+
                         <Button
                             className="!bg-[#3386FF] !text-white !w-[355px] !h-[38px] !rounded-[12px]"
-                            onClick={onStart}
+                            onClick={onSubmit}
+                            disabled={!isValidAadhaar || isLoading}
                         >
-                            Start Verification
+                            {isLoading ? "Starting…" : "Start Verification"}
                         </Button>
                     </div>
                 }
@@ -98,12 +196,8 @@ export default function SenderOnboarding({
                         <li>• Place finger firmly on the scanner</li>
                         <li>• Hold still during scanning process</li>
                     </ul>
-
                 }
-
             />
-            <div className="!text-center h-8 flex items-center !mx-auto mt-4 shadow-xl w-fit bg-white rounded-xl">
-                <span className="mx-4 text-sm"><SafetyCertificateOutlined /> Your biometric data is encrypted and secure</span> </div>
         </DashboardLayout>
     );
 }

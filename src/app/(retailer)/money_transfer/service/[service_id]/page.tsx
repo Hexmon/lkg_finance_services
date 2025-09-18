@@ -25,13 +25,16 @@ export default function MoneyTransferServicePage() {
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
   const router = useRouter();
   const [bankType, setBankType] = useState<BankId | undefined>('ARTL')
-  
+
   type RouteParams = { service_id: string };
   const { service_id } = useParams<RouteParams>();
   const { error, info } = useMessage()
 
   const { checkSenderAsync, data: { message: checkSenderRegMsg, bio_required } = {}, error: checkSenderRegError, isLoading: checkSenderRegLoading } = useCheckSender();
   const { data: { data: transactionData } = {}, isLoading: transactionLoading, error: transactionError } = useTransactionSummaryQuery({ page: 1, per_page: 5, order: "desc" })
+
+  // in MoneyTransferServicePage()
+  const [senderId, setSenderId] = useState<string | null>(null);
 
   const onSubmitWithOptions = async (values: SenderCheckWithOptionsValues) => {
     try {
@@ -42,25 +45,36 @@ export default function MoneyTransferServicePage() {
         service_id,
       });
 
-      // Open onboarding modal when no sender present
+      // If no sender → open onboarding modal
       if (!res?.sender) {
         info(res?.message ?? "Sender not found. Please verify to onboard.");
         setIsModalOpen(true);
+        setSenderId(null);
         return;
       }
 
-      // else: you have a sender; proceed (e.g., navigate or load beneficiaries)
-      // success("Sender verified");
+      // ✅ Extract sender_id from the response (try a few common shapes)
+      const sid =
+        (res as any)?.sender_id ??
+        (res as any)?.sender?.sender_id ??
+        (res as any)?.sender?.id ??
+        (res as any)?.sender?.SenderId ??
+        null;
+
+      setSenderId(sid);
+      // Optionally: info("Sender verified");
     } catch (err: any) {
       const status = err?.status ?? err?.response?.status;
       if (status === 400) {
         info(err?.message ?? "Sender not found. Please verify to onboard.");
         setIsModalOpen(true);
+        setSenderId(null);
       } else {
         error(err?.message ?? "Something went wrong while checking sender.");
       }
     }
   };
+
 
   const handleAddBeneficiary = async () => {
     // TODO: call your API here
@@ -68,7 +82,7 @@ export default function MoneyTransferServicePage() {
     // success("Beneficiary added!");
     setIsBeneficiaryModalOpen(false);
   };
-   
+
 
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="" pageTitle="Dashboards" error={[checkSenderRegError, transactionError]} isLoading={transactionLoading}>
@@ -107,10 +121,17 @@ export default function MoneyTransferServicePage() {
               <Button
                 type="primary"
                 className="!bg-[#3386FF] w-[111px] !rounded-[9px] !text-[10px]"
-                onClick={() => setIsBeneficiaryModalOpen(true)}
+                onClick={() => {
+                  if (!senderId) {
+                    info("Please verify sender first.");
+                    return;
+                  }
+                  setIsBeneficiaryModalOpen(true);
+                }}
               >
                 + Add Beneficiary
               </Button>
+
             </div>
           }
         />
@@ -120,21 +141,21 @@ export default function MoneyTransferServicePage() {
           open={isBeneficiaryModalOpen}
           onClose={() => setIsBeneficiaryModalOpen(false)}
           onSubmit={handleAddBeneficiary}
-        // loading={isAddingBeneficiary}
-        />
+          // loading={isAddingBeneficiary}
+          service_id={senderId ?? ""} sender_id={senderId ?? ""}        />
 
         {/* Add Sender Modal */}
         <AddsenderModal
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           service_id={service_id}
-          bankType={bankType || ""}
+          bankType={bankType || "ARTL"}
         />
 
       </div>
-      
+
       <div className="bg-transparent"></div>
     </DashboardLayout>
-    
+
   );
 }
