@@ -92,7 +92,7 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                         <div className="flex justify-between items-center">
                             <div className="text-[#787878] text-[14px] font-medium">Customers</div>
                             <Image
-                                src="/icons/customers.svg"
+                                src="/icons/customer.svg"
                                 alt=""
                                 width={25}
                                 height={25}
@@ -108,13 +108,7 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                                     width={15.58}
                                     height={8.5}
                                     className="object-contain"
-                                /> <Image
-                                src="/3.2.svg"
-                                alt=""
-                                width={24}
-                                height={13}
-                                className="object-contain"
-                            /> Since Last Month
+                                /> 3.2 Since Last Month
                             </div>
                         </Text>
                     </div>

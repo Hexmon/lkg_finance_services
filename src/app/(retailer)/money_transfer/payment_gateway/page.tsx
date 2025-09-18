@@ -5,6 +5,7 @@ import { Card, Typography, Form, Input, Button, Table, Radio, Modal } from "antd
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
 const { Text } = Typography;
 
@@ -21,8 +22,8 @@ export default function PaymentGatewayPage() {
     };
     const [isModalVisible, setIsModalVisible] = useState(false);
 
-    const showModal = () => setIsModalVisible(true);
-    const handleCancel = () => setIsModalVisible(false);
+    const showModalvw = () => setIsModalVisible(true);
+    const handleCancelvw = () => setIsModalVisible(false);
 
 
     // PG charges data
@@ -68,6 +69,10 @@ export default function PaymentGatewayPage() {
         },
     ];
 
+    const [isModalVisiblevw, setIsModalVisiblevw] = useState(false);
+    const handleOpen = () => setIsModalVisiblevw(true);
+    const handleCancel = () => setIsModalVisiblevw(false);
+
 
     return (
         <DashboardLayout
@@ -75,6 +80,9 @@ export default function PaymentGatewayPage() {
             sections={moneyTransferSidebarConfig}
             pageTitle="Payment Gateway"
         >
+            <DashboardSectionHeader
+            title=""
+            />
             <div className="p-6 min-h-screen !mt-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Section */}
                 <Card className="!rounded-2xl !shadow-md">
@@ -142,6 +150,17 @@ export default function PaymentGatewayPage() {
                         {/* Virtual Account */}
                         <div className="flex mb-7 bg-transparent">
                             <Card className="!rounded-2xl !shadow-md !w-[240px] ">
+                                <div className="flex justify-end mb-0"
+                                    onClick={handleOpen}
+                                >
+                                    <Image
+                                        src="/info.svg"
+                                        alt="info icon"
+                                        width={12}
+                                        height={12}
+                                        className="object-contain"
+                                    />
+                                </div>
                                 <Text className="!text-[15px] !font-medium !block !mb-2 !text-center !text-[#3386FF]">
                                     Virtual Account
                                 </Text>
@@ -159,7 +178,6 @@ export default function PaymentGatewayPage() {
                             </Card>
                             <div className="mt-6 flex justify-center ml-30">
                                 <Button className="!rounded-lg border !px-4 !h-[35px] !w-[192px] !bg-[#5298FF54] !text-[12px] !font-semibold !text-[#3386FF] !shadow-2xl"
-                                onClick={showModal}
                                 >
                                     View PG Transaction
                                 </Button>
@@ -210,14 +228,14 @@ export default function PaymentGatewayPage() {
                 </Card>
             </div>
             <Modal
-                open={isModalVisible}
-                onCancel={handleCancel}
+                open={isModalVisiblevw}
+                onCancel={handleCancelvw}
                 footer={null}
                 closable={false}
                 centered
                 className="custom-pg-modal"
             >
-                <div className="p-4 rounded-xl bg-[#fefaf6]">
+                <div className="p-4 rounded-xl bg-[#FFFFFF]">
                     <div className="flex justify-between items-start mb-2">
                         <h3 className="text-[#3386FF] text-[15px] font-semibold">Virtual Wallet</h3>
                         <button onClick={handleCancel} className="text-[#3386FF] font-bold text-[18px]">

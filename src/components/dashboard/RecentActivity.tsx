@@ -71,11 +71,36 @@ export default function RecentActivity({ transactionData }: { transactionData: T
                       ₹{net_amount ?? ""}
                     </Text>
 
-                    <Badge className="!shadow !rounded-2xl !px-2 !py-1 !flex !justify-center !items-center !bg-[#0BA82F36]">
-                      <span className="text-[#0BA82F] !text-[8px] !font-medium">
+                    <Badge
+                      className={`
+    !shadow !rounded-2xl !px-2 !py-1 !flex !justify-center !items-center
+    ${(txn_status || "").toLowerCase() === "success"
+                          ? "!bg-[#0BA82F36]"
+                          : (txn_status || "").toLowerCase() === "pending"
+                            ? "!bg-[#FFF7CC]"
+                            : (txn_status || "").toLowerCase() === "failed"
+                              ? "!bg-[#FFCCCC]"
+                              : "bg-gray-100"
+                        }
+  `}
+                    >
+                      <span
+                        className={`
+      !text-[8px] !font-medium
+      ${(txn_status || "").toLowerCase() === "success"
+                            ? "text-[#0BA82F]"
+                            : (txn_status || "").toLowerCase() === "pending"
+                              ? "text-[#C9A500]"
+                              : (txn_status || "").toLowerCase() === "failed"
+                                ? "text-[#D32F2F]"
+                                : "text-gray-500"
+                          }
+    `}
+                      >
                         {txn_status ?? ""}
                       </span>
                     </Badge>
+
                   </div>
                 </div>
               );

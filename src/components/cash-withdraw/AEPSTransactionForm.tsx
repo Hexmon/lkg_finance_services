@@ -27,7 +27,7 @@ export default function AEPSTransactionForm() {
       className="bg-white rounded-2xl shadow-md p-6"
     >
       {/* Header */}
-      <div className="mb-11 ml-3">
+      <div className="mb-11 ml-3 p-4">
         <div className="flex items-center">
           <Image
             src="/aeps.svg"

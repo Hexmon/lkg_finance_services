@@ -174,7 +174,7 @@ export const services = [
     key: "mini-statement",
     label: "Mini Statement",
     description: "Get last 5 transactions",
-    icon: "/mini-stmt.svg",
+    icon: "/line.svg",
   },
 ];
 
