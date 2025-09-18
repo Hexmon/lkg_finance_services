@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Button, Tooltip } from 'antd';
+import { Button, Form, Input, Modal, Select, Tooltip } from 'antd';
 import {
     HomeFilled,
     EditOutlined,
     DeleteOutlined,
 } from '@ant-design/icons';
 import { CardLayout } from '@/lib/layouts/CardLayout';
+import { useState } from 'react';
 
 // ---------- Small UI atoms ----------
 const Chip = ({
@@ -58,7 +59,7 @@ const GhostIconBtn = ({
 
 // ---------- Address Card (uses your CardLayout) ----------
 type AddressCardProps = {
-    badge: 'Current' | 'Billing';
+    badge: 'Current' | 'Billing' | 'Other';
     lines: string[]; // each address line
     onEdit?: () => void;
     onDelete?: () => void;
@@ -114,55 +115,177 @@ function AddressCard({ badge, lines, onEdit, onDelete }: AddressCardProps) {
     );
 }
 
-// ---------- The Address Tab (header button + list of cards) ----------
+// ---------- Inline Form ----------
+type FormValues = {
+  label: 'Current' | 'Billing' | 'Other';
+  addressLine: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  landmark?: string;
+};
+
+function AddressForm({
+  initialValues,
+  onSave,
+  onCancel,
+}: {
+  initialValues?: Partial<FormValues>;
+  onSave: (values: FormValues) => void;
+  onCancel: () => void;
+}) {
+  const [form] = Form.useForm();
+
+  return (
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={initialValues}
+      onFinish={onSave}
+      className="bg-[#FFFFFF] p-6 rounded-xl shadow-md h-[600px]"
+    >
+        <div className="grid grid-cols-2 gap-4">
+      <Form.Item name="label" label="Address Label" rules={[{ required: true }]} className='!ml-3'>
+        <Select options={[{ value: 'Current' }, { value: 'Billing' }, { value: 'Other' }]} />
+      </Form.Item>
+
+      <Form.Item name="addressLine" label="Address Line" rules={[{ required: true }]} className='!ml-3'>
+        <Input.TextArea rows={6} />
+      </Form.Item>
+
+      <Form.Item name="country" label="Country" rules={[{ required: true }]} className='!ml-3'>
+        <Input />
+      </Form.Item>
+
+      <Form.Item name="state" label="State" rules={[{ required: true }]} className='!ml-3'>
+        <Input />
+      </Form.Item>
+
+      <Form.Item name="city" label="City" className='!ml-3' >
+        <Input />
+      </Form.Item>
+
+      <Form.Item name="pincode" label="Pincode" rules={[{ required: true }]} className='!ml-3'>
+        <Input />
+      </Form.Item>
+
+      <Form.Item name="landmark" label="Landmark" className='!ml-3'>
+        <Input />
+      </Form.Item>
+      </div>
+
+      <div className="flex justify-center gap-3 mt-6">
+        <Button onClick={onCancel} className='w-[355px] h-[45px] text-[12px] font-medium'>Cancel</Button>
+        <Button type="primary" htmlType="submit" className='w-[355px] h-[45px] bg-[#3386FF] text-[12px] font-medium'>
+          Save
+        </Button>
+      </div>
+    </Form>
+  );
+}
+
+// ---------- Main Component ----------
 export default function AddressTab() {
-    const addresses: AddressCardProps[] = [
-        {
-            badge: 'Current',
-            lines: [
-                'Shri Kanaka Nilaya, Umachankar Nagar 1st Main',
-                'Near City Hospital',
-                'Rambeenu, Kumbaluru, Karnataka - 560001',
-                'India',
-            ],
-        },
-        {
-            badge: 'Billing',
-            lines: [
-                'Plot No. 123, MG Road',
-                'Near City Hospital',
-                'Bangalore, Bangalore, Karnataka - 560001',
-                'India',
-            ],
-        },
-    ];
+  const [addresses, setAddresses] = useState<AddressCardProps[]>([
+    {
+      badge: 'Current',
+      lines: [
+        'Shri Kanaka Nilaya, Umachankar Nagar 1st Main',
+        'Near City Hospital',
+        'Rambeenu, Kumbaluru, Karnataka - 560001',
+        'India',
+      ],
+    },
+    {
+      badge: 'Billing',
+      lines: ['Plot No. 123, MG Road', 'Near City Hospital', 'Bangalore, Karnataka - 560001', 'India'],
+    },
+  ]);
 
-    return (
-        <div className="w-full">
-            {/* Top bar with Add Address button */}
-            {/* <div className="mb-3 flex items-center justify-end">
-                <Button
-                    type="primary"
-                    className="!h-10 !rounded-xl !bg-[#1677ff] !border-none px-4 transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
-                >
-                    Add Address
-                </Button>
-            </div> */}
+  const [showForm, setShowForm] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-            {/* Subtle separator shadow under the bar (like the screenshot) */}
-            <div className="mb-4 h-[10px] w-full rounded-full bg-black/5 blur-[10px] opacity-10" />
+  const handleSave = (values: FormValues) => {
+    const newAddress: AddressCardProps = {
+      badge: values.label,
+      lines: [
+        values.addressLine,
+        values.landmark || '',
+        `${values.city}, ${values.state} - ${values.pincode}`,
+        values.country,
+      ].filter(Boolean),
+    };
 
-            {/* Cards list */}
-            <div className="space-y-5">
-                {addresses.map((addr, i) => (
-                    <AddressCard
-                        key={i}
-                        {...addr}
-                        onEdit={() => console.log('edit', i)}
-                        onDelete={() => console.log('delete', i)}
-                    />
-                ))}
-            </div>
-        </div>
-    );
+    if (editingIndex !== null) {
+      const updated = [...addresses];
+      updated[editingIndex] = newAddress;
+      setAddresses(updated);
+      setEditingIndex(null);
+    } else {
+      setAddresses([...addresses, newAddress]);
+    }
+
+    setShowForm(false);
+  };
+
+  const handleDelete = (index: number) => {
+    setAddresses(addresses.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="w-full">
+      {!showForm ? (
+        <>
+          <div className="mb-3 flex items-center justify-end">
+            <Button
+              type="primary"
+              onClick={() => {
+                setEditingIndex(null);
+                setShowForm(true);
+              }}
+              className="!h-10 !rounded-xl !bg-[#1677ff] !border-none px-4 transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
+            >
+              Add Address
+            </Button>
+          </div>
+
+          <div className="space-y-5">
+            {addresses.map((addr, i) => (
+              <AddressCard
+                key={i}
+                {...addr}
+                onEdit={() => {
+                  setEditingIndex(i);
+                  setShowForm(true);
+                }}
+                onDelete={() => handleDelete(i)}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <AddressForm
+          initialValues={
+            editingIndex !== null
+              ? {
+                  label: addresses[editingIndex].badge,
+                  addressLine: addresses[editingIndex].lines[0],
+                  landmark: addresses[editingIndex].lines[1],
+                  city: addresses[editingIndex].lines[2]?.split(',')[0] || '',
+                  state: addresses[editingIndex].lines[2]?.split(',')[1]?.split('-')[0]?.trim() || '',
+                  pincode: addresses[editingIndex].lines[2]?.match(/\d+/)?.[0] || '',
+                  country: addresses[editingIndex].lines[3] || '',
+                }
+              : undefined
+          }
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingIndex(null);
+          }}
+        />
+      )}
+    </div>
+  );
 }

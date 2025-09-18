@@ -164,7 +164,7 @@ export default function MoneyTransferPage() {
 
                 }
             />
-            <div className="p-6 w-full">
+            <div className="mt-2.5 w-full">
 
                 <SmartTabs
                     items={items}

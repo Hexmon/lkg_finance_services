@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from 'antd';
+import Image from 'next/image';
+import { Button, Typography } from 'antd';
+
+const { Text } = Typography;
 
 type FieldProps = {
   id: string;
@@ -64,7 +67,7 @@ const ProfileBlock: React.FC = () => {
   );
 };
 
-const BankingDetailsTab: React.FC = () => {
+const BankingDetailsForm: React.FC = () => {
   // IFSC mirrors to the read-only field on the right
   const [ifsc, setIfsc] = useState('SBI7474887');
   // optional: show a sample branch chip when IFSC has value
@@ -141,6 +144,100 @@ const BankingDetailsTab: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+
+// Main component to switch between cards and form
+const BankingDetailsTab: React.FC = () => {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const accounts = [
+    { id: '1', name: 'Rajesh Saini', bank: 'HDFC Bank', account: '1234567890', ifsc: 'HDFC0001234' },
+    { id: '2', name: 'Amit Sharma', bank: 'ICICI Bank', account: '9876543210', ifsc: 'ICIC0005678' },
+    { id: '2', name: 'Rakesh Sharma', bank: 'SBI Bank', account: '9876543210', ifsc: 'SBIN0005678' },
+  ];
+
+  if (showForm) {
+    return <BankingDetailsForm />;
+  }
+
+  return (
+    <>
+    {/* Add Bank CTA */ }
+    < div className = "flex justify-end mt-6" >
+      <Button
+        type="primary"
+        onClick={() => setShowForm(true)}
+        className="!h-[39PX] !W-[164.93px] !text-[12px] !font-medium !rounded-xl !bg-[#1677ff] !border-none px-6"
+      >
+        + Add Bank Account
+      </Button>
+      </div >
+  <div className="w-full">
+    <div className="flex gap-6 mt-8 flex-wrap mb-6 justify-center items-center">
+      {accounts.map((acc) => (
+        <div
+          key={acc.id}
+          onClick={() => setSelectedId(acc.id)}
+          className={`flex items-start gap-4 border rounded-2xl p-4 w-[280px] cursor-pointer transition ${selectedId === acc.id
+              ? 'border-blue-500 shadow-md'
+              : 'border-gray-200'
+            }`}
+        >
+          <div className="flex-1">
+            <div className="flex justify-between items-start">
+              <div className="bg-[#5298FF54] rounded-full w-[55px] h-[55px] flex items-center justify-center shrink-0">
+                <Image
+                  src="/person-blue.svg"
+                  alt="person"
+                  width={28}
+                  height={28}
+                  className="object-contain"
+                />
+              </div>
+
+              <div className="flex flex-col ml-3">
+                <Text strong className="text-[15px]">
+                  {acc.name}
+                </Text>
+                <Text type="secondary" className="text-[14px]">
+                  {acc.bank}
+                </Text>
+              </div>
+
+              <Image
+                src={
+                  selectedId === acc.id
+                    ? '/tick-blue.svg'
+                    : '/tick-gray.svg'
+                }
+                alt="tick"
+                width={15}
+                height={15}
+                className="ml-6"
+              />
+            </div>
+
+            <div className="mt-3 space-y-1">
+              <div className="flex justify-between">
+                <Text type="secondary">Account:</Text>
+                <Text className="font-semibold">{acc.account}</Text>
+              </div>
+              <div className="flex justify-between">
+                <Text type="secondary">IFSC Code:</Text>
+                <Text strong>{acc.ifsc}</Text>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+
+  </div>
+  </>
   );
 };
 
