@@ -57,6 +57,10 @@ export const cashWithdrawSidebarConfig: SidebarSection[] = [
       { label: 'Pan Card', icon: "https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/b84c994b298e40969e6ceb27af3be9ea.png", path: '/support_ticket' },
     ],
   },
+   {
+    title: 'Reports',
+    items: [{ label: 'Report & Analytics', icon: "https://pub-dcebb8dd7f554f2681fa24f286407352.r2.dev/3644d589569448b2bc1897ae032f5e3d.png", path: '/reports_analysis' }],
+  },
 ];
 
 

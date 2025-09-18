@@ -10,30 +10,71 @@ import ProfileDetailsTab from '@/components/profile/ProfileDetailsTab';
 import BankingDetailsTab from '@/components/profile/BankingDetailsTab';
 import AddressTab from '@/components/profile/AddressTab';
 import PasswordReset from '@/components/profile/ChangePassword';
+import { useState } from 'react';
+import { number } from 'zod';
 
 export default function ProfileTabsDemo() {
+    const [activeTab, setActiveTab] = useState<string| number>("personal");
+
     const items: TabItem[] = [
         {
-            key: 'personal',
-            label: <span className='mx-3'>Personal Details</span>,
+            key: "personal",
+            label: (
+                <span
+                    className={`mx-3 pb-2 border-b-2 transition ${activeTab === "personal"
+                        ? "border-[#3386FF] text-[#3386FF] font-medium"
+                        : "border-transparent text-gray-600"
+                        }`}
+                >
+                    Personal Details
+                </span>
+            ),
             content: <ProfileDetailsTab />,
         },
         {
-            key: 'bank',
-            label: <span className='mx-3'>Banking Details</span>,
+            key: "bank",
+            label: (
+                <span
+                    className={`mx-3 pb-2 border-b-2 transition ${activeTab === "bank"
+                        ? "border-[#3386FF] text-[#3386FF] font-medium"
+                        : "border-transparent text-gray-600"
+                        }`}
+                >
+                    Banking Details
+                </span>
+            ),
             content: <BankingDetailsTab />,
         },
         {
-            key: 'address',
-            label: <span className='mx-3'>Address</span>,
+            key: "address",
+            label: (
+                <span
+                    className={`mx-3 pb-2 border-b-2 transition ${activeTab === "address"
+                        ? "border-[#3386FF] text-[#3386FF] font-medium"
+                        : "border-transparent text-gray-600"
+                        }`}
+                >
+                    Address
+                </span>
+            ),
             content: <AddressTab />,
         },
         {
-            key: 'changepassword',
-            label: <span className='mx-3'>Change Password</span>,
+            key: "changepassword",
+            label: (
+                <span
+                    className={`mx-3 pb-2 border-b-2 transition ${activeTab === "changepassword"
+                        ? "border-[#3386FF] text-[#3386FF] font-medium"
+                        : "border-transparent text-gray-600"
+                        }`}
+                >
+                    Change Password
+                </span>
+            ),
             content: <PasswordReset />,
         },
     ];
+
 
     return (
         <DashboardLayout pageTitle="Dashboard" activePath="/" sections={moneyTransferSidebarConfig}>
@@ -41,19 +82,21 @@ export default function ProfileTabsDemo() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 md:p-6">
                 <SmartTabs
                     items={items}
+                    activeKey={activeTab}
+                    onChange={(key) => setActiveTab(key)}
                     keepAlive
                     fitted={false}
                     durationMs={260}
                     easing="cubic-bezier(.22,1,.36,1)"
-                    // extra={
-                    //     <Button
-                    //         type="primary"
-                    //         icon={<PlusOutlined />}
-                    //         className="!h-10 !rounded-xl !bg-[#1677ff] !border-none transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
-                    //     >
-                    //         Add Address
-                    //     </Button>
-                    // }
+                // extra={
+                //     <Button
+                //         type="primary"
+                //         icon={<PlusOutlined />}
+                //         className="!h-10 !rounded-xl !bg-[#1677ff] !border-none transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
+                //     >
+                //         Add Address
+                //     </Button>
+                // }
                 />
             </div>
         </DashboardLayout>
