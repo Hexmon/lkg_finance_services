@@ -1,4 +1,9 @@
+// src\features\retailer\dmt\beneficiaries\data\endpoints.ts
 import {
+    AddBeneficiaryRequest,
+    AddBeneficiaryRequestSchema,
+    AddBeneficiaryResponse,
+    AddBeneficiaryResponseSchema,
     VerifyIfscRequestSchema,
     VerifyIfscResponseSchema,
     type VerifyIfscRequest,
@@ -19,4 +24,19 @@ export async function apiVerifyIfsc(
     });
 
     return VerifyIfscResponseSchema.parse(res);
+}
+
+const ADD_BENEFICIARY_PATH = '/retailer/dmt/beneficiary/add-beneficiary';
+
+export async function apiAddBeneficiary(
+  body: AddBeneficiaryRequest
+): Promise<AddBeneficiaryResponse> {
+  const payload = AddBeneficiaryRequestSchema.parse(body);
+
+  const res = await postJSON<unknown>(ADD_BENEFICIARY_PATH, payload, {
+    redirectOn401: true,
+    redirectPath: '/signin',
+  });
+
+  return AddBeneficiaryResponseSchema.parse(res);
 }

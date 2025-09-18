@@ -37,12 +37,12 @@ export default function NewTransfer() {
     },
   ];
 
-  const purposeOptions: SmartOption<string>[] = [
-    { value: "family", label: "Family Support" },
-    { value: "business", label: "Business" },
-    { value: "education", label: "Education" },
-    { value: "others", label: "Others" },
-  ];
+  // const purposeOptions: SmartOption<string>[] = [
+  //   { value: "family", label: "Family Support" },
+  //   { value: "business", label: "Business" },
+  //   { value: "education", label: "Education" },
+  //   { value: "others", label: "Others" },
+  // ];
 
   return (
     <div className=" min-h-screen w-full">
@@ -135,7 +135,7 @@ export default function NewTransfer() {
         </div>
 
         {/* Purpose of Transfer */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <Text className="text-[#232323] font-semibold">Purpose of Transfer</Text>
           <SmartSelect
             placeholder="Select Purpose.."
@@ -146,7 +146,7 @@ export default function NewTransfer() {
               console.log("Purpose:", val, option);
             }}
           />
-        </div>
+        </div> */}
 
         {/* OTP */}
         <div className="mb-6">
