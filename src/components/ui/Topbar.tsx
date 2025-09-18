@@ -119,7 +119,7 @@ const Topbar: React.FC<TopbarProps> = ({
   );
 
   const pg_drp_dwn = (
-    <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[180px]">
+    <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
       <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
         <Image
           src="/bank-black.svg"
@@ -148,13 +148,12 @@ const Topbar: React.FC<TopbarProps> = ({
   const debit_funds_drp_dwn = (
     <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
       {/* Move to Wallet */}
-      <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-100 cursor-pointer">
+      <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
         <Image
-          src="/credit-card-blue.svg"
-          alt="credit card"
+          src="/credit-card-black.svg"
+          alt="credit card black"
           width={16}
           height={17}
-          className='object-contain'
         />
         <span className="text-[14px] text-gray-700 font-medium"
           onClick={() => router.push("/money_transfer/move_to_wallet")}
@@ -208,7 +207,7 @@ const Topbar: React.FC<TopbarProps> = ({
           trigger="click"
           placement="bottomRight"
           styles={{
-            body: { padding: 0, borderRadius: "12px" },
+            body: { padding: 0, borderRadius: "12px",},
           }}
         >
           <Button

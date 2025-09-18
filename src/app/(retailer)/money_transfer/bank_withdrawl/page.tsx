@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Typography, Form, Input, Button, Table, Select } from "antd";
+import { Card, Typography, Form, Input, Button, Table, Select, notification, Modal } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { CheckCircleTwoTone } from "@ant-design/icons";
 import Image from "next/image";
 import { accounts } from "@/config/app.config";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -18,10 +19,6 @@ type FormValues = {
 
 export default function BankWithdrawalPage() {
     const [form] = Form.useForm<FormValues>();
-
-    const handleSubmit = (values: FormValues) => {
-        console.log("Submitted:", values);
-    };
 
     const transactionData = [
         {
@@ -79,6 +76,19 @@ export default function BankWithdrawalPage() {
         },
     ];
     const [selectedId, setSelectedId] = useState<number | null>(1);
+      const handleSubmit = (values: any) => {
+    console.log("Form values:", values);
+
+    // Show success notification
+    Modal.success({
+      title: "Transaction Successful",
+      content: `₹${values.amount} has been transferred successfully.`,
+      centered: true,
+       zIndex: 9999,
+    });
+
+    form.resetFields();
+  };
 
     return (
         <DashboardLayout
@@ -86,6 +96,9 @@ export default function BankWithdrawalPage() {
             sections={billPaymentSidebarConfig}
             pageTitle="Bank Withdrawal"
         >
+            <DashboardSectionHeader
+            title=""
+            />
             <div className="p-6 min-h-screen !mt-0">
                 {/* Bank Withdrawal Form */}
                 <Card className="!rounded-2xl !shadow-md !mb-6">
@@ -197,7 +210,9 @@ export default function BankWithdrawalPage() {
 
                         {/* Buttons */}
                         <div className="flex gap-4 justify-center items-center">
-                            <Button size="large" className="!px-8 !h-[33px] !w-[199px]">
+                            <Button size="large" className="!px-8 !h-[33px] !w-[199px]"
+                            onClick={() => form.resetFields()}
+                            >
                                 Cancel
                             </Button>
                             <Button

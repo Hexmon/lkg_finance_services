@@ -7,6 +7,7 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
 import TransactionsTableFundReq from "@/components/money-transfer/FundRequest";
+import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -103,6 +104,9 @@ export default function FundRequestPage() {
 
     return (
         <DashboardLayout activePath="/wallet" sections={moneyTransferSidebarConfig} pageTitle="Fund Request">
+            <DashboardSectionHeader
+            title=""
+            />
             <div className="p-6 space-y-6">
 
                 {/* Main Grid */}

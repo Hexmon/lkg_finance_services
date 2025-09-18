@@ -81,7 +81,7 @@ export default function WalletOverview({
                 <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
-                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <Image src="/uparrow.svg" alt="growth" width={14} height={14} />
                 <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function WalletOverview({
                 <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
-                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <Image src="/uparrow.svg" alt="growth" width={14} height={14} />
                 <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function WalletOverview({
                 <Image src="/wallet.svg" alt="" width={35} height={35} className="size-full" />
               </div>
               <div className="flex justify-center items-center space-x-1">
-                <Image src="/icons/Trendingup.svg" alt="growth" width={14} height={14} />
+                <Image src="/uparrow.svg" alt="growth" width={14} height={14} />
                 <span className="text-[#3386FF] text-[12px] font-bold">+3.2%</span>
               </div>
             </div>

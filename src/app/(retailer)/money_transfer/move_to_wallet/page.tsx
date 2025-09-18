@@ -80,6 +80,9 @@ export default function MoveToWalletPage() {
       sections={billPaymentSidebarConfig}
       pageTitle="Move to Wallet"
     >
+      <DashboardSectionHeader
+            title=""
+            />
       <div className="p-6 min-h-screen !mt-0">
         {/* Wallet transfer form */}
         <Card className="!rounded-2xl !shadow-md !mb-6">
