@@ -32,7 +32,7 @@ export default function BeneficiaryManagementPage({ service_id, beneficiaries, s
 
     return (
         <CardLayout
-            width="w-full max-w-6xl mx-auto"
+            width="w-full mx-auto"
             height="h-auto"
             padding="p-0"
             bgColor="bg-transparent"
