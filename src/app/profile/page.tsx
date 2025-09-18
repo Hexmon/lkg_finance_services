@@ -9,6 +9,7 @@ import DashboardLayout from '@/lib/layouts/DashboardLayout';
 import ProfileDetailsTab from '@/components/profile/ProfileDetailsTab';
 import BankingDetailsTab from '@/components/profile/BankingDetailsTab';
 import AddressTab from '@/components/profile/AddressTab';
+import PasswordReset from '@/components/profile/ChangePassword';
 
 export default function ProfileTabsDemo() {
     const items: TabItem[] = [
@@ -27,6 +28,11 @@ export default function ProfileTabsDemo() {
             label: <span className='mx-3'>Address</span>,
             content: <AddressTab />,
         },
+        {
+            key: 'changepassword',
+            label: <span className='mx-3'>Change Password</span>,
+            content: <PasswordReset />,
+        },
     ];
 
     return (
@@ -39,15 +45,15 @@ export default function ProfileTabsDemo() {
                     fitted={false}
                     durationMs={260}
                     easing="cubic-bezier(.22,1,.36,1)"
-                    extra={
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            className="!h-10 !rounded-xl !bg-[#1677ff] !border-none transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
-                        >
-                            Add Address
-                        </Button>
-                    }
+                    // extra={
+                    //     <Button
+                    //         type="primary"
+                    //         icon={<PlusOutlined />}
+                    //         className="!h-10 !rounded-xl !bg-[#1677ff] !border-none transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0"
+                    //     >
+                    //         Add Address
+                    //     </Button>
+                    // }
                 />
             </div>
         </DashboardLayout>
