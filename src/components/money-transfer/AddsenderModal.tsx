@@ -2,8 +2,9 @@
 // src/components/money-transfer/AddsenderModal.tsx
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Form, Input, Button, Select } from "antd";
+import type { InputRef } from "antd";
 import { useRouter } from "next/navigation";
 import SmartModal from "@/components/ui/SmartModal";
 import { useAddSender, useVerifyOtpOnboardSender } from "@/features/retailer/dmt/sender";
@@ -37,9 +38,8 @@ export default function AddsenderModal({
     bankType,
 }: Props) {
     const router = useRouter();
-    const { error, info, success } = useMessage();
+    const { error, info } = useMessage();
 
-    // Avoid destructuring nested data properties directly (can be undefined mid-flight)
     const {
         addSenderAsync,
         data: addData,
@@ -47,6 +47,7 @@ export default function AddsenderModal({
         isLoading: addLoading,
     } = useAddSender();
 
+    // NOTE: not used for ARTL “Next” anymore, but kept for type parity
     const {
         verifyOtpOnboardSenderAsync,
         data: verifyData,
@@ -54,10 +55,45 @@ export default function AddsenderModal({
         isLoading: verifyLoading,
     } = useVerifyOtpOnboardSender();
 
-    const ref_id = addData?.ref_id; // for ARTL OTP flow only
     const [form] = Form.useForm();
 
-    // ---------- Error normalizer (prevents React from rendering Error objects) ----------
+    // ---- helpers to read various API shapes (UAT/prod differences) ----
+    const extractRefId = (r: any): string | null =>
+        r?.data?.ref_id ??
+        r?.ref_id ??
+        r?.data?.refId ??
+        r?.refId ??
+        r?.data?.reference_id ??
+        r?.reference_id ??
+        null;
+
+    const extractMessage = (r: any): string | undefined =>
+        r?.data?.message ?? r?.message;
+
+    const extractOtp = (r: any): string | undefined =>
+        r?.otp ?? r?.data?.otp;
+
+    // --- keep OTP/ref state locally for ARTL flow ---
+    const [otpSent, setOtpSent] = useState(false);
+    const [refId, setRefId] = useState<string | null>(null);
+    const otpInputRef = useRef<InputRef>(null);
+
+    // If the mutation returns a ref id later, sync it (defensive)
+    useEffect(() => {
+        const rid = extractRefId(addData);
+        if (rid && !refId) setRefId(rid);
+    }, [addData, refId]);
+
+    // Reset local state on modal close/open toggle
+    useEffect(() => {
+        if (!open) {
+            setOtpSent(false);
+            setRefId(null);
+            form.resetFields();
+        }
+    }, [open, form]);
+
+    // ---------- Error normalizer ----------
     const getErrorMessage = (err: any): string => {
         if (!err) return "Something went wrong.";
         if (typeof err === "string") return err;
@@ -104,21 +140,56 @@ export default function AddsenderModal({
                 return;
             }
 
-            // ARTL flow → call API here to send OTP
+            // --- ARTL flow: Send OTP ---
             const res = await addSenderAsync(draft);
-            info(res?.message ?? "OTP request sent. Enter the OTP to continue.");
+
+            // Pick data from nested shape
+            const rid = extractRefId(res);
+            const msg = extractMessage(res) ?? "OTP sent. Please enter the OTP.";
+            const otpFromApi = extractOtp(res); // UAT often returns this
+
+            if (rid) {
+                setRefId(rid);
+                setOtpSent(true); // enable OTP box
+                // toast
+                info(msg);
+
+                // Autofill OTP if backend returns it (useful on UAT/dev; remove if not desired)
+                if (otpFromApi) {
+                    form.setFieldsValue({ otp: String(otpFromApi) });
+                }
+
+                // focus OTP input
+                setTimeout(() => otpInputRef.current?.focus(), 0);
+            } else {
+                // Fallback if API didn't return ref id
+                setOtpSent(false);
+                setRefId(null);
+                error("Could not retrieve reference ID. Please try sending OTP again.");
+            }
         } catch (err: any) {
+            setOtpSent(false);
+            setRefId(null);
             error(getErrorMessage(err) || "Failed to send OTP.");
         }
     }, [addSenderAsync, form, service_id, bankType, router, info, error]);
 
-    // ---------- Verify OTP (Next) for ARTL ----------
+    // ---------- Next: for ARTL, just stash and navigate (NO API CALL HERE) ----------
     const handleFinish = async () => {
-        const { otp, sender_name, pincode, email_address, mobile_no } = form.getFieldsValue(true);
-
         if (bankType !== "ARTL") return; // FINO doesn't verify OTP here
 
-        if (!ref_id) {
+        const {
+            otp,
+            sender_name,
+            pincode,
+            email_address,
+            mobile_no,
+            address,
+            txnType,
+            bankId,
+        } = form.getFieldsValue(true);
+
+        if (!refId) {
             error("Please send OTP first.");
             return;
         }
@@ -127,21 +198,25 @@ export default function AddsenderModal({
             return;
         }
 
-        try {
-            await verifyOtpOnboardSenderAsync({
-                ref_id,
-                otp,
+        // Stash draft + ref/otp for onboarding page (where Aadhaar will be collected)
+        if (typeof window !== "undefined") {
+            const draft = {
                 sender_name,
                 pincode,
                 email_address,
                 mobile_no,
+                address,
+                txnType,
+                bankId: bankType, // lock from prop
                 service_id,
-            });
-
-            success("OTP Verified!");
-        } catch (e) {
-            error("OTP verification failed. Please try again.");
+                ref_id: refId,
+                otp: String(otp),
+            };
+            sessionStorage.setItem(draftKey(service_id), JSON.stringify(draft));
         }
+
+        // 👉 Navigate to onboarding page; it will collect Aadhaar & call verify API
+        router.push(`/money_transfer/service/${service_id}/sender_onboarding`);
     };
 
     return (
@@ -254,13 +329,20 @@ export default function AddsenderModal({
                                 <Form.Item
                                     name="otp"
                                     rules={[
-                                        { required: true, message: "Please enter OTP" },
+                                        { required: otpSent, message: "Please enter OTP" }, // required only after sending
                                         { pattern: /^\d{4,6}$/, message: "Enter 4–6 digit OTP" },
                                     ]}
                                     style={{ marginBottom: 0 }}
                                     className="flex-1"
                                 >
-                                    <Input placeholder="Enter OTP" maxLength={6} inputMode="numeric" className="!h-[42px]" />
+                                    <Input
+                                        ref={otpInputRef}
+                                        placeholder={otpSent ? "Enter OTP" : "Send OTP to enable"}
+                                        maxLength={6}
+                                        inputMode="numeric"
+                                        className="!h-[42px]"
+                                        disabled={!otpSent}
+                                    />
                                 </Form.Item>
 
                                 <Button
@@ -274,6 +356,10 @@ export default function AddsenderModal({
                                     Send OTP
                                 </Button>
                             </div>
+                            {/* Helper text: show ref id once obtained */}
+                            {otpSent && refId && (
+                                <div className="mt-1 text-xs text-gray-500">Reference ID: {refId}</div>
+                            )}
                         </Form.Item>
                     )}
 
@@ -293,7 +379,8 @@ export default function AddsenderModal({
                         form="add-sender-form"
                         size="large"
                         className="!bg-[#3386FF] w-[30%] !mx-auto"
-                        loading={verifyLoading}
+                        loading={false}
+                        disabled={!otpSent} // Next enabled only after OTP sent
                     >
                         Next
                     </Button>

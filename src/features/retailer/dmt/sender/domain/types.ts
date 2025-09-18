@@ -1,12 +1,9 @@
-// src/features/retailer/dmt/sender/domain/types.ts
 import { z } from 'zod';
 
 /** ------------ Check Sender: Request schema ------------ */
 export const CheckSenderBodySchema = z
   .object({
-    mobile_no: z
-      .string()
-      .regex(/^\d{10}$/, 'mobile_no must be a 10-digit number'),
+    mobile_no: z.string().regex(/^\d{10}$/, 'mobile_no must be a 10-digit number'),
     txnType: z.string().min(1).optional(), // Only for BillAvenue
     bankId: z.string().min(1).optional(),  // Only for BillAvenue
     service_id: z.string().uuid(),         // DMT service id
@@ -29,14 +26,29 @@ export const BeneficiarySchema = z
 
 export type Beneficiary = z.infer<typeof BeneficiarySchema>;
 
+/**
+ * Sender can now include optional/nullable fields and limit fields.
+ * API sample:
+ *  availableLimit: "25000.0"
+ *  totalLimit: "25000.0"
+ * email_address can be null.
+ */
+const numberLike = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === 'number' ? v : Number(v)))
+  .refine((n) => Number.isFinite(n), { message: 'Expected a numeric value' });
+
 export const SenderSchema = z
   .object({
     sender_id: z.string().uuid(),
     sender_name: z.string().min(1),
     mobile_no: z.string().min(1),
-    email_address: z.string().optional(),
-    pincode: z.string().optional(),
+    email_address: z.string().nullable().optional(), // <- allow null
+    pincode: z.string().nullable().optional(),       // <- allow null
     beneficiary_count: z.number().optional(),
+    // new optional limit fields (string/number -> number)
+    availableLimit: numberLike.optional(),
+    totalLimit: numberLike.optional(),
   })
   .strict();
 
@@ -44,14 +56,15 @@ export type Sender = z.infer<typeof SenderSchema>;
 
 export const CheckSenderResponseSchema = z
   .object({
+    status: z.union([z.number().int(), z.string().regex(/^\d+$/)]).transform((s) => Number(s)).optional(),
     message: z.string().optional(),
     sender: SenderSchema.optional(),
     beneficiaries: z.array(BeneficiarySchema).optional(),
   })
-  // allow any extra fields provider may send
   .passthrough();
 
 export type CheckSenderResponse = z.infer<typeof CheckSenderResponseSchema>;
+
 
 /* ========================================================================== */
 /*                     Verify OTP & Onboard Sender (POST)                     */

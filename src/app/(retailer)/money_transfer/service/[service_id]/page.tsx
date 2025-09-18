@@ -116,24 +116,24 @@ export default function MoneyTransferServicePage() {
               <TransactionsPaged isLoading={transactionLoading} transactionData={transactionData ?? []} />
             </>
           }
-          footer={
-            <div className="flex justify-end">
-              <Button
-                type="primary"
-                className="!bg-[#3386FF] w-[111px] !rounded-[9px] !text-[10px]"
-                onClick={() => {
-                  if (!senderId) {
-                    info("Please verify sender first.");
-                    return;
-                  }
-                  setIsBeneficiaryModalOpen(true);
-                }}
-              >
-                + Add Beneficiary
-              </Button>
+          // footer={
+          //   <div className="flex justify-end">
+          //     <Button
+          //       type="primary"
+          //       className="!bg-[#3386FF] w-[111px] !rounded-[9px] !text-[10px]"
+          //       onClick={() => {
+          //         if (!senderId) {
+          //           info("Please verify sender first.");
+          //           return;
+          //         }
+          //         setIsBeneficiaryModalOpen(true);
+          //       }}
+          //     >
+          //       + Add Beneficiary
+          //     </Button>
 
-            </div>
-          }
+          //   </div>
+          // }
         />
 
         {/* Add Beneficiary Modal */}

@@ -25,7 +25,7 @@ export async function apiCheckSender(
 ): Promise<CheckSenderResponse> {
     const payload = CheckSenderBodySchema.parse(body);
 
-    const res = await postJSON<CheckSenderResponse>(CHECK_SENDER_PATH, payload, {
+    const res = await postJSON<unknown>(CHECK_SENDER_PATH, payload, {
         redirectOn401: true,
         redirectPath: '/signin',
     });
