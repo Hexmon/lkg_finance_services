@@ -22,7 +22,7 @@ export default function AEPSFormPage() {
   const serviceComponents: Record<string, React.ReactNode> = {
     "cash-withdrawal": <AEPSTransactionForm />,
     "balance-enquiry": <BalanceEnquiry />,
-    "mini-statement": <MiniStatement/>,
+    "mini-statement": <MiniStatement />,
   };
 
   return (
@@ -33,28 +33,34 @@ export default function AEPSFormPage() {
         <Text type="secondary">Choose the service you want to provide</Text>
 
         <div className="flex justify-center gap-6 flex-wrap mt-4">
-          {services.map(({ key, label, icon }) => (
-            <div  
+          {services.map(({ key, label, description, icon }) => (
+            <div
               key={key}
               onClick={() => setActiveService(key)}
-              className={`cursor-pointer rounded-xl p-2 transition ${
-                activeService === key
-                  ? ""
-                  : ""
-              }`}
+              className={`cursor-pointer rounded-xl p-2 transition duration-200 ${activeService === key ? "scale-105" : "opacity-80 hover:opacity-100"
+                }`}
             >
-              <Image
-                src={icon}
-                alt={label}
-                width={139}
-                height={137}
-                className="object-contain"
-                priority
-              />
-              <p className="text-center mt-1 text-sm font-medium">{label}</p>
+              <div className={`rounded-xl w-64 p-6 flex flex-col items-center shadow-md ${activeService === key ? "bg-[#e6f0ff]" : "bg-white"
+                }`}>
+                <div className="bg-[#dbe6f7] rounded-full p-4 mb-4">
+                  <Image
+                    src={icon}
+                    alt={label}
+                    width={25}
+                    height={25}
+                    className="object-contain"
+                  />
+                </div>
+                <h3 className="text-[#2675ec] font-semibold text-lg mb-1 text-center">{label}</h3>
+                <p className="text-gray-500 text-sm text-center mb-4">{description}</p>
+                <div className="bg-[#dbe6f7] text-[#2675ec] text-sm font-medium px-3 py-1 rounded-full w-[60px] text-center">
+                  {key === "cash-withdrawal" ? "₹0.40" : key === "balance-enquiry" ? "₹2" : "₹5"}
+                </div>
+              </div>
             </div>
           ))}
         </div>
+
       </div>
 
       {/* Active Component */}

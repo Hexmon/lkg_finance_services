@@ -62,7 +62,7 @@ export default function Services({ quick_link }: { quick_link: QuickLink[] }) {
       {/* Grid */}
       <div
         key={showAll ? "all" : "four"}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#f8f8f890] mt-4"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"
       >
         {visibleItems.map((data, index) => {
           const delay = `${(index % 8) * 50}ms`;
@@ -76,6 +76,8 @@ export default function Services({ quick_link }: { quick_link: QuickLink[] }) {
                 height="h-fit"
                 elevation={2}
                 bgColor="bg-white"
+                style={{ boxShadow: "1px 4px 9px 3px rgba(0, 0, 0, 0.25)" }}
+                
                 body={
                   <div className="flex flex-col justify-between items-center">
                     {/* Icon */}

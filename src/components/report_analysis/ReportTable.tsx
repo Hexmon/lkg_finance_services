@@ -36,7 +36,7 @@ export default function ReportTable() {
           placeholder="From Date"
           style={{
             width: 203,
-            height: 45,
+            height: 35,
             borderRadius: 12,
             padding: "6px 12px",
             boxShadow: "5px 5px 5px rgba(0,0,0,0.1)",
@@ -48,7 +48,7 @@ export default function ReportTable() {
           placeholder="To Date"
           style={{
             width: 203,
-            height: 45,
+            height: 35,
             borderRadius: 12,
             padding: "6px 12px",
             boxShadow: "5px 5px 5px rgba(0,0,0,0.1)",
@@ -56,7 +56,7 @@ export default function ReportTable() {
         />
 
         {/* Service SmartSelect */}
-        <div className="px-0 py-0 rounded-xl shadow-md bg-white w-[203px]">
+        <div className="px-0 py-0  bg-white w-[203px]">
           <SmartSelect<ServiceValue>
             options={SERVICE_OPTIONS}
             value={service}
@@ -64,13 +64,13 @@ export default function ReportTable() {
             placeholder="Service"
             allowClear={false}
             dense
-            className="w-[203px]"
+            className="w-[203px] shadow-md rounded-2xl"
             aria-label="Service"
           />
         </div>
 
         {/* Status SmartSelect */}
-        <div className="px-0 py-0 rounded-xl shadow-md bg-white w-[203px]">
+        <div className="px-0 py-0   bg-white w-[203px]">
           <SmartSelect<StatusValue>
             options={STATUS_OPTIONS}
             value={status}
@@ -78,13 +78,13 @@ export default function ReportTable() {
             placeholder="Status"
             allowClear={false}
             dense
-            className="w-[203px]"
+            className="w-[203px] shadow-md rounded-2xl "
             aria-label="Status"
           />
         </div>
 
         {/* Filter Button */}
-        <Button
+        {/* <Button
           type="default"
           className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md text-gray-700 font-medium w-[109px]"
           onClick={() => {
@@ -108,7 +108,7 @@ export default function ReportTable() {
             />
           </svg>
           Filter
-        </Button>
+        </Button> */}
       </div>
 
       {/* <SmartTabs

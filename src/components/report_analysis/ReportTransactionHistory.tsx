@@ -207,7 +207,7 @@ export default function ReportTransactionHistory() {
           </Select>
         </div>
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label className="invisible mb-1">Filter</label>
           <Button
             className="!rounded-xl !bg-white !shadow-md !flex !items-center !justify-center h-[38px]"
@@ -216,7 +216,7 @@ export default function ReportTransactionHistory() {
             <FilterOutlined />
             <span className="ml-1">Filter</span>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Error */}

@@ -125,6 +125,37 @@ export default function TransactionsTableFundReq() {
     },
   ];
 
+   const transactions = [
+    { id: "TXN001", date: "2025-09-12", amount: 3163, status: "Success" },
+    { id: "TXN002", date: "2025-09-12", amount: 5000, status: "Pending" },
+    { id: "TXN003", date: "2025-09-13", amount: 2000, status: "Failed" },
+  ];
+
+  // 🔹 Export to CSV
+  const handleExport = () => {
+    // Convert to CSV string
+    const headers = ["Transaction ID", "Date", "Amount", "Status"];
+    const rows = transactions.map(
+      (t) => `${t.id},${t.date},${t.amount},${t.status}`
+    );
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+
+    // Create downloadable file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    // Trigger download
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Transaction_History.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
+
   return (
     <Card className="rounded-2xl shadow-md bg-[#FEFAF6] border-none">
       {/* Header */}
@@ -146,7 +177,9 @@ export default function TransactionsTableFundReq() {
             height={15}
             className="object-contain"
           />
-          <Text className="text-[#232323] text-[13px] font-[500]">Export</Text>
+          <Text className="text-[#232323] text-[13px] font-[500]"
+           onClick={handleExport}
+          >Export</Text>
         </div>
       </div>
 

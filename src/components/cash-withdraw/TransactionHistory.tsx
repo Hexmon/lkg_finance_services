@@ -18,6 +18,34 @@ const inr = new Intl.NumberFormat("en-IN", {
   currency: "INR",
   maximumFractionDigits: 2,
 });
+  const transactions = [
+    { id: "TXN001", date: "2025-09-12", amount: 3163, status: "Success" },
+    { id: "TXN002", date: "2025-09-12", amount: 5000, status: "Pending" },
+    { id: "TXN003", date: "2025-09-13", amount: 2000, status: "Failed" },
+  ];
+
+  // 🔹 Export to CSV
+  const handleExport = () => {
+    // Convert to CSV string
+    const headers = ["Transaction ID", "Date", "Amount", "Status"];
+    const rows = transactions.map(
+      (t) => `${t.id},${t.date},${t.amount},${t.status}`
+    );
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+
+    // Create downloadable file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    // Trigger download
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Transaction_History.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
 export default function TransactionHistory() {
   const {
@@ -133,7 +161,9 @@ export default function TransactionHistory() {
               </div>
             </Dropdown>
 
-            <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]">
+            <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-[9px] bg-white shadow-sm cursor-pointer w-[111px] h-[35px]"
+            onClick={handleExport}
+            >
               <Image
                 src="/download.svg"
                 alt="download"
