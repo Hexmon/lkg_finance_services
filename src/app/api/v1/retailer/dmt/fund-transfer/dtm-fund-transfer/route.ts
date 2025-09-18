@@ -1,4 +1,3 @@
-// src/app/api/v1/retailer/dmt/beneficiary/add-beneficiary/route.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
@@ -6,25 +5,26 @@ import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { retailerFetch } from '@/app/api/_lib/http-retailer';
+
 import {
-  AddBeneficiaryRequestSchema,
-  AddBeneficiaryResponseSchema,
-  type AddBeneficiaryRequest,
-  type AddBeneficiaryResponse,
-} from '@/features/retailer/dmt/beneficiaries/domain/types';
+  FundTransferRequestSchema,
+  FundTransferResponseSchema,
+  type FundTransferRequest,
+  type FundTransferResponse,
+} from '@/features/retailer/dmt/fund-transfer/domain/types';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * BFF: POST /api/v1/retailer/dmt/beneficiary/add-beneficiary
+ * BFF: POST /api/v1/retailer/dmt/fund-transfer/dtm-fund-transfer
  * Proxies upstream:
- *   POST https://retailer-uat.bhugtan.in/secure/retailer/add_beneficiary
+ *   POST /secure/retailer/fund-transfer
  */
 export async function POST(req: NextRequest) {
   const token = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Parse + validate body
+  // Parse JSON
   let body: unknown;
   try {
     body = await req.json();
@@ -32,9 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  let payload: AddBeneficiaryRequest;
+  // Validate body against FundTransfer
+  let payload: FundTransferRequest;
   try {
-    payload = AddBeneficiaryRequestSchema.parse(body);
+    payload = FundTransferRequestSchema.parse(body);
   } catch (zerr: any) {
     return NextResponse.json(
       { error: 'Validation failed', details: zerr?.errors ?? String(zerr) },
@@ -43,18 +44,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const raw = await retailerFetch<unknown>('/secure/retailer/add_beneficiary', {
+    // Upstream call
+    const raw = await retailerFetch<unknown>('/secure/retailer/fund-transfer', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: payload,
     });
 
-    const data: AddBeneficiaryResponse = AddBeneficiaryResponseSchema.parse(raw);
-    return NextResponse.json<AddBeneficiaryResponse>(data, { status: 200 });
+    // Response is permissive (z.any)
+    const data: FundTransferResponse = FundTransferResponseSchema.parse(raw);
+
+    // Typical success payload:
+    // { status: "200", message: "OTP sent successfully", txn_id: "...", verify_OTP: true }
+    return NextResponse.json<FundTransferResponse>(data, { status: 200 });
   } catch (err: any) {
-    const status = err?.status ?? err?.data?.status ?? 502;
+    const status = Number(err?.status ?? err?.data?.status ?? 502);
     return NextResponse.json(
-      err?.data ?? { status, error: { message: err?.message ?? 'Add beneficiary failed' } },
+      err?.data ?? { status, error: { message: err?.message ?? 'Fund transfer request failed' } },
       { status }
     );
   }

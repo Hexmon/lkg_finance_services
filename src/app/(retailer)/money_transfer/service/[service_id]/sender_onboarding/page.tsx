@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/app/money_transfer/service/[service_id]/sender_onboarding/page.tsx (or your current path)
+// src/app/money_transfer/service/[service_id]/sender_onboarding/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Input, message } from "antd";
+import { Button, Input } from "antd";
 import Image from "next/image";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
-import { useAddSender } from "@/features/retailer/dmt/sender";
+import { useAddSender, useVerifyOtpOnboardSender } from "@/features/retailer/dmt/sender";
 import { useMessage } from "@/hooks/useMessage";
 import { useParams, useRouter } from "next/navigation";
 import { biometricString } from "@/config/app.config";
@@ -19,11 +19,16 @@ export default function SenderOnboarding() {
     const router = useRouter();
     const { service_id } = useParams<{ service_id: string }>();
     const { error, info, success } = useMessage();
-    const { addSenderAsync, isLoading } = useAddSender();
+
+    // FINO flow uses addSender (unchanged)
+    const { addSenderAsync, isLoading: addLoading } = useAddSender();
+
+    // ARTL flow uses verify OTP here (with Aadhaar)
+    const { verifyOtpOnboardSenderAsync, isLoading: verifyLoading } = useVerifyOtpOnboardSender();
 
     const [draft, setDraft] = useState<any | null>(null);
 
-    // Aadhaar state (UI like BiometricVerification example)
+    // Aadhaar state
     const [aadhaar, setAadhaar] = useState("");
     const [touched, setTouched] = useState(false);
 
@@ -59,22 +64,82 @@ export default function SenderOnboarding() {
                 return;
             }
 
-            // FINO call happens here with combined payload
-            const res = await addSenderAsync({
-                ...draft,
-                aadharNumber: aadhaar,
-                bioPid: biometricString, 
-            });
+            const txnType = draft?.txnType;           // carry forward
+            const bankType = draft?.bankId;           // carry forward
+            const mobile_no = draft?.mobile_no;
 
-            success(res?.message ?? "Verification started. OTP sent if required.");
+            // FINO flow (unchanged except URL adds txnType & bankType)
+            if (draft.bankId === "FINO") {
+                const res = await addSenderAsync({
+                    ...draft,
+                    aadharNumber: aadhaar,
+                    bioPid: biometricString,
+                });
+                success(res?.message ?? "Verification started. OTP sent if required.");
 
-            // Decide your next step:
-            // - If you want a different route after starting verification, change this line.
-            router.push(`/money_transfer/service/${service_id}/${draft.mobile_no}`);
+                const nextUrl = `/money_transfer/service/${service_id}/${mobile_no}${txnType || bankType
+                        ? `?${[
+                            txnType ? `txnType=${encodeURIComponent(txnType)}` : "",
+                            bankType ? `bankType=${encodeURIComponent(bankType)}` : "",
+                        ]
+                            .filter(Boolean)
+                            .join("&")}`
+                        : ""
+                    }`;
+                router.push(nextUrl);
+                return;
+            }
+
+            // ARTL flow: verify OTP here with Aadhaar
+            if (draft.bankId === "ARTL") {
+                const {
+                    ref_id,
+                    otp,
+                    sender_name,
+                    pincode,
+                    email_address,
+                } = draft;
+
+                if (!ref_id || !otp) {
+                    error("Missing OTP session. Please go back and resend OTP.");
+                    return;
+                }
+
+                await verifyOtpOnboardSenderAsync({
+                    ref_id,
+                    otp,
+                    sender_name,
+                    pincode,
+                    email_address,
+                    mobile_no,
+                    service_id,
+                    bioPid: biometricString,
+                    aadharNumber: aadhaar, // required by backend
+                });
+
+                success("Sender verification completed!");
+
+                const nextUrl = `/money_transfer/service/${service_id}/${mobile_no}${txnType || bankType
+                        ? `?${[
+                            txnType ? `txnType=${encodeURIComponent(txnType)}` : "",
+                            bankType ? `bankType=${encodeURIComponent(bankType)}` : "",
+                        ]
+                            .filter(Boolean)
+                            .join("&")}`
+                        : ""
+                    }`;
+                router.push(nextUrl);
+                return;
+            }
+
+            // Unknown bank path safeguard
+            info("Unknown bank path. Please restart onboarding.");
         } catch (e: any) {
-            error(e?.message ?? "Failed to start verification.");
+            error(e?.message ?? "Verification failed. Please try again.");
         }
     };
+
+    const isWorking = addLoading || verifyLoading;
 
     return (
         <DashboardLayout
@@ -135,19 +200,16 @@ export default function SenderOnboarding() {
                         </div>
 
                         <div className="text-[12px] text-[#9A9595]">
-                            Verifying: <strong className="text-[#232323]">{userName}</strong>
+                            Verifying: <strong className="text-[#232323]">{draft?.sender_name ?? "User"}</strong>
                         </div>
 
-                        {/* Aadhaar number input (same visual as sample) */}
+                        {/* Aadhaar number input */}
                         <div className="w-full flex flex-col justify-center items-center !h-[30px]">
                             <div className="!relative !bg-[#6E6E6E1C] !rounded-xl !px-4 !py-2 !flex !items-center !shadow-sm h-[30px] w-[286px]">
-                                {/* Left side label */}
                                 <div className="w-2/3 text-sm text-[#B6B6B6] font-medium text-center">
                                     Aadhaar No.
                                 </div>
-
-                                {/* Right side input */}
-                                <div className="">
+                                <div>
                                     <Input
                                         id="aadhaar"
                                         name="aadhaar"
@@ -169,11 +231,9 @@ export default function SenderOnboarding() {
                                 </div>
                             </div>
 
-                            {/* Helper text */}
                             <div
                                 id="aadhaar-help"
-                                className={`mt-1 text-[11px] ${showError ? "text-red-500" : "text-[#9A9595]"
-                                    }`}
+                                className={`mt-1 text-[11px] ${showError ? "text-red-500" : "text-[#9A9595]"}`}
                             >
                                 {showError
                                     ? "Please enter a valid 12-digit Aadhaar number."
@@ -184,9 +244,9 @@ export default function SenderOnboarding() {
                         <Button
                             className="!bg-[#3386FF] !text-white !w-[355px] !h-[38px] !rounded-[12px]"
                             onClick={onSubmit}
-                            disabled={!isValidAadhaar || isLoading}
+                            disabled={!isValidAadhaar || isWorking}
                         >
-                            {isLoading ? "Starting…" : "Start Verification"}
+                            {isWorking ? "Starting…" : "Start Verification"}
                         </Button>
                     </div>
                 }
