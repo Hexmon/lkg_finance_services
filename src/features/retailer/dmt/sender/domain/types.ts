@@ -124,7 +124,7 @@ export type VerifyOtpOnboardSenderResponse = z.infer<
 /*    Upstream: /secure/retailer/addSender  (Retailer UAT)                     */
 /* ========================================================================== */
 
-/** Request schema — based on docs; required/optional as specified. */ // NEW
+/** Request schema — with email optional */
 export const AddSenderRequestSchema = z
   .object({
     mobile_no: z.string().regex(/^[6-9]\d{9}$/, 'Enter valid 10-digit mobile number'),
@@ -132,26 +132,32 @@ export const AddSenderRequestSchema = z
     sender_name: z.string().min(1),
     pincode: z.string().regex(/^\d{6}$/, 'Enter valid 6-digit pincode'),
     // Optional fields
-    txnType: z.string().min(1).optional(),     // BillAvenue only
-    bankId: z.string().min(1).optional(),      // BillAvenue only
-    email_address: z.string().email().optional(),
-    aadharNumber: z.string().min(1).optional(), // ARTL only (per notes)
+    txnType: z.string().min(1).optional(),
+    bankId: z.string().min(1).optional(),
+    email_address: z.string().email().optional(), // 👈 stays optional
+    aadharNumber: z.string().min(1).optional(),
     bioPid: z.string().optional(),
-    address: z.string().optional(),             // UI collects it; upstream may ignore
+    address: z.string().optional(),
   })
   .strict();
 
-export type AddSenderRequest = z.infer<typeof AddSenderRequestSchema>; // NEW
+export type AddSenderRequest = z.infer<typeof AddSenderRequestSchema>;
 
-/** Response schema — matches your sample exactly, with safe coercions. */ // NEW
 export const AddSenderResponseSchema = z
   .object({
-    message: z.string(),
-    ref_id: z.string().uuid(), // upstream looks like a UUID in your sample
-    otp_code: z.string(),       // keep string; do not coerce to number to preserve leading zeros
-    status: z.union([z.number().int(), z.string()]).transform((s) => Number(s)),
-    aadhaar_required: z.boolean(),
-    bio_required: z.boolean(),
+    // Often present, but allow missing
+    message: z.string().optional(),
+    ref_id: z.string().uuid().optional(),
+    otp_code: z.string().optional(),
+
+    // Different backends/paths spell this differently or omit it
+    aadhaar_required: z.boolean().optional(),
+    aadhar_required: z.boolean().optional(),
+
+    bio_required: z.boolean().optional(),
+
+    // Sometimes number, sometimes string, sometimes absent
+    status: z.union([z.number().int(), z.string()]).transform((s) => Number(s)).optional(),
   })
   .passthrough();
 
