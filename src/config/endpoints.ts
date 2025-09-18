@@ -48,14 +48,15 @@ export const RETAILER_ENDPOINTS = {
             ADD_SENDER: "secure/retailer/addSender"
         },
         BENEFICIARIES: {
-            VERIFY_IFSC: "/secure/retailer/verify_ifsc"
+            VERIFY_IFSC: "/secure/retailer/verify_ifsc",
+            ADD_BENIFICARY: "/secure/retailer/add_beneficiary"
         }
     },
     CASH_WITHDRAWL: {
         CHECK_AUTHENTICATION: "/secure/paypoint/aeps/check_authentication",
         TWO_FACTOR_AUTHENTICATION: "/secure/paypoint/aeps/two_factor_authentication",
         AEPS_TRANSACTION: "/secure/paypoint/aeps/aeps_transaction",
-        BANK_LIST: "/secure/paypoint/aeps/banklist"
+        BANK_LIST: "/secure/retailer/bank_info"
     },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",

@@ -25,7 +25,7 @@ export default function MoneyTransferServicePage() {
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
   const router = useRouter();
   const [bankType, setBankType] = useState<BankId | undefined>('ARTL')
-  
+
   type RouteParams = { service_id: string };
   const { service_id } = useParams<RouteParams>();
   const { error, info } = useMessage()
@@ -68,7 +68,7 @@ export default function MoneyTransferServicePage() {
     // success("Beneficiary added!");
     setIsBeneficiaryModalOpen(false);
   };
-   
+
 
   return (
     <DashboardLayout sections={moneyTransferSidebarConfig} activePath="" pageTitle="Dashboards" error={[checkSenderRegError, transactionError]} isLoading={transactionLoading}>
@@ -120,7 +120,8 @@ export default function MoneyTransferServicePage() {
           open={isBeneficiaryModalOpen}
           onClose={() => setIsBeneficiaryModalOpen(false)}
           onSubmit={handleAddBeneficiary}
-        // loading={isAddingBeneficiary}
+          // loading={isAddingBeneficiary}
+          service_id={service_id}
         />
 
         {/* Add Sender Modal */}
@@ -128,13 +129,13 @@ export default function MoneyTransferServicePage() {
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           service_id={service_id}
-          bankType={bankType || ""}
+          bankType={bankType || "ARTL"}
         />
 
       </div>
-      
+
       <div className="bg-transparent"></div>
     </DashboardLayout>
-    
+
   );
 }
