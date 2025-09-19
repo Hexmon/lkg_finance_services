@@ -43,7 +43,7 @@ const Topbar: React.FC<TopbarProps> = ({
 
   const { profile, name, aadhaar_verified, accepted_terms, email_verified, pan_verified } = core || {}
   const isVerified = aadhaar_verified && accepted_terms && email_verified && pan_verified
-  const balanceAmount = balances[0]?.balance ?? 0
+  const balanceAmount = (balances[0]?.balance ?? 0) + (balances[1]?.balance ?? 0)
 
   const router = useRouter();
   const [role, setRole] = useState("Distributor");
@@ -109,11 +109,11 @@ const Topbar: React.FC<TopbarProps> = ({
     <div className="bg-[#FFFFFF] p-2 rounded-xl shadow-md w-[200px]">
       <div className="flex justify-between text-[13px] mb-2">
         <span className="text-gray-700">Main Wallet</span>
-        <span className="font-medium">₹15,000</span>
+        <span className="font-medium">₹{balances[0]?.balance ?? 0}</span>
       </div>
       <div className="flex justify-between text-[13px]">
         <span className="text-gray-700">AEPS Wallet</span>
-        <span className="font-medium">₹10,000</span>
+        <span className="font-medium">₹{balances[1]?.balance ?? 0}</span>
       </div>
     </div>
   );
@@ -128,7 +128,7 @@ const Topbar: React.FC<TopbarProps> = ({
           height={15}
         />
         <span className="text-[13px] text-gray-700"
-        onClick={()=> router.push("/money_transfer/payment_gateway")}
+          onClick={() => router.push("/money_transfer/payment_gateway")}
         >Payment Gateway (PG)</span>
       </div>
       <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 rounded-lg cursor-pointer">
@@ -139,7 +139,7 @@ const Topbar: React.FC<TopbarProps> = ({
           height={15}
         />
         <span className="text-[13px] text-gray-700"
-        onClick={()=> router.push("/money_transfer/fund_request")}
+          onClick={() => router.push("/money_transfer/fund_request")}
         >Fund Request</span>
       </div>
     </div>
@@ -207,7 +207,7 @@ const Topbar: React.FC<TopbarProps> = ({
           trigger="click"
           placement="bottomRight"
           styles={{
-            body: { padding: 0, borderRadius: "12px",},
+            body: { padding: 0, borderRadius: "12px", },
           }}
         >
           <Button
