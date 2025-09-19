@@ -1,4 +1,5 @@
 // src\features\retailer\retailer_bbps\bbps-online\bill-fetch\data\endpoints.ts
+import { UseQueryOptions, QueryKey, useQuery } from "@tanstack/react-query";
 import {
   CategoryListResponseSchema,
   BillerListResponseSchema,
@@ -78,16 +79,51 @@ export async function apiGetPlanPull(
   if (!params?.service_id) throw new Error("service_id is required");
   if (!params?.billerId) throw new Error("billerId is required");
 
+  // Optional: enforce UUID like server does
+  // BillPaymentPathParamsSchema.pick({ service_id: true }).parse({ service_id: params.service_id });
+
   const qs = new URLSearchParams({ mode: params.mode }).toString();
 
-  // NOTE: getJSON prefixes /api/v1, so we keep this relative path without a leading slash.
-  const path = `retailer/bbps/bbps-online/bill-fetch/all-plans/${encodeURIComponent(
-    params.service_id
-  )}/${encodeURIComponent(params.billerId)}?${qs}`;
+  const path =
+    `retailer/bbps/bbps-online/bill-fetch/all-plans/` +
+    `${encodeURIComponent(params.service_id)}/` +
+    `${encodeURIComponent(params.billerId)}?${qs}`;
 
+  // If BFF already normalizes, this will always succeed:
   const raw = await getJSON<PlanPullResponse>(path, { signal: opts?.signal });
+
+  // Keep this if you want client-side safety too:
   return PlanPullResponseSchema.parse(raw);
 }
+
+export function useBbpsPlanPullQuery(
+  params: { service_id: string; billerId: string; mode: "ONLINE" | "OFFLINE" },
+  _opt?: {
+    query?: Omit<
+      UseQueryOptions<PlanPullResponse, Error, PlanPullResponse, QueryKey>,
+      "queryKey" | "queryFn"
+    >;
+  }
+) {
+  const baseEnabled =
+    !!params?.service_id &&
+    !!params?.billerId &&
+    !!params?.mode;
+
+  const userEnabled = _opt?.query?.enabled ?? true;
+  const enabled = baseEnabled && userEnabled;
+
+  return useQuery({
+    queryKey: ["bbps", "plan-pull", params.service_id, params.billerId, params.mode],
+    queryFn: ({ signal }) => apiGetPlanPull(params, { signal }),
+    // optional: avoid refetch loop on tab focus
+    // staleTime: 60_000,
+    // refetchOnWindowFocus: false,
+    ...(_opt?.query ?? {}),
+    enabled,
+  });
+}
+
 
 /**
  * POST (BFF) → /retailer/bbps/bbps-online/bill-fetch/bill-fetch/[service_id]?mode=

@@ -132,7 +132,7 @@ export default function BillerPage() {
     }, [selectedBiller, isActive, inputs, formValues]);
 
     const planSatisfied = planReq !== "MANDATORY" || !!selectedPlan;
-    const canOpenModal = baseFormValid && isActive && fetchReq === "MANDATORY" && planSatisfied;
+    const canOpenModal = baseFormValid && isActive && fetchReq === "MANDATORY";
 
     // Prepare inputParams payload for modal
     const payloadInputs = React.useMemo(

@@ -281,7 +281,8 @@ export const PlanParamTagSchema = z.object({
 });
 
 export const PlanAddnlInfoSchema = z.object({
-  paramTag: z.union([PlanParamTagSchema, z.array(PlanParamTagSchema)]),
+  // Some billers send a single object, others an array, some omit entirely
+  paramTag: z.union([PlanParamTagSchema, z.array(PlanParamTagSchema)]).optional(),
 });
 
 export const PlanSchema = z.object({
@@ -289,23 +290,37 @@ export const PlanSchema = z.object({
   billerId: z.string(),
   categoryType: z.string().nullable().optional(),
   categorySubType: z.string().nullable().optional(),
-  amountInRupees: z.string(),
+  amountInRupees: z.string(), // keep as string; upstream sends "500.0"
   planDesc: z.string(),
   planAddnlInfo: PlanAddnlInfoSchema.optional(),
   effectiveFrom: z.string(),
-  effectiveTo: z.string().nullable(),
+  effectiveTo: z.string().nullable(),   // null is valid in examples
   status: z.string(),
 });
 
+// Accept both "planDetails" and "plans" variants; allow optional; normalize to planDetails[]
 export const PlanPullResponseSchema = z.object({
   status: z.union([z.string(), z.number()]).transform((s) => Number(s)),
-  requestId: z.string(),
+  requestId: z.string().optional(),
   data: z.object({
-    responseCode: z.string(),
-    respReason: z.string(),
-    planDetails: z.array(PlanSchema),
-  }),
-});
+    responseCode: z.string().optional(),
+    respReason: z.string().optional(),
+    responseReason: z.string().optional(), // some envs send this name
+    planDetails: z.array(PlanSchema).optional(),
+    plans: z.array(PlanSchema).optional(),
+  }).passthrough(),
+}).passthrough()
+  .transform((v) => {
+    const plans = v.data.planDetails ?? v.data.plans ?? [];
+    return {
+      ...v,
+      data: {
+        ...v.data,
+        // Always expose data.planDetails (downstream can rely on it)
+        planDetails: plans,
+      },
+    };
+  });
 
 export type PlanParamTag = z.infer<typeof PlanParamTagSchema>;
 export type PlanAddnlInfo = z.infer<typeof PlanAddnlInfoSchema>;

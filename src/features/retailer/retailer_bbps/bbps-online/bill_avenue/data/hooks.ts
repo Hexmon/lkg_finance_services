@@ -17,27 +17,44 @@ const qk = {
   txnStatus: (service_id: string, body: TxnStatusRequest) =>
     [...qk.base, "txn-status", service_id, body] as QueryKey,
 };
-
-type BillPaymentVars = {
-  service_id: string;
-  body: BillPaymentRequest;
-};
+// src/features/retailer/retailer_bbps/bbps-online/bill_avenue/hooks.ts
+type BillPaymentVars = { service_id: string; body: BillPaymentRequest };
 
 export function useBillPayment() {
-  const mutation = useMutation<BillPaymentResponse, unknown, BillPaymentVars>({
+  const mutation = useMutation<unknown, unknown, BillPaymentVars>({ // ⬅️ unknown/any
     mutationFn: ({ service_id, body }) => apiBillPayment(service_id, body),
   });
 
   return {
-    data: mutation.data,
+    data: mutation.data as unknown,     // keep as-is or narrow where you consume it
     error: mutation.error,
     isLoading: mutation.isPending,
-    billPayment: mutation.mutate,            // sync-call style
-    billPaymentAsync: mutation.mutateAsync,  // async/await style
+    billPayment: mutation.mutate,
+    billPaymentAsync: mutation.mutateAsync,
     reset: mutation.reset,
   };
 }
 
+// type BillPaymentVars = {
+//   service_id: string;
+//   body: BillPaymentRequest;
+// };
+
+// // src/features/retailer/retailer_bbps/bbps-online/bill_avenue/hooks.ts
+// export function useBillPayment() {
+//   const mutation = useMutation<BillPaymentResponse, unknown, BillPaymentVars>({
+//     mutationFn: ({ service_id, body }) => apiBillPayment(service_id, body),
+//   });
+
+//   return {
+//     data: mutation.data,
+//     error: mutation.error,
+//     isLoading: mutation.isPending,
+//     billPayment: mutation.mutate,
+//     billPaymentAsync: mutation.mutateAsync,
+//     reset: mutation.reset,
+//   };
+// }
 
 /** ---------------------- Txn Status (Query) ---------------------- **/
 /**

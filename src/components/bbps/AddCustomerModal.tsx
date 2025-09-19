@@ -101,7 +101,8 @@ export default function AddCustomerModal({
             const nextScreenPayload = {
                 ...resp,
                 customerMobile: values.mobileNumber,
-                billerId
+                billerId,
+                customerPan: values.idNumber,
             }
             if (typeof window !== "undefined") {
                 sessionStorage.setItem(STORAGE_KEY, JSON.stringify(nextScreenPayload));
