@@ -6,7 +6,7 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { Button } from "antd";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function formatINR(n?: string | null) {
     const num = Number(n);
@@ -20,7 +20,7 @@ function formatINR(n?: string | null) {
 
 export default function PaymentSuccess() {
     const params = useSearchParams();
-
+    const router = useRouter()
     const tx = params.get("tx") || "—";
     const amt = params.get("amt");               // number string
     const name = params.get("name") || "—";
@@ -99,15 +99,16 @@ export default function PaymentSuccess() {
 
                         {/* Buttons */}
                         <div className="flex gap-3 w-full justify-center">
-                            <Button
+                            {/* <Button
                                 size="large"
                                 className="flex-1 !bg-white border !text-black rounded-lg shadow-sm"
                             >
                                 Download Receipt
-                            </Button>
+                            </Button> */}
                             <Button
                                 size="large"
                                 className="flex-1 !bg-green-500 !text-white rounded-lg"
+                                onClick={() => { router.replace('/cash_withdrawal') }}
                             >
                                 Make Another Payment
                             </Button>

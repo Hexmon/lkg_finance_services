@@ -1,27 +1,32 @@
-import { useState, useEffect } from "react";
-import { apiGetTickets } from "./endpoints";
-import { GetTicketsQuery } from "@/features/support/domain/types";
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiCreateTicket, apiGetTickets } from './endpoints';
+import type {
+  CreateTicketRequest,
+  CreateTicketResponse,
+  GetTicketsQuery,
+  GetTicketsResponse,
+} from '../domain/types';
 
-export function useTickets(query: GetTicketsQuery) {
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+export function useCreateTicket() {
+  const mutation = useMutation<CreateTicketResponse, unknown, CreateTicketRequest>({
+    mutationFn: apiCreateTicket,
+  });
 
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    apiGetTickets(query)
-      .then((response) => {
-        setTickets(Array.isArray(response?.data) ? response.data : []);
-      })
-      .catch((err) => {
-        setError(err);
-        setTickets([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [JSON.stringify(query)]);
+  return {
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    createTicket: mutation.mutate,          // callback style
+    createTicketAsync: mutation.mutateAsync // async/await style
+  };
+}
 
-  return { tickets, isLoading, error };
+export function useGetTickets(query: GetTicketsQuery, enabled = true) {
+  return useQuery<GetTicketsResponse, unknown>({
+    queryKey: ['support', 'tickets', query],
+    queryFn: () => apiGetTickets(query),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 }
