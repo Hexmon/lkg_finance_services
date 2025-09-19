@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { GetTicketsQuerySchema, GetTicketsResponseSchema } from '@/features/support/domain/types';
-import { authFetch } from '@/app/api/_lib/http';
+import { supportFetch } from '@/app/api/_lib/http-support';
 
 export async function GET(req: NextRequest) {
     // 1) Read & validate query params
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     // 3) Call upstream (no manual QS; use `query`)
     try {
-        const upstream = await authFetch<unknown>('/secure/tickets', {
+        const upstream = await supportFetch<unknown>('/secure/tickets', {
             headers: {
                 Authorization: `Bearer ${jwt}`,
                 Accept: 'application/json',

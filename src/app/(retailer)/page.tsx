@@ -26,7 +26,7 @@ export default function Dashboard() {
       activePath="/"
       pageTitle="Dashboards"
       isLoading={showLoading || transactionLoading}
-      error={[dashboardError, transactionError]}
+      error={[dashboardError]}
     // error={[dashboardError, transactionError, anotherError].filter(Boolean)}
     //  error={dashboardError}
     >
