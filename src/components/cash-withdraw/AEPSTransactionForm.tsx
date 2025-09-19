@@ -274,7 +274,7 @@ export default function AEPSTransactionForm() {
           rules={[{ required: true, message: "Please enter amount" }]}
           className="md:col-span-2 flex flex-col w-full max-w-[444px]"
         >
-          <Input.Password placeholder="Enter amount" className="rounded-lg h-11 mt-1" />
+          <Input placeholder="Enter amount" className="rounded-lg h-11 mt-1" type="number" />
         </Form.Item>
       </div>
 

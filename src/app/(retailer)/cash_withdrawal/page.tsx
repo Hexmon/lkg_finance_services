@@ -74,26 +74,16 @@ export default function CashWithdraw() {
 
             {/* Step 2: Verify outcome */}
             {step === 2 &&
-                (verificationStatus === "failed" ? (
-                    <VerificationFailed
-                        userName={name ?? username ?? ""}
-                        onRetry={() => {
-                            setVerificationStatus("pending");
-                            // stay on step 2; VerifyingIdentity will run again based on your component logic
-                        }}
-                    />
-                ) : (
-                    <VerifyingIdentity
-                        userName={name ?? username ?? ""}
-                        onSuccess={() => {
-                            setVerificationStatus("success");
-                            setStep(3);
-                        }}
-                        onFailure={() => {
-                            setVerificationStatus("failed");
-                        }}
-                    />
-                ))}
+                <VerifyingIdentity
+                    userName={name ?? username ?? ""}
+                    onSuccess={() => {
+                        setVerificationStatus("success");
+                        setStep(3);
+                    }}
+                    onFailure={() => {
+                        setVerificationStatus("failed");
+                    }}
+                />}
 
             {/* Step 3: Success screen */}
             {step === 3 && <IdentityVerified userName={name ?? username ?? ""} aepsId={aepsId} />}
