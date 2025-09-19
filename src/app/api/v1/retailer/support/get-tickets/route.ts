@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { GetTicketsQuerySchema, GetTicketsResponseSchema } from '@/features/support/domain/types';
+import { authFetch } from '@/app/api/_lib/http';
 import { supportFetch } from '@/app/api/_lib/http-support';
 
 export async function GET(req: NextRequest) {

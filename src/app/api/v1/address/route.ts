@@ -56,8 +56,18 @@ export async function POST(req: NextRequest) {
 /** ---------- GET /api/v1/address?user_id=... → GET /secure/address/ ---------- */
 export async function GET(req: NextRequest) {
   const jar = await cookies();
-  const token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cookieToken = jar.get(AUTH_COOKIE_NAME)?.value;
+
+  // Optional: accept Authorization header when cookie is absent
+  const headerAuth = req.headers.get('authorization') || '';
+  const headerToken = headerAuth.toLowerCase().startsWith('bearer ')
+    ? headerAuth.slice(7).trim()
+    : '';
+
+  const token = cookieToken || headerToken;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const raw = Object.fromEntries(req.nextUrl.searchParams.entries());
   const q = GetAddressesQuerySchema.safeParse(raw);
@@ -65,11 +75,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid query", issues: q.error.issues }, { status: 400 });
   }
 
-  // Build upstream path: /secure/address/  OR  /secure/address/{user_id}
   const base = AUTHERIZATION_ENDPOINT.ADDRESS_PATH.replace(/\/$/, ""); // "/secure/address"
   const upstreamPath = q.data.user_id
     ? `${base}/${encodeURIComponent(q.data.user_id)}`
-    : `${base}/`;
+    : base; // <- no trailing slash
+console.log({upstreamPath});
 
   try {
     const data = await authFetch<GetAddressesResponse>(upstreamPath, {
