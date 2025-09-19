@@ -135,7 +135,7 @@ export async function request<T>(
           if (!window.location.pathname.startsWith(signinPath) && !redirectingToSignin) {
             redirectingToSignin = true;
             try { await onUnauthorized?.(); } catch { }
-            try { apiLogout?.(); } catch { }
+            try { await apiLogout?.(); } catch { }
             window.location.replace(`${signinPath}?next=${encodeURIComponent(here)}`);
           }
           return new Promise<never>(() => { });
