@@ -112,13 +112,21 @@ export const PaymentMethodSchema = z.object({
 }).strict();
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
-/** paymentInfo */
-export const PaymentInfoSchema = z.object({
-  info: z.object({
-    infoName: z.string().min(1),
-    infoValue: z.string().min(1),
-  }).strict(),
+/** paymentInfo
+ * Accept both:
+ *  A) { info: { infoName, infoValue } }
+ *  B) { infoName, infoValue }
+ * (We’ll normalize to A) before sending upstream in the route.)
+ */
+const PaymentInfoInnerSchema = z.object({
+  infoName: z.string().min(1),
+  infoValue: z.string().min(1),
 }).strict();
+
+export const PaymentInfoSchema = z.union([
+  z.object({ info: PaymentInfoInnerSchema }).strict(),
+  PaymentInfoInnerSchema,
+]);
 export type PaymentInfo = z.infer<typeof PaymentInfoSchema>;
 
 /** additionalInfo — array of {infoName, infoValue} seen in FASTag example */
@@ -175,6 +183,7 @@ export const BillPaymentResponseSchema = z.object({
   data: BillPaymentResponseDataSchema.optional(),
 }).passthrough();
 export type BillPaymentResponse = z.infer<typeof BillPaymentResponseSchema>;
+
 
 /* ======================================================================
  * Transaction Status

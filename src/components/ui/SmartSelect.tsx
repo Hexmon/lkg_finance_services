@@ -96,8 +96,15 @@ function useDebouncedValue<T>(value: T, ms = 300) {
     return debounced;
 }
 
+type ParentSignals = {
+    /** optional: receive the component's DEBOUNCED search term */
+    onSearchTermChange?: (term: string) => void;
+    /** optional: receive dropdown open/close state */
+    onOpenChange?: (open: boolean) => void;
+};
+
 /** ---- Component ---- */
-export default function SmartSelect<T extends OptionValue>(props: SmartSelectProps<T>) {
+export default function SmartSelect<T extends OptionValue>(props: SmartSelectProps<T> & ParentSignals) {
     const {
         options = [],
         className,
@@ -127,6 +134,10 @@ export default function SmartSelect<T extends OptionValue>(props: SmartSelectPro
     const [remoteOpts, setRemoteOpts] = useState<SmartOption<T>[]>(props.initialRemoteOptions ?? []);
     const [remoteLoading, setRemoteLoading] = useState(false);
     const isRemote = !!props.remote && !!props.searchFn;
+
+    useEffect(() => {
+        if (props.onSearchTermChange) props.onSearchTermChange(debounced);
+    }, [debounced]);
 
     // Fetch remote when open + search term changes
     useEffect(() => {
@@ -223,7 +234,10 @@ export default function SmartSelect<T extends OptionValue>(props: SmartSelectPro
                 showSearch={!!filterOption || isRemote || false}
                 filterOption={isRemote ? false : filterOption ?? true}
                 onSearch={setSearch}
-                onDropdownVisibleChange={setOpen}
+                onDropdownVisibleChange={(next) => {
+                    setOpen(next);                 // keep internal behavior
+                    props.onOpenChange?.(next);    // NEW: tell parent (optional)
+                }}
                 // loading
                 notFoundContent={(loading || remoteLoading) ? <Spin size="small" /> : null}
                 tagRender={tagRender as any}

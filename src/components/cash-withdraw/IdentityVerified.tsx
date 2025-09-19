@@ -8,14 +8,15 @@ import { CardLayout } from "@/lib/layouts/CardLayout";
 
 type IdentityVerifiedProps = {
   userName?: string;
+  aepsId: string;
 };
 
-export default function IdentityVerified({ userName = "Rajesh Kumar" }: IdentityVerifiedProps) {
+export default function IdentityVerified({ userName = "", aepsId }: IdentityVerifiedProps) {
   const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/cash_withdrawal/aeps_service");
+      router.push(`/cash_withdrawal/${aepsId}`);
     }, 1000);
 
     return () => clearTimeout(timer);
