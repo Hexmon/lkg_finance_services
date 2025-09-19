@@ -8,6 +8,7 @@ import { cashWithdrawSidebarConfig } from "@/config/sidebarconfig";
 import { useServiceList } from "@/features/retailer/services";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { useAppSelector } from "@/lib/store";
+import { selectProfileName, selectProfileUsername } from "@/lib/store/slices/profileSlice";
 import { ArrowLeftOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import { useState } from "react";
@@ -16,6 +17,8 @@ export default function CashWithdraw() {
     const [step, setStep] = useState<number>(0);
     const [verificationStatus, setVerificationStatus] =
         useState<"pending" | "success" | "failed">("pending");
+    const username = useAppSelector(selectProfileUsername);
+    const name = useAppSelector(selectProfileName);
 
     const profileData = useAppSelector((s) => s.profile.data);
     const userId = profileData?.user_id ?? "";
@@ -56,7 +59,7 @@ export default function CashWithdraw() {
             {/* Step 0: Enter Aadhaar + hit Start (this calls 2FA inside the component) */}
             {step === 0 && (
                 <BiometricVerification
-                    userName="Rajesh Kumar"
+                    userName={name ?? username ?? ""}
                     service_id={aepsId}
                     user_id={userId}
                     onStart={() => {
@@ -73,6 +76,7 @@ export default function CashWithdraw() {
             {step === 2 &&
                 (verificationStatus === "failed" ? (
                     <VerificationFailed
+                        userName={name ?? username ?? ""}
                         onRetry={() => {
                             setVerificationStatus("pending");
                             // stay on step 2; VerifyingIdentity will run again based on your component logic
@@ -80,6 +84,7 @@ export default function CashWithdraw() {
                     />
                 ) : (
                     <VerifyingIdentity
+                        userName={name ?? username ?? ""}
                         onSuccess={() => {
                             setVerificationStatus("success");
                             setStep(3);
@@ -91,7 +96,7 @@ export default function CashWithdraw() {
                 ))}
 
             {/* Step 3: Success screen */}
-            {step === 3 && <IdentityVerified />}
+            {step === 3 && <IdentityVerified userName={name ?? username ?? ""} aepsId={aepsId} />}
 
             <div className="!text-center h-8 flex items-center !mx-auto mt-4 shadow-xl w-fit bg-white rounded-xl">
                 <span className="mx-4 text-sm">
