@@ -56,7 +56,7 @@ export const RETAILER_ENDPOINTS = {
         CHECK_AUTHENTICATION: "/secure/paypoint/aeps/check_authentication",
         TWO_FACTOR_AUTHENTICATION: "/secure/paypoint/aeps/two_factor_authentication",
         AEPS_TRANSACTION: "/secure/paypoint/aeps/aeps_transaction",
-        BANK_LIST: "/secure/retailer/bank_info"
+        BANK_LIST: "/secure/paypoint/aeps/banklist"
     },
     SERVICE: {
         SERVICE_LIST: "secure/retailer/service-list",
@@ -72,6 +72,9 @@ export const RETAILER_ENDPOINTS = {
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",
     },
+    SUPPORT: {
+        TICKET_LIST: "/admin/tickets",
+    }
 }
 
 export const AUTHERIZATION_ENDPOINT = {

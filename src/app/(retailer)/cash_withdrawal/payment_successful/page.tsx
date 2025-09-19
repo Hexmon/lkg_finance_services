@@ -1,12 +1,31 @@
+"use client";
+
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { cashWithdrawSidebarConfig } from "@/config/sidebarconfig";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
-import { ArrowLeftOutlined, SafetyCertificateOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+
+function formatINR(n?: string | null) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "₹0";
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 2,
+    }).format(num);
+}
 
 export default function PaymentSuccess() {
+    const params = useSearchParams();
+    const router = useRouter()
+    const tx = params.get("tx") || "—";
+    const amt = params.get("amt");               // number string
+    const name = params.get("name") || "—";
+    const cust = params.get("cust") || "—";       // optional extra if you pass it
+
     return (
         <DashboardLayout
             sections={cashWithdrawSidebarConfig}
@@ -55,42 +74,41 @@ export default function PaymentSuccess() {
                                 {/* Transaction ID */}
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-600">Transaction ID</span>
-                                    <span className="font-semibold">TXNIPRS02MQFZH</span>
+                                    <span className="font-semibold break-all">{tx}</span>
                                 </div>
 
                                 {/* Amount Paid */}
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-600">Amount Paid</span>
-                                    <span className="font-semibold">₹999</span>
+                                    <span className="font-semibold">{formatINR(amt)}</span>
                                 </div>
 
                                 {/* Sender Name */}
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-600">Sender Name</span>
-                                    <span className="font-semibold">Rajesh Kumar</span>
+                                    <span className="font-semibold">{name}</span>
                                 </div>
 
                                 {/* Customer ID */}
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-600">Customer ID</span>
-                                    <span className="font-semibold">97886556</span>
+                                    <span className="font-semibold">{cust}</span>
                                 </div>
                             </div>
                         </div>
 
-
-
                         {/* Buttons */}
                         <div className="flex gap-3 w-full justify-center">
-                            <Button
+                            {/* <Button
                                 size="large"
                                 className="flex-1 !bg-white border !text-black rounded-lg shadow-sm"
                             >
                                 Download Receipt
-                            </Button>
+                            </Button> */}
                             <Button
                                 size="large"
                                 className="flex-1 !bg-green-500 !text-white rounded-lg"
+                                onClick={() => { router.replace('/cash_withdrawal') }}
                             >
                                 Make Another Payment
                             </Button>

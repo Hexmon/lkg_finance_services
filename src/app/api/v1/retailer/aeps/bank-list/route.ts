@@ -7,6 +7,7 @@ import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
 import { AEPSBankListQuerySchema, AEPSBankListResponseSchema, type AEPSBankListResponse } from '@/features/retailer/cash_withdrawl/domain/types';
 import { RETAILER_ENDPOINTS } from '@/config/endpoints';
 import { retailerFetch } from '@/app/api/_lib/http-retailer';
+import { paypointFetch } from '@/app/api/_lib/http-paypoint';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // ---- Call upstream ----
-    const raw = await retailerFetch<unknown>(RETAILER_ENDPOINTS.CASH_WITHDRAWL.BANK_LIST, {
+    const raw = await paypointFetch<unknown>(RETAILER_ENDPOINTS.CASH_WITHDRAWL.BANK_LIST, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
       query: {
@@ -71,6 +72,8 @@ export async function GET(req: NextRequest) {
     const data: AEPSBankListResponse = AEPSBankListResponseSchema.parse(normalized);
     return NextResponse.json<AEPSBankListResponse>(data, { status: 200 });
   } catch (err: any) {
+    console.log({err});
+    
     return NextResponse.json(err?.data ?? { error: err?.message ?? 'Upstream error' }, { status: err?.status ?? 502 });
   }
 }

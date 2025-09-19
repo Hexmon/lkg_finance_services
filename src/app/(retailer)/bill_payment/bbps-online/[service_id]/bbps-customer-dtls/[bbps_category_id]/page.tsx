@@ -57,6 +57,7 @@ export default function CustomerDetailsForm() {
     success("Customer details saved");
     // ✅ carry both IDs forward in the URL:
     router.push(
+      // `/bill_payment/bbps-online/${service_id}/bbps-broadband-postpaid/${bbps_category_id}/biller`
       `/bill_payment/bbps-online/${service_id}/bbps-broadband-postpaid/${bbps_category_id}/biller`
     );
   };

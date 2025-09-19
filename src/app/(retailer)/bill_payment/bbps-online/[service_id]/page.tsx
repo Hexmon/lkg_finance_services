@@ -170,7 +170,7 @@ export default function ChooseServicePage() {
   ];
 
   return (
-    <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
+    <DashboardLayout activePath="/bbps-online" sections={billPaymentSidebarConfig} isLoading={isBillersLoading && isCatLoading} pageTitle="Bill Payment">
 
       <div className="p-6 min-h-screen w-full">
         {/* Header */}
@@ -218,7 +218,18 @@ export default function ChooseServicePage() {
             {(filteredCategories ?? []).map((data) => {
               const { bbps_category_id, biller_category, icon } = data || {}
               return (
-                <div key={bbps_category_id} onClick={() => { router.push(`/bill_payment/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}>
+                <div
+                  key={bbps_category_id}
+                  onClick={() => {
+                    router.push(
+                      // `/bill_payment/bbps-online/${service_id}/bbps-broadband-postpaid/${bbps_category_id}/biller?label=${encodeURIComponent(
+                      //   biller_category ?? ""
+                      `/bill_payment/bbps-online/${service_id}/${biller_category}/${bbps_category_id}/biller`
+                    );
+                  }}
+                >
+
+                  {/* <div key={bbps_category_id} onClick={() => { router.push(`/bill_payment/bbps-online/${service_id}/bbps-customer-dtls/${bbps_category_id}`) }}> */}
                   <Card
                     className="cursor-pointer shadow rounded-md text-center py-2 bg-[#faf9f6] hover:border-blue-400 hover:shadow-md transition w-full h-[130px] text-[8px] break-words leading-tight"
                   >
