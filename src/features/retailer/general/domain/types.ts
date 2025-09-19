@@ -108,7 +108,7 @@ export const TransactionSummaryItemSchema = z
     service_id: z.string().uuid().nullable(),
     user_id: z.string().uuid(),
 
-    // ✅ Add this line to match API
+    // ✅ Matches API (may be null or absent)
     customer_id: z.string().uuid().nullable().optional(),
 
     wallet_id: z.string().uuid(),
@@ -135,7 +135,6 @@ export const TransactionSummaryItemSchema = z
     updated_at: z.string().min(1),
   })
   .strict();
-
 
 export type TransactionSummaryItem = z.infer<
   typeof TransactionSummaryItemSchema
@@ -170,9 +169,9 @@ export const QuickLinkMetaSchema = z
   .object({
     id: z.string().uuid(),
     display: z.string(),
-    icon: z.string(), // allow URLs or base64/data URIs
+    icon: z.string(), // allow URLs or data URIs
     route: z.string(),
-    order: z.number(),
+    order: z.number().int(),
     is_active: z.boolean(),
     created_at: z.string(),
     updated_at: z.string().nullable(),
@@ -184,14 +183,15 @@ export const QuickLinkSchema = z
     meta: QuickLinkMetaSchema,
     category_id: z.string().uuid(),
     name: z.string(),
-    description: z.string(),
+    description: z.string(), // may be ""
     created_at: z.string(),
     updated_at: z.string().nullable(),
   })
   .strict();
 
 /** Transactions block */
-export const TxnStatsSchema = z
+// Base stats (no last_month_ratio)
+const TxnStatsSchema = z
   .object({
     total_count: NumberLike,
     ratio: NumberLike,
@@ -199,12 +199,18 @@ export const TxnStatsSchema = z
   })
   .strict();
 
+// Stats that include last_month_ratio (for total_transaction only)
+const TxnStatsWithLastMonthRatioSchema = TxnStatsSchema.extend({
+  last_month_ratio: NumberLike,
+}).strict();
+
 export const TransactionsBlockSchema = z
   .object({
     success_rate: NumberLike,
     success_rate_ratio: NumberLike,
     growth: NumberLike,
-    total_transaction: TxnStatsSchema,
+    // 🔧 API sends last_month_ratio only here
+    total_transaction: TxnStatsWithLastMonthRatioSchema,
     overall_transaction: TxnStatsSchema,
   })
   .strict();
@@ -241,13 +247,14 @@ export const DashboardDetailsResponseSchema = z
     quick_links: z.array(QuickLinkSchema),
     user_id: z.string().uuid(),
     name: z.string(),
-    profile: z.string(), // base64 image or URL
+    // 🔧 more tolerant: base64/URL or null/absent
+    profile: z.string().min(1).nullable().optional(),
     username: z.string(),
     balances: z.record(z.string(), NumberLike), // dynamic keys: MAIN, AEPS, etc.
     transactions: TransactionsBlockSchema,
     virtual_account: VirtualAccountSchema,
     commissions: CommissionsSchema,
-    customers: CustomersSchema
+    customers: CustomersSchema,
   })
   .passthrough(); // keep tolerant to extra vendor fields
 

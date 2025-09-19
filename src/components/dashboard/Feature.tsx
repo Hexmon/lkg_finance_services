@@ -5,7 +5,7 @@ import Image from "next/image";
 
 const { Title, Text } = Typography
 
-export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, success_rate_ratio, commissions, total_users_count }: { totalTxnCount: number, totalTxnRatio: number, success_rate: number, success_rate_ratio: number, commissions: { overall: number, overall_ratio: number }, total_users_count: number }) {
+export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, success_rate_ratio, commissions, total_users_count, customerLastMonthCount, transactionLatMontRatio }: { totalTxnCount: number, customerLastMonthCount: number,transactionLatMontRatio: number,totalTxnRatio: number, success_rate: number, success_rate_ratio: number, commissions: { overall: number, overall_ratio: number, current_month_ratio: number }, total_users_count: number }) {
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <CardLayout
@@ -43,7 +43,7 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                                 height={13}
                                 className="object-contain"
                             /> */}
-                                {totalTxnRatio} Since Last Month </div>
+                                {transactionLatMontRatio} Since Last Month </div>
                         </Text>
                     </div>
                 }
@@ -108,7 +108,7 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                                     width={15.58}
                                     height={8.5}
                                     className="object-contain"
-                                /> 3.2 Since Last Month
+                                /> {customerLastMonthCount} Since Last Month
                             </div>
                         </Text>
                     </div>
@@ -141,7 +141,7 @@ export default function Feature({ totalTxnCount, totalTxnRatio, success_rate, su
                                 width={15.58}
                                 height={8.5}
                                 className="object-contain"
-                            /> {commissions.overall_ratio} Since Last Month
+                            /> {commissions.current_month_ratio} Since Last Month
                             </div>
                         </Text>
                     </div>
