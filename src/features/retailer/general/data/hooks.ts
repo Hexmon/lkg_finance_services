@@ -20,14 +20,14 @@ export const DEFAULT_DASHBOARD: DashboardDetailsResponse = {
   quick_links: [],
   user_id: '',
   name: '',
-  profile: '',
+  profile: null, // was '' — make tolerant to schema (string | null | undefined)
   username: '',
   balances: {},
   transactions: {
     success_rate: 0,
     success_rate_ratio: 0,
     growth: 0,
-    total_transaction: { total_count: 0, ratio: 0, growth: 0 },
+    total_transaction: { total_count: 0, ratio: 0, growth: 0, last_month_ratio: 0 }, // ⬅️ added last_month_ratio
     overall_transaction: { total_count: 0, ratio: 0, growth: 0 },
   },
   virtual_account: { vba_account_number: '', vba_ifsc: '' },
@@ -41,9 +41,10 @@ export const DEFAULT_DASHBOARD: DashboardDetailsResponse = {
   customers: {
     last_month_count: 0,
     last_month_ratio: 0,
-    total_users_count: 0
-  }
+    total_users_count: 0,
+  },
 } as const;
+
 
 /** ---------- Dashboard ---------- */
 export function useRetailerDashboardQuery() {

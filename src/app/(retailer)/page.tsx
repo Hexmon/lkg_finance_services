@@ -12,7 +12,7 @@ import WalletOverview from "@/components/dashboard/WalletOverview";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 
 export default function Dashboard() {
-  const { data: { quick_links, balances: { MAIN, AEPS } = {}, commissions, name, profile, transactions: { success_rate = 0, growth, overall_transaction, success_rate_ratio = 0, total_transaction: { ratio: totalTxnRatio = 0, total_count: totalTxnCount = 0 } = {} } = {}, user_id, username, virtual_account, customers: {total_users_count} = {} } = DEFAULT_DASHBOARD ?? {}, isFetching, isPending, isPlaceholderData, error: dashboardError } = useRetailerDashboardQuery();
+  const { data: { quick_links, balances: { MAIN, AEPS } = {}, commissions, name, profile, transactions: { success_rate = 0, growth, overall_transaction, success_rate_ratio = 0, total_transaction: { ratio: totalTxnRatio = 0 } = {} } = {}, user_id, username, virtual_account, customers: {total_users_count} = {} } = DEFAULT_DASHBOARD ?? {}, isFetching, isPending, isPlaceholderData, error: dashboardError } = useRetailerDashboardQuery();
 
   const { data: { data: transactionData } = {}, isLoading: transactionLoading, error: transactionError } = useTransactionSummaryQuery({ page: 1, per_page: 5, order: "desc" })
 
@@ -26,13 +26,13 @@ export default function Dashboard() {
       activePath="/"
       pageTitle="Dashboards"
       isLoading={showLoading || transactionLoading}
-      error={[dashboardError, transactionError]}
+      error={[dashboardError]}
     // error={[dashboardError, transactionError, anotherError].filter(Boolean)}
     //  error={dashboardError}
     >
       <Profile totalBalance={totalBalance} username={name || username} virtual_account={virtual_account} />
 
-      <Feature commissions={commissions} success_rate={success_rate} success_rate_ratio={success_rate_ratio} totalTxnCount={totalTxnCount} totalTxnRatio={totalTxnRatio} total_users_count={total_users_count ?? 0} />
+      <Feature commissions={commissions} success_rate={success_rate} success_rate_ratio={success_rate_ratio} totalTxnCount={0} totalTxnRatio={totalTxnRatio} total_users_count={total_users_count ?? 0} customerLastMonthCount={0} transactionLatMontRatio={0} />
 
       <Services quick_link={quick_links} />
 

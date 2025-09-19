@@ -9,7 +9,7 @@ import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { CardLayout } from "@/lib/layouts/CardLayout";
 import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
-import WalletStatement from "@/components/report_analysis/WalletStatement";
+import WalletStatement, { WalletStatementFilters } from "@/components/report_analysis/WalletStatement";
 import ReportTransactionHistory from "@/components/report_analysis/ReportTransactionHistory";
 import CommissionSummary from "@/components/report_analysis/CommissionSummary";
 import Feature from "@/components/report_analysis/Feature";
@@ -20,9 +20,22 @@ const { Text } = Typography;
 
 export default function ReportAnalyticsPage() {
     const [activeTab, setActiveTab] = useState<string | number>("wallet");
-
     const { data: { balances: { MAIN } = {}, transactions: { success_rate, total_transaction: { growth, total_count } = {} } = {}, commissions: { overall, overall_ratio } = {} } = {}, isLoading, error } = useRetailerDashboardQuery()
+    const [filters, setFilters] = useState<WalletStatementFilters>({
+        // subtype: "CR",
+        // statuses: ["SUCCESS"],
+        // walletNames: ["MAIN"],
+        // txnTypes: ["AEPS","COMMISSION"],
+        // search: "credited",
+        // from: new Date("2025-09-19T00:00:00Z"),
+        // to: new Date("2025-09-20T00:00:00Z"),
+    });
 
+    const [page, setPage] = useState(1);
+    const wsKey = React.useMemo(
+        () => `ws-${page}-${JSON.stringify(filters)}`,
+        [page, filters]
+    );
     const items: TabItem[] = [
         {
             key: "walletstatement",
@@ -37,7 +50,15 @@ export default function ReportAnalyticsPage() {
                     <span className="ml-2">Wallet Statement</span>
                 </div>
             ),
-            content: <WalletStatement />,
+            content: <WalletStatement
+                key={wsKey}
+                page={page}
+                onPageChange={(p) => setPage(p)}
+                filters={filters}
+                perPage={10}
+                order="desc"
+                sortBy="created_at"
+            />,
         },
         {
             key: "transactionhistory",
@@ -63,7 +84,7 @@ export default function ReportAnalyticsPage() {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
-                    <Image src={activeTab === "commissionsummary" ?"/heart-line.svg" :"/line-blk.svg"} alt="History" width={22} height={26} />
+                    <Image src={activeTab === "commissionsummary" ? "/heart-line.svg" : "/line-blk.svg"} alt="History" width={22} height={26} />
                     <span className="ml-2">Commission Summary</span>
                 </div>
             ),
