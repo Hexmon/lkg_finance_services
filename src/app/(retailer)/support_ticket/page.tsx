@@ -2,10 +2,11 @@
 
 import { Card, Button, Typography, Tag, Modal, Form, Select, Input } from "antd";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
+import { apiGetTickets } from "@/features/support/data/endpoints";
 
 const { Text } = Typography;
 
@@ -26,22 +27,7 @@ interface TicketFormValues {
 
 export default function SupportTickets() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [tickets, setTickets] = useState<Ticket[]>([
-        {
-            id: "TXN123456789",
-            status: "Active",
-            desc: "Customer reported incorrect transaction amount",
-            mode: "BBPS Offline",
-            datetime: "24 Aug 25, 14:30PM",
-        },
-        {
-            id: "TXN123456789",
-            status: "Closed",
-            desc: "Customer reported incorrect transaction amount",
-            mode: "BBPS Offline",
-            datetime: "24 Aug 25, 14:30PM",
-        },
-    ]);
+    const [tickets, setTickets] = useState<Ticket[]>([]);
 
     const showModal = () => setIsModalOpen(true);
     const handleCancel = () => setIsModalOpen(false);
@@ -64,6 +50,28 @@ export default function SupportTickets() {
         setTickets([newTicket, ...tickets]); // Add new ticket at the top
         setIsModalOpen(false);
     };
+
+    useEffect(() => {
+        async function fetchTickets() {
+            try {
+                const response = await apiGetTickets({ per_page: 1, page: 1, order: "desc", sort_by: "created_at" });
+                if (Array.isArray(response?.data)) {
+                    setTickets(response.data.map((item: any) => ({
+                        id: item.id || item.transactionId || "",
+                        status: item.status || "Active",
+                        desc: item.desc || item.description || "",
+                        mode: item.mode || "",
+                        datetime: item.datetime || item.created_at || "",
+                    })));
+                } else {
+                    setTickets([]);
+                }
+            } catch {
+                setTickets([]);
+            }
+        }
+        fetchTickets();
+    }, []);
 
     return (
         <DashboardLayout sections={moneyTransferSidebarConfig} activePath="/support_ticket" pageTitle="Support Ticket">

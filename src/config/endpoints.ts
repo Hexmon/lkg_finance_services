@@ -72,6 +72,9 @@ export const RETAILER_ENDPOINTS = {
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",
     },
+    SUPPORT: {
+        TICKET_LIST: "/admin/tickets",
+    }
 }
 
 export const AUTHERIZATION_ENDPOINT = {
