@@ -52,17 +52,16 @@ export default function ChooseServicePage() {
       biller_batch_id,
       input_json: {
         amountInfo: { amount },
-        customerInfo: { REMITTER_NAME, customerMobile } = {},
-        billerResponse: { billAmount, customerName } = {},
+        customerInfo: { customerName, customerMobile } = {},
+        billerResponse: { billAmount } = {},
       },
     }) => ({
       status,
       amount,
       biller_batch_id,
-      REMITTER_NAME,
+      customerName,
       customerMobile,
       billAmount,
-      customerName,
     })
   ) ?? [];
 

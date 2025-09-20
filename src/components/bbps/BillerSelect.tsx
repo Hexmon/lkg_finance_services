@@ -15,7 +15,7 @@ type Props = {
 export default function BillerSelect({ billers, value, onChange, showInactiveWarning }: Props) {
   const options = billers
     .filter((b) => (b.biller_status ?? "INACTIVE") === "ACTIVE")
-    .map((b) => ({ label: b.biller_name, value: b.biller_id }));
+    .map((b) => ({ label: b?.billerName ?? "", value: b.biller_id }));
 
   return (
     <div>

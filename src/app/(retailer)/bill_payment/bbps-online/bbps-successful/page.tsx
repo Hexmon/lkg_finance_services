@@ -4,10 +4,94 @@ import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const PAYMENT_KEY = "bbps:lastBillPayment"; // ✅ read what we stored
+
+function paiseToRupees(paise?: string | number): string {
+  const n = Number(paise ?? 0);
+  const rupees = isFinite(n) ? n / 100 : 0;
+  return rupees.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
 export default function PaymentSuccessPage() {
-    const router = useRouter();
+  const router = useRouter();
+  const [payment, setPayment] = useState<any | null>(null);
+  const [ctx, setCtx] = useState<any | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PAYMENT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setPayment(parsed?.resp ?? parsed ?? null);
+        setCtx(parsed?.context ?? null);
+
+        // Optional: clear after reading in prod
+        if (process.env.NODE_ENV === "production") {
+          sessionStorage.removeItem(PAYMENT_KEY);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Derive display values with safe fallbacks (UI unchanged)
+  const nameOfBiller =
+    payment?.data?.billerResponse?.billerName ||
+    payment?.billerName ||
+    "Mobile Prepaid_Dummy";
+
+  const txRef =
+    payment?.data?.txRefNo ||
+    payment?.data?.transactionId ||
+    payment?.transactionId ||
+    "CC015223BAAG000010158";
+
+  const amountDisplay =
+    ctx?.displayAmount ??
+    (ctx?.amountPaise ? paiseToRupees(ctx.amountPaise) : "799");
+
+  const mobileMasked = (() => {
+    const m = ctx?.customerMobile || payment?.customerMobile || "";
+    if (!m || typeof m !== "string") return "XXXXXXXXXX";
+    return m.replace(/^(\d{2})\d+(\d{2})$/, (_: any, a: string, b: string) => `${a}${"X".repeat(Math.max(0, m.length - 4))}${b}`);
+  })();
+
+  const registeredMasked = mobileMasked;
+
+  const billNumber =
+    payment?.data?.billerResponse?.billNumber ||
+    ctx?.billNumber ||
+    "XXXXXXXXXX";
+
+  const paymentMode =
+    ctx?.paymentMode ||
+    payment?.data?.paymentMethod?.paymentMode ||
+    "Cash";
+
+  const txnDateTime =
+    payment?.data?.dateTime ||
+    payment?.dateTime ||
+    "29/06/2017 23:17:03";
+
+  const billDate =
+    payment?.data?.billerResponse?.billDate ||
+    ctx?.billDate ||
+    "29/06/2017";
+
+  const dueDate =
+    payment?.data?.billerResponse?.dueDate ||
+    ctx?.dueDate ||
+    "29/06/2017";
+
+  const status =
+    payment?.data?.status ||
+    payment?.status ||
+    "PAID";
+
   return (
     <DashboardLayout activePath="/bbps" sections={billPaymentSidebarConfig} pageTitle="Bill Payment">
       <DashboardSectionHeader
@@ -34,11 +118,11 @@ export default function PaymentSuccessPage() {
           <div className="flex justify-center mb-4">
             <div className="bg-green-100 text-green-600 w-16 h-16 flex items-center justify-center rounded-full">
               <Image
-              src="/verified-b.svg"
-              alt="payment successed"
-              width={60}
-              height={60}
-              className="object-contain"
+                src="/verified-b.svg"
+                alt="payment successed"
+                width={60}
+                height={60}
+                className="object-contain"
               />
             </div>
           </div>
@@ -57,52 +141,52 @@ export default function PaymentSuccessPage() {
 
               <div>
                 <p className="text-gray-500">Name Of Biller</p>
-                <p className="font-medium">Mobile Prepaid_Dummy</p>
+                <p className="font-medium">{nameOfBiller}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">B-Connect TXD</p>
-                <p className="font-semibold">CC015223BAAG000010158</p>
+                <p className="font-semibold">{txRef}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Bill Amount</p>
-                <p className="font-medium">₹799</p>
+                <p className="font-medium">₹{amountDisplay}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Mobile Number</p>
-                <p className="font-medium">XXXXXXXXXX</p>
+                <p className="font-medium">{mobileMasked}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Registered Mobile Number</p>
-                <p className="font-medium">XXXXXXXXXX</p>
+                <p className="font-medium">{registeredMasked}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Total Amount</p>
-                <p className="font-medium">₹799</p>
+                <p className="font-medium">₹{amountDisplay}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Bill Number</p>
-                <p className="font-medium">XXXXXXXXXX</p>
+                <p className="font-medium">{billNumber}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Payment Mode</p>
-                <p className="font-semibold">Cash</p>
+                <p className="font-semibold">{paymentMode}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Transaction Date & Time</p>
-                <p className="font-medium">29/06/2017 23:17:03</p>
+                <p className="font-medium">{txnDateTime}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Bill Date (dd/mm/yyyy)</p>
-                <p className="font-medium">29/06/2017</p>
+                <p className="font-medium">{billDate}</p>
               </div>
 
               <div>
@@ -112,24 +196,22 @@ export default function PaymentSuccessPage() {
 
               <div>
                 <p className="text-gray-500">Status</p>
-                <p className="font-semibold text-green-600">PAID</p>
+                <p className="font-semibold text-green-600">{status}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Due Date (dd/mm/yyyy)</p>
-                <p className="font-medium">29/06/2017</p>
+                <p className="font-medium">{dueDate}</p>
               </div>
-
-              
 
             </div>
           </div>
 
-
           {/* Buttons */}
           <div className="flex gap-4 justify-center mt-8 mb-5">
-            <button className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-medium w-full cursor-pointer"
-            onClick={()=> router.push("/bill_payment/bbps-online/bbps-postpaid-receipt")}
+            <button
+              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-medium w-full cursor-pointer"
+              onClick={() => router.push("/bill_payment/bbps-online/bbps-postpaid-receipt")}
             >
               Download Receipt
             </button>

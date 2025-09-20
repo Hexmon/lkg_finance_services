@@ -269,7 +269,7 @@ export default function WalletStatement({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-3">
         <Card className="rounded-2xl shadow-md bg-[#FEFAF6]">
           <div className="flex justify-between items-start p-4 mb-0">
             <div>
@@ -303,7 +303,7 @@ export default function WalletStatement({
         </Card>
       </div>
 
-      <Card className="rounded-2xl shadow-md p-6">{/* right summary card placeholder */}</Card>
+      {/* <Card className="rounded-2xl shadow-md p-6">right summary card placeholder</Card> */}
     </div>
   );
 }

@@ -38,6 +38,22 @@ export const NumberLike = z.union([
   z.string().transform((s) => Number(s)).pipe(z.number()),
 ]);
 
+/** ---------- Normalizers for quirky upstream values ---------- */
+// Treat "None" or undefined as null
+const noneToNull = (v: unknown) => (v === "None" || v === undefined ? null : v);
+
+// UUID | null, but also accept "None" (→ null)
+const uuidOrNullFromNone = z.preprocess(
+  noneToNull,
+  z.union([z.string().uuid(), z.null()])
+);
+
+// string | number | null, but also accept "None" (→ null)
+const strNumOrNullFromNone = z.preprocess(
+  noneToNull,
+  z.union([z.string(), z.number(), z.null()])
+);
+
 /** =====================================================================
  *  Transaction Summary
  * ====================================================================*/
@@ -61,14 +77,25 @@ export const TxnChargeSummarySchema = z
   .object({
     service_id: z.string().uuid(),
     charge_id: z.string().uuid().nullable(),
-    bbps_category_id: z.string().uuid().nullable(),
+
+    // CHANGED: accept "None" → null, or a UUID
+    bbps_category_id: uuidOrNullFromNone,
+
     user_id: z.string().uuid(),
-    reference_id: z.union([z.string(), z.number()]).nullable(),
+
+    // CHANGED: accept string | number | null and normalize "None" → null
+    reference_id: strNumOrNullFromNone,
+
     role: z.string().min(1),
     category: z.string(), // may be empty string
     txn_amount: z.number(),
     net_amount: z.number(),
     is_gst_inclusive: z.boolean(),
+
+    // NEW: tolerate upstream extras
+    daily_limit: z.number().optional(),
+    montly_limit: z.number().optional(), // keep API's typo to match payload
+
     gst_amount: z.number(),
     gst_percent: z.number(),
     base_charges: z.number(),
@@ -83,12 +110,17 @@ export const TxnRevenueItemSchema = z
   .object({
     user_id: z.string().uuid(),
     service_id: z.string().uuid(),
-    reference_id: z.union([z.string(), z.number()]).nullable(),
+
+    // CHANGED: normalize "None" → null
+    reference_id: strNumOrNullFromNone,
+
     role: z.string().min(1),
     admin_revenue: z.number(),
     tds_collected: z.number(),
     gst_collected: z.number(),
-    txn_id: z.string().min(1),
+
+    // CHANGED: optional because it may be absent
+    txn_id: z.string().min(1).optional(),
   })
   .strict();
 
