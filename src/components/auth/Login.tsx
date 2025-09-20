@@ -50,8 +50,12 @@ export const LoginMain = () => {
 
       // status === 200
       success('Signed in successfully');
-      router.replace('/');
-      router.refresh();
+      const next = searchParams.get('next') || '/';
+      if (typeof window !== 'undefined') {
+        window.location.replace(next); // <- hard navigation (not client router)
+      }
+      // router.replace('/');
+      // router.refresh();
     } catch (e) {
       if (e instanceof ApiError) {
         error(e.message || 'Unable to sign in. Please try again.');

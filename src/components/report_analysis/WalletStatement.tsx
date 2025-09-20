@@ -1,4 +1,3 @@
-// WalletStatement.tsx
 "use client";
 
 import { Card, Table, Button, Typography } from "antd";
@@ -7,25 +6,16 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const { Text } = Typography;
 
-/** ----- Filter types the parent can pass ----- */
 export type WalletStatementFilters = {
-  /** "CR" or "DR" (API: subtype) */
   subtype?: "CR" | "DR";
-  /** API statuses, e.g. ["SUCCESS","FAILED"] (API: txn_status) */
-  statuses?: unknown[];          // ← can be string[] or {value,label}[]; normalize below
-  /** API wallet names, e.g. ["MAIN","AEPS"] (API: wallet_name) */
-  walletNames?: unknown[];       // ← normalize below
-  /** API txn types, e.g. ["AEPS","DMT","COMMISSION"] (API: txn_type) */
-  txnTypes?: unknown[];          // ← normalize below
-  /** free-text search on remark + wallet_name + txn_type (case-insensitive) */
+  statuses?: unknown[];    // API txn_status values (e.g., ["SUCCESS","FAILED"])
+  walletNames?: unknown[]; // API wallet_name values (if you later add this)
+  txnTypes?: unknown[];    // API txn_type values (e.g., ["DMT","AEPS"])
   search?: string;
-  /** inclusive UTC start time, compares to created_at */
   from?: Date | null;
-  /** inclusive UTC end time, compares to created_at */
   to?: Date | null;
 };
 
-/** ----- Minimal shape for API rows we use ----- */
 export type ApiWalletTxnRow = {
   id: string;
   created_at: string;
@@ -35,30 +25,27 @@ export type ApiWalletTxnRow = {
   subtype: "CR" | "DR";
   balance: number | string;
   current_balance: number | string;
-  txn_status: string; // API: e.g. "SUCCESS"
-  // optional extra fields you might have:
+  txn_status: string; // "SUCCESS" | "PENDING" | "FAILED" ...
   registered_name?: string;
   txn_id?: string;
 };
 
-/** Build dropdown options from the current page (dedup + sorted). */
 export function deriveWalletStatementOptions(apiPage: ApiWalletTxnRow[]) {
   const uniq = <T,>(arr: T[]) => Array.from(new Set(arr)).filter(Boolean) as T[];
 
   const walletNames = uniq(apiPage.map((r) => r.wallet_name)).sort();
   const txnTypes = uniq(apiPage.map((r) => r.txn_type)).sort();
   const statuses = uniq(apiPage.map((r) => (r.txn_status ?? "").toUpperCase())).sort();
-  const subtypes = uniq(apiPage.map((r) => r.subtype)).sort(); // ["CR","DR"]
+  const subtypes = uniq(apiPage.map((r) => r.subtype)).sort();
 
   return {
     walletNameOptions: walletNames.map((w) => ({ label: w, value: w })),
     txnTypeOptions: txnTypes.map((t) => ({ label: t, value: t })),
-    statusOptions: statuses.map((s) => ({ label: s, value: s })), // value = API value
-    subtypeOptions: subtypes.map((s) => ({ label: s, value: s })), // CR/DR
+    statusOptions: statuses.map((s) => ({ label: s, value: s })),
+    subtypeOptions: subtypes.map((s) => ({ label: s, value: s })),
   };
 }
 
-/** Normalize dropdown arrays (string[] | {value,label}[]) → string[] */
 function normalizeToStringArray(input?: unknown[]): string[] {
   if (!input || !Array.isArray(input)) return [];
   return input
@@ -79,22 +66,46 @@ function normalizeToStringArray(input?: unknown[]): string[] {
     .filter(Boolean) as string[];
 }
 
-export type WalletStatementProps = {
-  /** server-provided one page of transactions */
-  apiPage: ApiWalletTxnRow[];
-  /** parent-provided loading */
-  loading?: boolean;
+const STATUS_ALIAS: Record<string, string> = {
+  COMPLETED: "SUCCESS",
+  SUCCESS: "SUCCESS",
+  FAIL: "FAILED",
+  FAILED: "FAILED",
+  PENDING: "PENDING",
+};
 
-  /** display-only */
+function toUpperSet(arr?: unknown[]): Set<string> {
+  if (!arr) return new Set();
+  return new Set(
+    normalizeToStringArray(arr).map((s) => STATUS_ALIAS[s.toUpperCase()] ?? s.toUpperCase())
+  );
+}
+
+function normalizeFilterObject(filters?: WalletStatementFilters) {
+  const f = filters ?? {};
+  return {
+    subtype: f.subtype as "CR" | "DR" | undefined,
+    statuses: toUpperSet(f.statuses as unknown[]),
+    walletNames: new Set(
+      normalizeToStringArray(f.walletNames as unknown[]).map((s) => s.toUpperCase())
+    ),
+    txnTypes: new Set(
+      normalizeToStringArray(f.txnTypes as unknown[]).map((s) => s.toUpperCase())
+    ),
+    q: (f.search ?? "").trim().toLowerCase(),
+    from: f.from ? new Date(f.from) : null,
+    to: f.to ? new Date(f.to) : null,
+  };
+}
+
+export type WalletStatementProps = {
+  apiPage: ApiWalletTxnRow[];
+  loading?: boolean;
   perPage?: number;
   order?: "asc" | "desc";
   sortBy?: string;
-
-  /** parent-controlled server page index */
   page?: number;
   onPageChange?: (page: number, pageSize: number) => void;
-
-  /** parent-provided filters (client-side) */
   filters?: WalletStatementFilters;
 };
 
@@ -115,19 +126,10 @@ export default function WalletStatement({
     if (typeof controlledPage === "number" && controlledPage > 0) setPage(controlledPage);
   }, [controlledPage]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
-  // ---- map upstream -> row model (UI-ready) ----
   const rowsRaw = useMemo(() => {
     const fmt = (iso: string) => {
       const d = new Date(iso);
-      const dd = d.toLocaleString(undefined, {
-        day: "2-digit",
-        month: "short",
-        year: "2-digit",
-      });
+      const dd = d.toLocaleString(undefined, { day: "2-digit", month: "short", year: "2-digit" });
       const time = d
         .toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true })
         .replace(" ", "");
@@ -138,31 +140,22 @@ export default function WalletStatement({
       const amountNum = Number(row.balance);
       const balanceNum = Number(row.current_balance);
       const subtype = row.subtype;
-      // Keep a human label, but DO NOT use it for filtering.
       const prettyStatus =
-        (row.txn_status ?? "").toUpperCase() === "SUCCESS"
-          ? "Completed"
-          : row.txn_status ?? "—";
+        (row.txn_status ?? "").toUpperCase() === "SUCCESS" ? "Completed" : row.txn_status ?? "—";
 
       return {
         key: row.id,
         datetime: fmt(row.created_at),
-        created_at: row.created_at, // for date filters
+        created_at: row.created_at,
         desc: row.remark || `${row.wallet_name} • ${row.txn_type}`,
         type: subtype === "CR" ? "Credited" : "Debited",
         subtype,
         amountNum,
-        amount: `₹${amountNum.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`,
+        amount: `₹${amountNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         balanceNum,
-        balance: `₹${balanceNum.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`,
-        statusPretty: prettyStatus, // for display
-        rawStatus: (row.txn_status ?? "").toUpperCase(), // for filtering
+        balance: `₹${balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        statusPretty: prettyStatus,
+        rawStatus: (row.txn_status ?? "").toUpperCase(),
         wallet_name: row.wallet_name,
         txn_type: row.txn_type,
         remark: row.remark ?? "",
@@ -170,34 +163,45 @@ export default function WalletStatement({
     });
   }, [apiPage]);
 
-  // ---- apply client-side filters using **API keys** ----
+  const fNorm = useMemo(() => normalizeFilterObject(filters), [filters]);
+
+  const filtersKey = useMemo(() => {
+    return JSON.stringify({
+      subtype: fNorm.subtype ?? null,
+      statuses: Array.from(fNorm.statuses).sort(),
+      walletNames: Array.from(fNorm.walletNames).sort(),
+      txnTypes: Array.from(fNorm.txnTypes).sort(),
+      q: fNorm.q,
+      from: fNorm.from ? fNorm.from.toISOString() : null,
+      to: fNorm.to ? fNorm.to.toISOString() : null,
+    });
+  }, [fNorm]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filtersKey]);
+
   const txData = useMemo(() => {
     let arr = rowsRaw;
 
-    if (filters?.subtype) {
-      arr = arr.filter((r) => r.subtype === filters.subtype);
+    if (fNorm.subtype) {
+      arr = arr.filter((r) => r.subtype === fNorm.subtype);
     }
 
-    if (filters?.statuses?.length) {
-      const statuses = normalizeToStringArray(filters.statuses).map((s) => s.toUpperCase());
-      const statusSet = new Set(statuses);
-      arr = arr.filter((r) => statusSet.has(r.rawStatus)); // ✅ match API txn_status
+    if (fNorm.statuses.size > 0) {
+      arr = arr.filter((r) => fNorm.statuses.has((r.rawStatus ?? "").toUpperCase()));
     }
 
-    if (filters?.walletNames?.length) {
-      const walletNames = normalizeToStringArray(filters.walletNames).map((w) => w.toUpperCase());
-      const walletSet = new Set(walletNames);
-      arr = arr.filter((r) => walletSet.has((r.wallet_name ?? "").toUpperCase()));
+    if (fNorm.walletNames.size > 0) {
+      arr = arr.filter((r) => fNorm.walletNames.has((r.wallet_name ?? "").toUpperCase()));
     }
 
-    if (filters?.txnTypes?.length) {
-      const txnTypes = normalizeToStringArray(filters.txnTypes).map((t) => t.toUpperCase());
-      const typeSet = new Set(txnTypes);
-      arr = arr.filter((r) => typeSet.has((r.txn_type ?? "").toUpperCase()));
+    if (fNorm.txnTypes.size > 0) {
+      arr = arr.filter((r) => fNorm.txnTypes.has((r.txn_type ?? "").toUpperCase()));
     }
 
-    if (filters?.search?.trim()) {
-      const q = filters.search.trim().toLowerCase();
+    if (fNorm.q) {
+      const q = fNorm.q;
       arr = arr.filter(
         (r) =>
           (r.remark ?? "").toLowerCase().includes(q) ||
@@ -206,9 +210,9 @@ export default function WalletStatement({
       );
     }
 
-    if (filters?.from || filters?.to) {
-      const fromTs = filters.from ? filters.from.getTime() : Number.NEGATIVE_INFINITY;
-      const toTs = filters.to ? filters.to.getTime() : Number.POSITIVE_INFINITY;
+    if (fNorm.from || fNorm.to) {
+      const fromTs = fNorm.from ? fNorm.from.getTime() : -Infinity;
+      const toTs = fNorm.to ? fNorm.to.getTime() : Infinity;
       arr = arr.filter((r) => {
         const ts = new Date(r.created_at).getTime();
         return ts >= fromTs && ts <= toTs;
@@ -216,7 +220,7 @@ export default function WalletStatement({
     }
 
     return arr;
-  }, [rowsRaw, filters]);
+  }, [rowsRaw, filtersKey]);
 
   const pagedTxData = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -224,50 +228,24 @@ export default function WalletStatement({
   }, [txData, page, pageSize]);
 
   const columns = [
-    {
-      title: "Date & Time",
-      dataIndex: "datetime",
-      render: (t: string) => (
-        <Text className="!text-[13px] !text-[#9A9595] !font-medium">{t}</Text>
-      ),
-    },
-    {
-      title: "Description",
-      dataIndex: "desc",
-      render: (t: string) => <Text className="!text-[13px] !font-medium">{t}</Text>,
-    },
+    { title: "Date & Time", dataIndex: "datetime", render: (t: string) => <Text className="!text-[13px] !text-[#9A9595] !font-medium">{t}</Text> },
+    { title: "Description", dataIndex: "desc", render: (t: string) => <Text className="!text-[13px] !font-medium">{t}</Text> },
     {
       title: "Type",
       dataIndex: "type",
       render: (t: string) => (
-        <span
-          className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${
-            t === "Credited" ? "bg-[#DFF5DD] text-[#0BA82F]" : "bg-[#FFCCCC] text-[#FF4D4F]"
-          }`}
-        >
+        <span className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${t === "Credited" ? "bg-[#DFF5DD] text-[#0BA82F]" : "bg-[#FFCCCC] text-[#FF4D4F]"}`}>
           {t}
         </span>
       ),
     },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      render: (a: string) => <Text className="!text-[13px] !font-medium">{a}</Text>,
-    },
-    {
-      title: "Balance",
-      dataIndex: "balance",
-      render: (b: string) => <Text className="text-[13px] !font-medium">{b}</Text>,
-    },
+    { title: "Amount", dataIndex: "amount", render: (a: string) => <Text className="!text-[13px] !font-medium">{a}</Text> },
+    { title: "Balance", dataIndex: "balance", render: (b: string) => <Text className="text-[13px] !font-medium">{b}</Text> },
     {
       title: "Status",
       dataIndex: "statusPretty",
       render: (s: string) => (
-        <span
-          className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${
-            s === "Completed" ? "bg-[#DFF5DD] text-[#0BA82F]" : "bg-[#FFCCCC] text-[#FF4D4F]"
-          }`}
-        >
+        <span className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${s === "Completed" ? "bg-[#DFF5DD] text-[#0BA82F]" : "bg-[#FFCCCC] text-[#FF4D4F]"}`}>
           {s}
         </span>
       ),
@@ -277,9 +255,7 @@ export default function WalletStatement({
 
   const handleExport = () => {
     const headers = ["Date & Time", "Description", "Type", "Amount", "Balance", "Status"];
-    const rows = (txData ?? []).map((r) =>
-      [r.datetime, r.desc, r.type, r.amount, r.balance, r.statusPretty].join(",")
-    );
+    const rows = (txData ?? []).map((r) => [r.datetime, r.desc, r.type, r.amount, r.balance, r.statusPretty].join(","));
     const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -298,14 +274,9 @@ export default function WalletStatement({
           <div className="flex justify-between items-start p-4 mb-0">
             <div>
               <Text className="!text-[20px] !font-medium block">Wallet Transactions</Text>
-              <Text className="!text-[12px] !font-light text-gray-500">
-                Recent money transfer transactions
-              </Text>
+              <Text className="!text-[12px] !font-light text-gray-500">Recent money transfer transactions</Text>
             </div>
-            <Button
-              className="bg-white shadow-xl px-4 rounded-lg flex items-center h-fit"
-              onClick={handleExport}
-            >
+            <Button className="bg-white shadow-xl px-4 rounded-lg flex items-center h-fit" onClick={handleExport}>
               <Image src="/download.svg" alt="export" width={15} height={15} />
               <Text className="inline ml-2">Export</Text>
             </Button>
@@ -332,10 +303,7 @@ export default function WalletStatement({
         </Card>
       </div>
 
-      {/* Right summary card (unchanged placeholder) */}
-      <Card className="rounded-2xl shadow-md p-6">
-        {/* ... */}
-      </Card>
+      <Card className="rounded-2xl shadow-md p-6">{/* right summary card placeholder */}</Card>
     </div>
   );
 }
