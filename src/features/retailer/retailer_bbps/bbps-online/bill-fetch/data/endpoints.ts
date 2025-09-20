@@ -39,6 +39,7 @@ export async function apiGetCategoryList(
  *   /api/v1/retailer/bbps/bbps-online/bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
 
+// ✅ apiGetBillerList — always send is_active (defaults to true)
 export async function apiGetBillerList<T = unknown>(
   params: {
     service_id: string;
@@ -54,20 +55,19 @@ export async function apiGetBillerList<T = unknown>(
   if (!params?.bbps_category_id) throw new Error("bbps_category_id is required");
 
   const qs = new URLSearchParams({
-    is_offline: String(params.is_offline ?? true),
-    mode: params.mode,
+    is_offline: params.is_offline ? "true" : "false",
+    mode: params.mode || "ONLINE",
+    // ⬇️ CHANGED: always include is_active, default "true"
+    is_active: String(params.is_active ?? true),
     ...(params.opr_id ? { opr_id: params.opr_id } : {}),
-    ...(typeof params.is_active !== "undefined" ? { is_active: String(params.is_active) } : {}),
   }).toString();
 
   const path = `/retailer/bbps/bbps-online/bill-fetch/biller-list/${encodeURIComponent(
     params.service_id
   )}/${encodeURIComponent(params.bbps_category_id)}?${qs}`;
 
-  // ⬇️ Pass-through: return exactly what the BFF returns
   return getJSON<T>(path, { signal: opts?.signal });
 }
-
 
 
 /**

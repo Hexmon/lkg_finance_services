@@ -47,6 +47,7 @@ export function useBbpsCategoryListQuery(
  * Matches BFF route: /bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
 
+// ✅ useBbpsBillerListQuery — add default select(normalize) + stability
 export function useBbpsBillerListQuery<T = unknown>(
   params: {
     service_id: string;
@@ -57,7 +58,7 @@ export function useBbpsBillerListQuery<T = unknown>(
     is_active?: boolean | string;
   },
   _opt?: {
-    token?: string | null; // still unused
+    token?: string | null;
     query?: Omit<UseQueryOptions<T, Error, T, QueryKey>, "queryKey" | "queryFn">;
   },
 ) {
@@ -71,6 +72,26 @@ export function useBbpsBillerListQuery<T = unknown>(
   const userEnabled = _opt?.query?.enabled ?? true;
   const enabled = baseEnabled && userEnabled;
 
+  // normalize biller shapes to consistent keys
+  const normalize = (raw: any) => {
+    const list = raw?.data ?? [];
+    const data = Array.isArray(list)
+      ? list.map((b: any) => ({
+          ...b,
+          biller_id: b?.biller_id ?? b?.billerId ?? b?.id ?? "",
+          biller_status: b?.biller_status ?? b?.billerStatus ?? "INACTIVE",
+          biller_payment_exactness:
+            b?.biller_payment_exactness ?? b?.billerPaymentExactness ?? null,
+          plan_mdm_requirement:
+            b?.plan_mdm_requirement ?? b?.planMdmRequirement ?? "NOT_SUPPORTED",
+          biller_fetch_requiremet:
+            b?.biller_fetch_requiremet ?? b?.billerFetchRequiremet ?? "NOT_REQUIRED",
+          inputParams: b?.inputParams ?? b?.input_params ?? [],
+        }))
+      : [];
+    return { ...raw, data };
+  };
+
   return useQuery<T, Error>({
     queryKey: [
       "bbps",
@@ -80,14 +101,17 @@ export function useBbpsBillerListQuery<T = unknown>(
       params.mode,
       params.is_offline ? "offline" : "online",
       params.opr_id ?? "",
-      String(params.is_active ?? ""),
+      String(params.is_active ?? "true"), // ← CHANGED: default active
     ],
     queryFn: ({ signal }) => apiGetBillerList<T>(params, { signal }),
     enabled,
+    // prefer caller's select if provided; otherwise normalize
+    select: (_opt?.query as any)?.select ?? ((d: any) => normalize(d)),
+    staleTime: 60_000, // 1 min
+    placeholderData: (prev) => prev, // keeps old list during refetch
     ...(_opt?.query ?? {}),
   });
 }
-
 
 
 /** -------- Plan Pull (query) --------

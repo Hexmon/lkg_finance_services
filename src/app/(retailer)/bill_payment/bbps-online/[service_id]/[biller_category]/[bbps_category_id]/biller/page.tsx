@@ -39,7 +39,7 @@ export default function BillerPage() {
 
   // ── biller list
   const {
-    data: { data: billers = [] } = {},
+    data: billers = [],
     isError,
     error,
     isLoading,
