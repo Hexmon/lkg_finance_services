@@ -74,6 +74,7 @@ export const RETAILER_ENDPOINTS = {
         GET_WALLET_STATEMENT: "/secure/retailer/get-wallet-statement",
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",
+        COMMISSION_SUMMARY: "/secure/retailer/commission-summary"
     },
     SUPPORT: {
         TICKET_LIST: "/admin/tickets",
