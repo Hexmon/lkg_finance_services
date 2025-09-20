@@ -1,35 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Card, Typography, Input, Select, Button, Alert, Skeleton } from "antd";
-import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
+import React, { useEffect, useMemo, useState } from "react";
+import { Card, Typography, Input, Select, Alert, Skeleton, message } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import SmartTable, { type SmartTableColumn } from "@/components/ui/SmartTable";
-import { useTransactionSummaryQuery } from "@/features/retailer/general";
+import { apiGetTransactionSummary } from "@/features/retailer/general/data/endpoints";
 
 const { Text } = Typography;
 const { Option } = Select;
 
+/** ---------- Types from API (loose) ---------- */
 type ApiTxn = {
   id: string;
   txn_id: string;
-  service: string;
+  service?: string | null; // AEPS, DMT, BBPS, etc. (shown as Category in UI)
   created_at: string; // ISO
-  txn_type: string;
+  txn_type?: string | null; // CREDIT / DEBIT / AEPS / DMT etc.
   txn_amount: number;
-  commission?: number | null;
+  commission?: unknown; // may be number | object | array | null (API varies)
   txn_status: "SUCCESS" | "FAILED" | "PENDING" | string;
   customer_id?: string | null;
   mode?: string | null;
-  user_id?: string;
-  // ...other fields possible
+  user_id?: string | null;
 };
 
-type ApiResponseShape =
-  | { transactionData?: ApiTxn[]; total?: number; meta?: { total?: number } }
-  | { data?: ApiTxn[]; total?: number; meta?: { total?: number } }
-  | any;
+type ApiResponse = {
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  next_page: number | null;
+  prev_page: number | null;
+  sort_by: string;
+  data: ApiTxn[];
+};
 
+/** ---------- Helpers ---------- */
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {
@@ -42,45 +51,182 @@ function formatDateTime(iso?: string) {
       hour12: true,
     });
   } catch {
-    return iso;
+    return iso ?? "—";
   }
 }
 
 function formatINR(n?: number | null) {
   if (n == null) return "—";
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(n);
 }
 
+/** Normalize commission → number; default 0 */
+function toCommissionAmount(c: unknown): number {
+  if (c == null) return 0;
+  if (typeof c === "number") return Number.isFinite(c) ? c : 0;
+
+  if (Array.isArray(c)) {
+    const sum = c.reduce((acc, item: any) => {
+      const v =
+        typeof item?.net_commission === "number"
+          ? item.net_commission
+          : typeof item?.gross_commission === "number"
+          ? item.gross_commission
+          : 0;
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+    return Number.isFinite(sum) ? sum : 0;
+  }
+
+  if (typeof c === "object") {
+    const obj = c as any;
+    const v =
+      typeof obj?.net_commission === "number"
+        ? obj.net_commission
+        : typeof obj?.gross_commission === "number"
+        ? obj.gross_commission
+        : Number(obj);
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  const n = Number(c);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Row we actually render (adds normalized commission & safe fields) */
+type UiTxn = ApiTxn & {
+  commission_amount: number; // always numeric
+};
+
 export default function ReportTransactionHistory() {
-  // --- server pagination state ---
+  // ---------- local states ----------
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // full dataset (ALL pages)
+  const [allRows, setAllRows] = useState<ApiTxn[]>([]);
+
+  // client pagination
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // --- query (server-paginated) ---
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-  } = useTransactionSummaryQuery(
-    { page, per_page: pageSize, order: "desc" },
-    { refetchOnMountOrArgChange: true }
+  // top-bar filters
+  const [search, setSearch] = useState<string>("");
+  const [fltType, setFltType] = useState<string>("all");
+  const [fltStatus, setFltStatus] = useState<string>("all");
+  const [fltCategory, setFltCategory] = useState<string>("all");
+
+  // ---------- fetch ALL pages once ----------
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAll() {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+
+        const per_page = 100; // tune as needed
+        let pageNo = 1;
+        let acc: ApiTxn[] = [];
+
+        for (;;) {
+          const resp: ApiResponse = await apiGetTransactionSummary({
+            page: pageNo,
+            per_page,
+            order: "desc",
+          });
+
+          const chunk = resp?.data ?? [];
+          acc = acc.concat(chunk);
+
+          if (!resp?.has_next) break;
+          pageNo += 1;
+        }
+
+        if (!cancelled) setAllRows(acc);
+      } catch (e: any) {
+        if (!cancelled) {
+          setErrorMsg(e?.message || "Failed to load transactions.");
+          message.error("Failed to load transactions.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadAll();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ---------- build UI rows with normalized commission ----------
+  const uiRows: UiTxn[] = useMemo(
+    () =>
+      (allRows || []).map((r) => ({
+        ...r,
+        commission_amount: toCommissionAmount((r as any).commission),
+      })),
+    [allRows]
   );
 
-  // --- robust data extraction: supports both shapes you shared ---
-  const rows: ApiTxn[] = useMemo(() => {
-    const d = data as ApiResponseShape | undefined;
-    if (!d) return [];
-    return (d.data as ApiTxn[]) || (d.transactionData as ApiTxn[]) || [];
-  }, [data]);
+  // ---------- unique option sets for top filters (based on data) ----------
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    uiRows.forEach((r) => set.add(String(r.service ?? "—")));
+    return Array.from(set).filter(Boolean);
+  }, [uiRows]);
 
-  const total: number = useMemo(() => {
-    const d = data as ApiResponseShape | undefined;
-    return d?.meta?.total ?? d?.total ?? rows.length;
-  }, [data, rows.length]);
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>();
+    uiRows.forEach((r) => set.add(String(r.txn_type ?? "—")));
+    return Array.from(set).filter(Boolean);
+  }, [uiRows]);
 
-  // --- columns for SmartTable ---
-  const columns: SmartTableColumn<ApiTxn>[] = useMemo(
+  const statusOptions = useMemo(() => {
+    const set = new Set<string>();
+    uiRows.forEach((r) => set.add(String(r.txn_status ?? "—").toUpperCase()));
+    return Array.from(set).filter(Boolean);
+  }, [uiRows]);
+
+  // ---------- apply client-side filters ----------
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return uiRows.filter((r) => {
+      // text search across common fields
+      const hay = [
+        r.txn_id,
+        r.service,
+        r.txn_type,
+        r.user_id,
+        r.customer_id,
+        r.mode,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const okSearch = q ? hay.includes(q) : true;
+
+      const okType = fltType === "all" ? true : String(r.txn_type ?? "—") === fltType;
+      const okStatus =
+        fltStatus === "all"
+          ? true
+          : String(r.txn_status ?? "—").toUpperCase() === fltStatus.toUpperCase();
+      const okCategory =
+        fltCategory === "all" ? true : String(r.service ?? "—") === fltCategory;
+
+      return okSearch && okType && okStatus && okCategory;
+    });
+  }, [uiRows, search, fltType, fltStatus, fltCategory]);
+
+  const total = filteredRows.length;
+
+  // ---------- columns ----------
+  const columns: SmartTableColumn<UiTxn>[] = useMemo(
     () => [
       {
         key: "txn",
@@ -125,10 +271,10 @@ export default function ReportTransactionHistory() {
       {
         key: "commission",
         title: "Commission",
-        dataIndex: "commission",
+        dataIndex: "commission_amount", // always numeric
         align: "right",
         render: ({ value }) => (
-          <Text className="!text-[14px] !text-[#0BA82F]">{value != null ? formatINR(value) : "—"}</Text>
+          <Text className="!text-[14px] !text-[#0BA82F]">{formatINR(typeof value === "number" ? value : 0)}</Text>
         ),
       },
       {
@@ -144,11 +290,7 @@ export default function ReportTransactionHistory() {
               ? "bg-[#FFF2CC] text-[#F9A825]"
               : "bg-[#FFCCCC] text-[#FF4D4F]";
           const label = v === "SUCCESS" ? "Success" : v === "PENDING" ? "Processing" : v || "Failed";
-          return (
-            <span className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${cls}`}>
-              {label}
-            </span>
-          );
+          return <span className={`px-2 py-[1px] rounded-[6px] text-[12px] font-medium ${cls}`}>{label}</span>;
         },
       },
     ],
@@ -160,100 +302,86 @@ export default function ReportTransactionHistory() {
       {/* Header */}
       <div className="p-4">
         <Text className="!text-[20px] !font-medium block">Transaction History</Text>
-        <Text className="!text-[12px] !font-light text-gray-500">
-          Recent money transfer transactions
-        </Text>
+        <Text className="!text-[12px] !font-light text-gray-500">Recent money transfer transactions</Text>
       </div>
 
-      {/* Filters (UI only; wire your own handlers if needed) */}
+      {/* Filters (wired to client-side filtering) */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 px-4 pb-4">
         <div className="flex flex-col">
           <label className="text-gray-600 text-sm mb-1">Search</label>
           <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             prefix={<SearchOutlined />}
-            placeholder="Transaction Id, mobile…"
+            placeholder="Transaction Id, user, mode…"
             className="!rounded-xl !bg-[#8C8C8C1C]"
-            disabled={isLoading || isFetching}
+            disabled={loading}
+            allowClear
           />
         </div>
 
         <div className="flex flex-col">
           <label className="text-gray-600 text-sm mb-1">Transaction Type</label>
-          <Select defaultValue="All Type" className="!rounded-xl !bg-[#8C8C8C1C] !w-full">
-            <Option value="all">All Type</Option>
-            <Option value="SUBSCRIPTION">Subscription</Option>
-            <Option value="DEBIT">Debit</Option>
-            <Option value="CREDIT">Credit</Option>
-          </Select>
+          <Select
+            value={fltType}
+            onChange={setFltType}
+            className="!rounded-xl !bg-[#8C8C8C1C] !w-full"
+            options={[{ label: "All Type", value: "all" }, ...typeOptions.map((v) => ({ label: v, value: v }))]}
+            disabled={loading}
+          />
         </div>
 
         <div className="flex flex-col">
           <label className="text-gray-600 text-sm mb-1">Status</label>
-          <Select defaultValue="All Status" className="!rounded-xl !bg-[#8C8C8C1C] !w-full">
-            <Option value="all">All Status</Option>
-            <Option value="SUCCESS">Success</Option>
-            <Option value="PENDING">Processing</Option>
-            <Option value="FAILED">Failed</Option>
-          </Select>
+          <Select
+            value={fltStatus}
+            onChange={setFltStatus}
+            className="!rounded-xl !bg-[#8C8C8C1C] !w-full"
+            options={[{ label: "All Status", value: "all" }, ...statusOptions.map((v) => ({ label: v, value: v }))]}
+            disabled={loading}
+          />
         </div>
 
         <div className="flex flex-col">
           <label className="text-gray-600 text-sm mb-1">Category</label>
-          <Select defaultValue="All Category" className="!rounded-xl !bg-[#8C8C8C1C] !w-full">
-            <Option value="all">All Category</Option>
-            <Option value="BBPS">BBPS</Option>
-            <Option value="DMT">DMT</Option>
-            <Option value="AEPS">AEPS</Option>
-          </Select>
+          <Select
+            value={fltCategory}
+            onChange={setFltCategory}
+            className="!rounded-xl !bg-[#8C8C8C1C] !w-full"
+            options={[{ label: "All Category", value: "all" }, ...categoryOptions.map((v) => ({ label: v, value: v }))]}
+            disabled={loading}
+          />
         </div>
-
-        {/* <div className="flex flex-col">
-          <label className="invisible mb-1">Filter</label>
-          <Button
-            className="!rounded-xl !bg-white !shadow-md !flex !items-center !justify-center h-[38px]"
-            disabled={isLoading || isFetching}
-          >
-            <FilterOutlined />
-            <span className="ml-1">Filter</span>
-          </Button>
-        </div> */}
       </div>
 
       {/* Error */}
-      {error ? (
+      {errorMsg ? (
         <div className="px-4 pb-3">
-          <Alert
-            type="error"
-            message="Couldn’t load transactions."
-            description="Please try again in a moment."
-            showIcon
-          />
+          <Alert type="error" message="Couldn’t load transactions." description={errorMsg} showIcon />
         </div>
       ) : null}
 
       {/* Loading skeleton */}
-      {isLoading ? (
+      {loading ? (
         <div className="px-4 pb-4">
           <Skeleton active paragraph={{ rows: 6 }} />
         </div>
       ) : (
         <div className="px-4 pb-4">
-          <SmartTable<ApiTxn>
+          <SmartTable<UiTxn>
             columns={columns}
-            data={rows}
+            data={filteredRows}         // ⬅️ pass filtered array
             striped
             card
-            pagination={{
-              mode: "server",
+            pagination={{               // ⬅️ client-side pagination
               page,
               pageSize,
               total,
               align: "right",
-              pageSizeOptions: [5, 10, 20, 50],
+              pageSizeOptions: [5, 10, 20, 50, 100],
               onChange: (nextPage, nextSize) => {
                 setPage(nextPage);
                 setPageSize(nextSize);
-                // the hook will refetch because args changed
               },
             }}
             caption="Transactions table"

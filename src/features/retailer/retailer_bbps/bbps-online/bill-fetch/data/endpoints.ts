@@ -38,35 +38,37 @@ export async function apiGetCategoryList(
  * NOTE: This matches your server route:
  *   /api/v1/retailer/bbps/bbps-online/bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
-export async function apiGetBillerList(
+
+export async function apiGetBillerList<T = unknown>(
   params: {
     service_id: string;
     bbps_category_id: string;
     is_offline: boolean;
     mode: "ONLINE" | "OFFLINE";
     opr_id?: string;
-    is_active?: string; // keep string to mirror upstream flexibility
+    is_active?: boolean | string;
   },
   opts?: { signal?: AbortSignal }
-): Promise<BillerListResponse> {
+): Promise<T> {
   if (!params?.service_id) throw new Error("service_id is required");
   if (!params?.bbps_category_id) throw new Error("bbps_category_id is required");
 
   const qs = new URLSearchParams({
-    is_offline: String(params.is_offline ?? false),
+    is_offline: String(params.is_offline ?? true),
     mode: params.mode,
     ...(params.opr_id ? { opr_id: params.opr_id } : {}),
-    ...(params.is_active ? { is_active: params.is_active } : {}),
+    ...(typeof params.is_active !== "undefined" ? { is_active: String(params.is_active) } : {}),
   }).toString();
 
-  // Hit the BFF route; server will read bt_auth and forward to BBPS base
-  const path = `retailer/bbps/bbps-online/bill-fetch/biller-list/${encodeURIComponent(
+  const path = `/retailer/bbps/bbps-online/bill-fetch/biller-list/${encodeURIComponent(
     params.service_id
   )}/${encodeURIComponent(params.bbps_category_id)}?${qs}`;
 
-  const raw = await getJSON<BillerListResponse>(path, { signal: opts?.signal });
-  return BillerListResponseSchema.parse(raw);
+  // ⬇️ Pass-through: return exactly what the BFF returns
+  return getJSON<T>(path, { signal: opts?.signal });
 }
+
+
 
 /**
  * GET (BFF) → /api/v1/retailer/bbps/bbps-online/bill-fetch/plan-pull/[service_id]/[billerId]?mode=ONLINE
@@ -79,22 +81,18 @@ export async function apiGetPlanPull(
   if (!params?.service_id) throw new Error("service_id is required");
   if (!params?.billerId) throw new Error("billerId is required");
 
-  // Optional: enforce UUID like server does
-  // BillPaymentPathParamsSchema.pick({ service_id: true }).parse({ service_id: params.service_id });
-
   const qs = new URLSearchParams({ mode: params.mode }).toString();
 
+  // ✅ point to plan-pull, not biller-list
   const path =
-    `retailer/bbps/bbps-online/bill-fetch/all-plans/` +
+    `/retailer/bbps/bbps-online/bill-fetch/plan-pull/` +
     `${encodeURIComponent(params.service_id)}/` +
     `${encodeURIComponent(params.billerId)}?${qs}`;
 
-  // If BFF already normalizes, this will always succeed:
-  const raw = await getJSON<PlanPullResponse>(path, { signal: opts?.signal });
-
-  // Keep this if you want client-side safety too:
+  const raw = await getJSON<unknown>(path, { signal: opts?.signal });
   return PlanPullResponseSchema.parse(raw);
 }
+
 
 export function useBbpsPlanPullQuery(
   params: { service_id: string; billerId: string; mode: "ONLINE" | "OFFLINE" },
@@ -129,17 +127,17 @@ export function useBbpsPlanPullQuery(
  * POST (BFF) → /retailer/bbps/bbps-online/bill-fetch/bill-fetch/[service_id]?mode=
  * Proxies upstream: /secure/bbps/bills/bill-fetch/{service_id}?mode=
  */
-export async function apiPostBillFetch(
+export async function apiPostBillFetch<TResp = unknown>(
   params: {
     service_id: string;
     mode: "ONLINE" | "OFFLINE";
     body: BillFetchRequest;
   },
   opts?: { signal?: AbortSignal }
-): Promise<BillFetchResponse> {
+): Promise<TResp> {
   if (!params?.service_id) throw new Error("service_id is required");
 
-  // Early validate request (BFF also validates)
+  // validate the request (keep this)
   const validated = BillFetchRequestSchema.parse(params.body);
 
   const qs = new URLSearchParams({ mode: params.mode }).toString();
@@ -147,6 +145,6 @@ export async function apiPostBillFetch(
     params.service_id
   )}?${qs}`;
 
-  const raw = await postJSON<BillFetchResponse>(path, validated, { signal: opts?.signal });
-  return BillFetchResponseSchema.parse(raw);
+  // ⬇️ do NOT parse the response; return as-is
+  return postJSON<TResp>(path, validated, { signal: opts?.signal });
 }

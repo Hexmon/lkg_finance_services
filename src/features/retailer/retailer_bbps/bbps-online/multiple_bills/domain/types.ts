@@ -28,7 +28,7 @@ export const AddOBInputParamsSchema = z.object({
 export const AddOBCustomerInfoSchema = z.object({
   customerMobile: z.string(),
   customerAdhaar: z.string().optional().nullable(),
-  REMITTER_NAME: z.string().optional().nullable(),
+  customerName: z.string().optional().nullable(),
   customerPan: z.string().optional().nullable(),
 });
 
@@ -93,7 +93,7 @@ const InputParamsSchema = z.object({
 
 const CustomerInfoSchema = z.object({
   customerPan: z.string().optional().nullable(),
-  REMITTER_NAME: z.string().optional().nullable(),
+  customerName: z.string().optional().nullable(),
   customerAdhaar: z.string().optional().nullable(),
   customerMobile: z.string(),
 }).passthrough();

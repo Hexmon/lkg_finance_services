@@ -46,21 +46,19 @@ export function useBbpsCategoryListQuery(
 /** -------- Biller List (query) --------
  * Matches BFF route: /bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
-export function useBbpsBillerListQuery(
+
+export function useBbpsBillerListQuery<T = unknown>(
   params: {
     service_id: string;
     bbps_category_id: string;
     is_offline: boolean;
     mode: "ONLINE" | "OFFLINE";
     opr_id?: string;
-    is_active?: string;
+    is_active?: boolean | string;
   },
   _opt?: {
-    token?: string | null;
-    query?: Omit<
-      UseQueryOptions<BillerListResponse, Error, BillerListResponse, QueryKey>,
-      "queryKey" | "queryFn"
-    >;
+    token?: string | null; // still unused
+    query?: Omit<UseQueryOptions<T, Error, T, QueryKey>, "queryKey" | "queryFn">;
   },
 ) {
   const baseEnabled =
@@ -73,7 +71,7 @@ export function useBbpsBillerListQuery(
   const userEnabled = _opt?.query?.enabled ?? true;
   const enabled = baseEnabled && userEnabled;
 
-  return useQuery({
+  return useQuery<T, Error>({
     queryKey: [
       "bbps",
       "biller-list",
@@ -82,13 +80,15 @@ export function useBbpsBillerListQuery(
       params.mode,
       params.is_offline ? "offline" : "online",
       params.opr_id ?? "",
-      params.is_active ?? "",
+      String(params.is_active ?? ""),
     ],
-    queryFn: ({ signal }) => apiGetBillerList(params, { signal }),
+    queryFn: ({ signal }) => apiGetBillerList<T>(params, { signal }),
     enabled,
     ...(_opt?.query ?? {}),
   });
 }
+
+
 
 /** -------- Plan Pull (query) --------
  * Matches BFF route:
@@ -134,13 +134,13 @@ type BillFetchVars = {
   body: BillFetchRequest;
 };
 
-export function useBbpsBillerFetchMutation(
-  _opt?: UseMutationOptions<BillFetchResponse, Error, BillFetchVars>
+export function useBbpsBillerFetchMutation<TResp = unknown>(
+  _opt?: UseMutationOptions<TResp, Error, BillFetchVars>
 ) {
-  return useMutation<BillFetchResponse, Error, BillFetchVars>({
+  return useMutation<TResp, Error, BillFetchVars>({
     mutationKey: ["bbps", "bill-fetch"],
     mutationFn: (vars) =>
-      apiPostBillFetch(
+      apiPostBillFetch<TResp>(
         { service_id: vars.service_id, mode: vars.mode, body: vars.body },
         // react-query provides AbortSignal internally; postJSON uses it via client
         undefined

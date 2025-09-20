@@ -19,7 +19,7 @@ export const BACustomerInfoSchema = z.object({
   customerMobile: z.string(),
   customerEmail: z.string().email().optional(),
   customerAdhaar: z.string().optional(),
-  REMITTER_NAME: z.string(),
+  customerName: z.string(),
   customerPan: z.string().optional(), // Server enforces if amount > 49,999
   customerName: z.string().optional(), // Seen in some samples
 }).strict();
@@ -65,7 +65,7 @@ export const CustomerInfoSchema = z.object({
   customerMobile: z.string().min(1, "customerMobile is required"),
   customerEmail: emailOpt,
   customerAdhaar: z.string().regex(/^\d{12}$/, "customerAdhaar must be 12 digits").optional(),
-  REMITTER_NAME: z.string().min(1, "REMITTER_NAME is required"),
+  customerName: z.string().min(1, "customerName is required"),
   customerPan: z
     .string()
     .regex(/^[A-Z]{5}\d{4}[A-Z]$/, "Invalid PAN format")
