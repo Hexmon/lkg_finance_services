@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Typography } from "antd";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
@@ -11,7 +11,7 @@ import WalletStatement, { WalletStatementFilters } from "@/components/report_ana
 import ReportTransactionHistory from "@/components/report_analysis/ReportTransactionHistory";
 import CommissionSummary from "@/components/report_analysis/CommissionSummary";
 import Feature from "@/components/report_analysis/Feature";
-import ReportTable from "@/components/report_analysis/ReportTable";
+import ReportTable, { ReportTableFiltersPayload } from "@/components/report_analysis/ReportTable";
 import { useRetailerDashboardQuery } from "@/features/retailer/general";
 import { useWalletStatement } from "@/features/wallet/data/hooks";
 
@@ -31,109 +31,135 @@ export default function ReportAnalyticsPage() {
         } = {},
     } = useRetailerDashboardQuery();
 
-    /** parent-managed filters (you can wire a UI later) */
+    // ---- central filters for WalletStatement (driven by ReportTable) ----
     const [filters, setFilters] = useState<WalletStatementFilters>({});
 
-    /** parent-managed pagination for server paging (used only when no filters) */
+    // parent-managed pagination (only when no filters)
     const [page, setPage] = useState(1);
     const perPage = 10;
     const order: "asc" | "desc" = "desc";
     const sortBy = "created_at";
 
-    /** Any filter active? (when true, fetch a big page 1 so client-side filters work across full set) */
+    // ReportTable -> translate into WalletStatement filters
+    // MEMOIZED + equality guard to avoid render loops and unnecessary updates
+    const handleReportFilters = useCallback((payload: ReportTableFiltersPayload) => {
+        const next: WalletStatementFilters = {};
+
+        // date range
+        if (payload.from) next.from = payload.from;
+        if (payload.to) next.to = payload.to;
+
+        // service -> txnTypes
+        if (payload.service && payload.service !== "ALL") {
+            next.txnTypes = [payload.service]; // API expects txn_type like "DMT" | "BBPS" | "AEPS" | "RECHARGE"
+        }
+
+        // status -> statuses
+        if (payload.status && payload.status !== "ALL") {
+            next.statuses = [payload.status]; // API expects txn_status "SUCCESS" | "PENDING" | "FAILED"
+        }
+
+        // Only update when values actually change
+        setFilters((prev) => {
+            const prevJson = JSON.stringify(prev ?? {});
+            const nextJson = JSON.stringify(next);
+            return prevJson === nextJson ? prev : next;
+        });
+    }, []);
+
+    // any filter active?
+    function normalizeForHasFilters(f: WalletStatementFilters) {
+        const statuses = Array.isArray(f.statuses) ? f.statuses : [];
+        const walletNames = Array.isArray(f.walletNames) ? f.walletNames : [];
+        const txnTypes = Array.isArray(f.txnTypes) ? f.txnTypes : [];
+        const search = (f.search ?? "").trim();
+        return {
+            subtype: f.subtype ?? null,
+            statuses: statuses.length,
+            walletNames: walletNames.length,
+            txnTypes: txnTypes.length,
+            searchLen: search.length,
+            hasFrom: !!f.from,
+            hasTo: !!f.to,
+        };
+    }
+
     const hasFilters = useMemo(() => {
+        const n = normalizeForHasFilters(filters);
         return Boolean(
-            (filters.subtype && String(filters.subtype).length > 0) ||
-            (filters.statuses && filters.statuses.length > 0) ||
-            (filters.walletNames && filters.walletNames.length > 0) ||
-            (filters.txnTypes && filters.txnTypes.length > 0) ||
-            (filters.search && filters.search.trim().length > 0) ||
-            filters.from ||
-            filters.to
+            n.subtype ||
+            n.statuses ||
+            n.walletNames ||
+            n.txnTypes ||
+            n.searchLen ||
+            n.hasFrom ||
+            n.hasTo
         );
     }, [filters]);
 
-    /** keep server page in sync when filters change (no UI change) */
+    // reset server page when filters change
     useEffect(() => {
         setPage(1);
     }, [filters]);
 
-    /** When filters are on, request a large page from the server to cover most/all rows */
-    const effectivePerPage = hasFilters ? 1000 : perPage; // adjust cap based on your API limits
+    // big page when filtering (client-side slice), otherwise normal server paging
+    const effectivePerPage = hasFilters ? 1000 : perPage; // tune to API limit
     const effectivePage = hasFilters ? 1 : page;
 
-    /** fetch server page **in parent** (big slice when filtering, normal paging otherwise) */
     const { data: walletPage, isLoading: walletLoading } = useWalletStatement(
-        {
-            per_page: effectivePerPage,
-            page: effectivePage,
-            order,
-            sort_by: sortBy,
-        },
+        { per_page: effectivePerPage, page: effectivePage, order, sort_by: sortBy },
         true
     );
 
-    /** Pass page control to child only when NOT filtering; otherwise keep child on page 1 for clarity */
+    // child page control: only when NOT filtering
     const childPage = hasFilters ? 1 : page;
-    const handleChildPageChange = (p: number) => {
+    const handleChildPageChange = (p: number, _ps?: number) => {
         if (!hasFilters) setPage(p);
-        // when filtering, we keep page at 1 and let child paginate client-side on the big dataset
     };
 
-    /** tab items (child gets the fetched page + loading via props) */
     const items: TabItem[] = [
         {
             key: "walletstatement",
             label: (
                 <div
-                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "walletstatement"
-                            ? "bg-[#3386FF] text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "walletstatement" ? "bg-[#3386FF] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
                     <Image
                         src={activeTab === "walletstatement" ? "/credit-card.svg" : "/credit-card-black.svg"}
-                        alt="New"
-                        width={16}
-                        height={17}
+                        alt="New" width={16} height={17}
                     />
                     <span className="ml-2">Wallet Statement</span>
                 </div>
             ),
             content: (
-                <WalletStatement
-                    /** server page (may be large) + loading now come from parent */
-                    apiPage={walletPage?.data ?? []}
-                    loading={walletLoading}
-                    /** client filters still applied in child */
-                    filters={filters}
-                    /** child pagination:
-                     * - when filters OFF: child mirrors server paging
-                     * - when filters ON: child stays at page 1 and paginates client-side over large apiPage
-                     */
-                    page={childPage}
-                    onPageChange={(p) => handleChildPageChange(p)}
-                    /** optional (display-only in child) */
-                    perPage={perPage}
-                    order={order}
-                    sortBy={sortBy}
-                />
+                <>
+                    {/* keep the filters UI exactly as-is, but now it drives WalletStatement */}
+                    <ReportTable onFiltersChange={handleReportFilters} />
+
+                    <WalletStatement
+                        apiPage={walletPage?.data ?? []}
+                        loading={walletLoading}
+                        filters={filters}
+                        page={childPage}
+                        onPageChange={handleChildPageChange}
+                        perPage={perPage}
+                        order={order}
+                        sortBy={sortBy}
+                    />
+                </>
             ),
         },
         {
             key: "transactionhistory",
             label: (
                 <div
-                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "transactionhistory"
-                            ? "bg-[#3386FF] text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "transactionhistory" ? "bg-[#3386FF] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
                     <Image
                         src={activeTab === "transactionhistory" ? "/transaction-bill-white.svg" : "/transaction-bill.svg"}
-                        alt="History"
-                        width={16}
-                        height={16}
+                        alt="History" width={16} height={16}
                     />
                     <span className="ml-2">Transaction History</span>
                 </div>
@@ -144,9 +170,7 @@ export default function ReportAnalyticsPage() {
             key: "commissionsummary",
             label: (
                 <div
-                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "commissionsummary"
-                            ? "bg-[#3386FF] text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    className={`flex items-center px-3.5 py-2.5 rounded-[15px] h-[60px] ${activeTab === "commissionsummary" ? "bg-[#3386FF] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                 >
                     <Image src={activeTab === "commissionsummary" ? "/heart-line.svg" : "/line-blk.svg"} alt="History" width={22} height={26} />
@@ -176,8 +200,6 @@ export default function ReportAnalyticsPage() {
                 totalTransaction={total_count ?? 0}
                 totalTransactionGrowth={growth ?? 0}
             />
-
-            <ReportTable />
 
             <SmartTabs
                 items={items}

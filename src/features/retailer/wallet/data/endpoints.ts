@@ -35,7 +35,7 @@ function qsFromObj(obj: Record<string, unknown>) {
  * Wallet Statement
  * BFF route: /api/v1/retailer/wallet/get-wallet-statement
  * ------------------------*/
-const WALLET_STATEMENT_PATH = "/retailer/wallet/get-wallet-statement";
+const WALLET_STATEMENT_PATH = "/wallet/get-wallet-statement";
 
 export async function apiGetWalletStatement(
     query: WalletStatementQuery
@@ -77,7 +77,7 @@ export async function apiWalletBalance(
     const parsedQuery = WalletBalanceQuerySchema.parse(_query);
 
     const qs = qsFromObj(parsedQuery as Record<string, unknown>);
-    const url = `/retailer/wallet/wallet-balance${qs}`;
+    const url = `/wallet/wallet-balance${qs}`;
 
     const json = await getJSON<unknown>(url, {
         redirectOn401: true,
@@ -106,7 +106,7 @@ export async function apiCommissionSummary(
         user_id: parsed.user_id,
     });
 
-    const url = `/retailer/wallet/commission-summary${qs}`;
+    const url = `/wallet/commission-summary${qs}`;
 
     const json = await getJSON<unknown>(url, {
         redirectOn401: true,

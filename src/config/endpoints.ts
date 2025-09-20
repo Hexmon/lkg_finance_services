@@ -15,6 +15,9 @@ export const RETAILER_ENDPOINTS = {
         DASHBOARD_DETAILS: "/secure/retailer/getDashboard",
         Transaction_SUMMARY: "/secure/retailer/transaction_summary",
     },
+    FUND_REQUEST: {
+        COMPANY_BANK_ACCOUNTS: "/secure/retailer/company_bank_accounts",
+    },
     RETAILER_BBPS: {
         BBPS_ONLINE: {
             BILL_FETCH: {
