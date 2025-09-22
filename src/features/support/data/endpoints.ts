@@ -1,4 +1,4 @@
-import { getJSON, postJSON } from '@/lib/api/client';
+import { ApiError, getJSON, postJSON } from '@/lib/api/client';
 import {
   CreateTicketRequestSchema,
   CreateTicketResponseSchema,
@@ -18,13 +18,16 @@ export async function apiCreateTicket(
   body: CreateTicketRequest
 ): Promise<CreateTicketResponse> {
   const payload = CreateTicketRequestSchema.parse(body);
-
-  const res = await postJSON<unknown>(CREATE_TICKET_PATH, payload, {
-    redirectOn401: true,
-    redirectPath: '/signin',
-  });
-
-  return CreateTicketResponseSchema.parse(res);
+  try {
+    const res = await postJSON<unknown>(CREATE_TICKET_PATH, payload, {
+      redirectOn401: true,
+      redirectPath: "/signin",
+    });
+    return CreateTicketResponseSchema.parse(res);
+  } catch (e: any) {
+    if (e instanceof ApiError) throw e; // keep 409 + existing_ticket
+    throw new ApiError(500, e?.message ?? "Create ticket failed", e?.data);
+  }
 }
 
 /* -------------------- get tickets (new) -------------------- */

@@ -2,28 +2,29 @@
 import { z } from "zod";
 
 /** ---------- Base record ---------- */
-export const AddressRecordSchema = z.object({
-  address_id: z.number().int(),
-  user_id: z.string(), // allow any string (UAT sometimes non-UUID)
-  owner_type: z.string(),
+const AddressRecordSchema = z.object({
+  user_type: z.string(),
   address_type: z.string(),
-  state: z.string(),
-  country: z.string(),
-  pincode: z.string(),
-  po: z.string(),
-  house: z.string(),
+  address_id: z.string(),
+  user_id: z.string(),
+  house: z.string().nullable().optional(),
+  street: z.string().nullable().optional(),
+  dist: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),          // <- allow null
   landmark: z.string().nullable().optional(),
-  dist: z.string(),
-  street: z.string(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
-  created_at: z.string(),
-  updated_at: z.string().nullable(),
-  // sometimes present in POST body:
-  subdist: z.string().optional(),
-  vtc: z.string().optional(),
+  po: z.string().nullable().optional(),
   locality: z.string().nullable().optional(),
+  vtc: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  pincode: z.string().nullable().optional(),
+  latitude: z.number().nullable().optional(),      // <- allow null
+  longitude: z.number().nullable().optional(),     // <- allow null
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),    // <- allow null
+  is_active: z.boolean(),
 });
+
 export type AddressRecord = z.infer<typeof AddressRecordSchema>;
 
 /** ---------- GET /secure/address ---------- */

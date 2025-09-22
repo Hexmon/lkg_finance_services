@@ -1,81 +1,98 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import 'server-only';
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import "server-only";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-import { AUTH_COOKIE_NAME } from '@/app/api/_lib/auth-cookies';
+import { AUTH_COOKIE_NAME } from "@/app/api/_lib/auth-cookies";
+import { AUTHERIZATION_ENDPOINT } from "@/config/endpoints";
 import {
   CreateTicketRequestSchema,
   CreateTicketResponseSchema,
+  GetTicketsResponseSchema,
   type CreateTicketRequest,
-  type CreateTicketResponse,
-} from '@/features/support/domain/types';
+} from "@/features/support/domain/types";
+import { supportFetch } from "@/app/api/_lib/http-support";
 
-export const dynamic = 'force-dynamic';
-
-// Upstream absolute URL (AUTH service)
-const AUTH_CREATE_TICKET_URL = 'https://auth-uat.bhugtan.in/secure/create-ticket';
+export const dynamic = "force-dynamic";
 
 /**
  * BFF: POST /api/v1/retailer/support/support-list
- * Proxies upstream:
- *   POST https://auth-uat.bhugtan.in/secure/create-ticket
+ * -> POST {AUTH_BASE_URL}/secure/create-ticket
+ * On 409, returns { existing_ticket } for the same transaction_id (status=OPEN).
  */
 export async function POST(req: NextRequest) {
-  // ---- Auth (HttpOnly JWT cookie -> Bearer) ----
   const jar = await cookies();
   const token = jar.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // ---- Parse + validate body ----
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let payload: CreateTicketRequest;
   try {
-    payload = CreateTicketRequestSchema.parse(body);
+    const raw = await req.json();
+    payload = CreateTicketRequestSchema.parse(raw);
   } catch (zerr: any) {
     return NextResponse.json(
-      { error: 'Validation failed', issues: zerr?.errors ?? String(zerr) },
+      { error: "Validation failed", issues: zerr?.errors ?? String(zerr) },
       { status: 400 }
     );
   }
 
-  // ---- Proxy upstream ----
   try {
-    const res = await fetch(AUTH_CREATE_TICKET_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-      body: JSON.stringify(payload),
-    });
+    const upstream = await supportFetch<unknown>(
+      AUTHERIZATION_ENDPOINT.AUTH_SUPPORT_CREATE_TICKET_PATH, // '/secure/create-ticket'
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload,
+      }
+    );
 
-    const text = await res.text().catch(() => '');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json: any = text ? (() => { try { return JSON.parse(text); } catch { return null; } })() : null;
+    const parsed = CreateTicketResponseSchema.parse(upstream);
+    return NextResponse.json(parsed, { status: 200 });
+  } catch (err: any) {
+    const status = err?.status ?? err?.data?.status ?? 502;
 
-    if (!res.ok) {
-      const status = res.status || json?.status || 502;
-      return NextResponse.json(
-        json ?? { status, error: { message: res.statusText || 'Upstream error' } },
-        { status }
-      );
+    if (status === 409 && payload.transaction_id) {
+      try {
+        const existing = await supportFetch<unknown>(
+          AUTHERIZATION_ENDPOINT.AUTH_SUPPORT_TICKETS_PATH, // '/secure/tickets'
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+            query: {
+              transaction_id: payload.transaction_id,
+              status: "OPEN",
+              per_page: 1,
+              page: 1,
+              order: "desc",
+              sort_by: "created_at",
+            },
+          }
+        );
+        const safe = GetTicketsResponseSchema.parse(existing);
+        const existing_ticket =
+          Array.isArray(safe.data) && safe.data.length > 0 ? safe.data[0] : null;
+
+        return NextResponse.json(
+          {
+            status,
+            error:
+              err?.data?.error ?? {
+                code: "ERROR_CODE_RECORD_EXIST",
+                message: "Record already exists",
+                field_name: "ticket_status",
+              },
+            existing_ticket,
+          },
+          { status: 409 }
+        );
+      } catch {
+        // fall through if lookup fails
+      }
     }
 
-    const parsed: CreateTicketResponse = CreateTicketResponseSchema.parse(json);
-    // Upstream returns "status": "201" in body; normalize HTTP status to 200 for UI
-    return NextResponse.json<CreateTicketResponse>(parsed, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json(err?.data ?? { error: err.message }, { status: err?.status ?? 502 });
+    return NextResponse.json(
+      err?.data ?? { status, error: { message: err?.message ?? "Create ticket failed" } },
+      { status }
+    );
   }
 }

@@ -15,6 +15,9 @@ export const RETAILER_ENDPOINTS = {
         DASHBOARD_DETAILS: "/secure/retailer/getDashboard",
         Transaction_SUMMARY: "/secure/retailer/transaction_summary",
     },
+    FUND_REQUEST: {
+        COMPANY_BANK_ACCOUNTS: "/secure/retailer/company_bank_accounts",
+    },
     RETAILER_BBPS: {
         BBPS_ONLINE: {
             BILL_FETCH: {
@@ -71,6 +74,7 @@ export const RETAILER_ENDPOINTS = {
         GET_WALLET_STATEMENT: "/secure/retailer/get-wallet-statement",
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",
+        COMMISSION_SUMMARY: "/secure/retailer/commission-summary"
     },
     SUPPORT: {
         TICKET_LIST: "/admin/tickets",

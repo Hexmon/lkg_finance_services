@@ -46,21 +46,20 @@ export function useBbpsCategoryListQuery(
 /** -------- Biller List (query) --------
  * Matches BFF route: /bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
-export function useBbpsBillerListQuery(
+
+// ✅ useBbpsBillerListQuery — add default select(normalize) + stability
+export function useBbpsBillerListQuery<T = unknown>(
   params: {
     service_id: string;
     bbps_category_id: string;
     is_offline: boolean;
     mode: "ONLINE" | "OFFLINE";
     opr_id?: string;
-    is_active?: string;
+    is_active?: boolean | string;
   },
   _opt?: {
     token?: string | null;
-    query?: Omit<
-      UseQueryOptions<BillerListResponse, Error, BillerListResponse, QueryKey>,
-      "queryKey" | "queryFn"
-    >;
+    query?: Omit<UseQueryOptions<T, Error, T, QueryKey>, "queryKey" | "queryFn">;
   },
 ) {
   const baseEnabled =
@@ -73,7 +72,27 @@ export function useBbpsBillerListQuery(
   const userEnabled = _opt?.query?.enabled ?? true;
   const enabled = baseEnabled && userEnabled;
 
-  return useQuery({
+  // normalize biller shapes to consistent keys
+  const normalize = (raw: any) => {
+    const list = raw?.data ?? [];
+    const data = Array.isArray(list)
+      ? list.map((b: any) => ({
+          ...b,
+          biller_id: b?.biller_id ?? b?.billerId ?? b?.id ?? "",
+          biller_status: b?.biller_status ?? b?.billerStatus ?? "INACTIVE",
+          biller_payment_exactness:
+            b?.biller_payment_exactness ?? b?.billerPaymentExactness ?? null,
+          plan_mdm_requirement:
+            b?.plan_mdm_requirement ?? b?.planMdmRequirement ?? "NOT_SUPPORTED",
+          biller_fetch_requiremet:
+            b?.biller_fetch_requiremet ?? b?.billerFetchRequiremet ?? "NOT_REQUIRED",
+          inputParams: b?.inputParams ?? b?.input_params ?? [],
+        }))
+      : [];
+    return { ...raw, data };
+  };
+
+  return useQuery<T, Error>({
     queryKey: [
       "bbps",
       "biller-list",
@@ -82,13 +101,18 @@ export function useBbpsBillerListQuery(
       params.mode,
       params.is_offline ? "offline" : "online",
       params.opr_id ?? "",
-      params.is_active ?? "",
+      String(params.is_active ?? "true"), // ← CHANGED: default active
     ],
-    queryFn: ({ signal }) => apiGetBillerList(params, { signal }),
+    queryFn: ({ signal }) => apiGetBillerList<T>(params, { signal }),
     enabled,
+    // prefer caller's select if provided; otherwise normalize
+    select: (_opt?.query as any)?.select ?? ((d: any) => normalize(d)),
+    staleTime: 60_000, // 1 min
+    placeholderData: (prev) => prev, // keeps old list during refetch
     ...(_opt?.query ?? {}),
   });
 }
+
 
 /** -------- Plan Pull (query) --------
  * Matches BFF route:
@@ -134,13 +158,13 @@ type BillFetchVars = {
   body: BillFetchRequest;
 };
 
-export function useBbpsBillerFetchMutation(
-  _opt?: UseMutationOptions<BillFetchResponse, Error, BillFetchVars>
+export function useBbpsBillerFetchMutation<TResp = unknown>(
+  _opt?: UseMutationOptions<TResp, Error, BillFetchVars>
 ) {
-  return useMutation<BillFetchResponse, Error, BillFetchVars>({
+  return useMutation<TResp, Error, BillFetchVars>({
     mutationKey: ["bbps", "bill-fetch"],
     mutationFn: (vars) =>
-      apiPostBillFetch(
+      apiPostBillFetch<TResp>(
         { service_id: vars.service_id, mode: vars.mode, body: vars.body },
         // react-query provides AbortSignal internally; postJSON uses it via client
         undefined

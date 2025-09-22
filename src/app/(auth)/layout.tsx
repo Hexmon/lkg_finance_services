@@ -1,26 +1,23 @@
 // src/app/(auth)/layout.tsx
-"use client";
+import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME, getJwtExp } from "@/app/api/_lib/auth-cookies";
 
-import { ReactNode, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/lib/store";
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  // Read HttpOnly JWT set by your server
+  const jar = await cookies();
+  const jwt = jar.get(AUTH_COOKIE_NAME)?.value;
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const token = useAppSelector((s) => s.auth.token);
-  const [hydrated, setHydrated] = useState(false);
+  if (jwt) {
+    // Optional: only redirect if not expired (defensive)
+    const exp = getJwtExp(jwt); // seconds since epoch
+    const now = Math.floor(Date.now() / 1000);
+    if (!exp || exp > now) {
+      redirect("/"); // already signed in -> bounce away from auth pages
+    }
+  }
 
-  // Wait for rehydration so we don't read a pre-hydrate null token
-  useEffect(() => setHydrated(true), []);
-
-  // Redirect once hydrated and token exists
-  useEffect(() => {
-    if (!hydrated) return;
-    if (token) router.replace("/");
-  }, [hydrated, token, router]);
-
-  // Avoid UI flash while hydrating or when already authenticated
-  if (!hydrated || token) return null;
-
+  // No valid session -> render auth pages (signin/signup/forgot, etc.)
   return <>{children}</>;
 }

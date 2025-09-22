@@ -14,6 +14,7 @@ import { useMessage } from "@/hooks/useMessage";
 const { Title } = Typography;
 const { Option } = Select;
 const STORAGE_KEY = "bbps:lastBillFetch";
+const PAYMENT_KEY = "bbps:lastBillPayment"; // ✅ NEW: for payment response
 
 // ---- helpers ----
 const toPaise = (r: string | number) => String(Math.round(Number(r || 0) * 100));
@@ -25,7 +26,6 @@ type PayModeUI = "Wallet" | "Cashfree";
 
 /** UI -> upstream paymentMode mapping */
 function mapPaymentMode(ui: PayModeUI): string {
-  // Wallet balance = Cash for BBPS; Cashfree gateway ~ UPI (or "Online" if your upstream expects that exact string)
   return ui === "Wallet" ? "Cash" : "UPI";
 }
 
@@ -40,8 +40,9 @@ export default function BillDetailsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentMode, setPaymentMode] = useState<PayModeUI>("Wallet");
   const router = useRouter();
-  const {error, warning} = useMessage()
+  const { error, warning } = useMessage();
   const [resp, setResp] = useState<any | null>(null);
+  console.log({ resp });
 
   const { billPaymentAsync, isLoading: payLoading } = useBillPayment();
   const { biller_category, service_id } = useParams() as { biller_category?: string; service_id?: string };
@@ -49,11 +50,19 @@ export default function BillDetailsPage() {
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
+      console.log({ raw });
       if (raw) {
         const parsed = JSON.parse(raw);
-        setResp(parsed);
-        // keep or clear depending on your UX; clearing avoids stale replays
-        sessionStorage.removeItem(STORAGE_KEY);
+        console.log({ parsed });
+
+        // ✅ unwrap if saved as { resp: { ... } }, else use as-is
+        const payload = parsed?.resp ?? parsed;
+        setResp(payload);
+
+        // Avoid clearing in dev (React 18 StrictMode runs effects twice)
+        if (process.env.NODE_ENV === "production") {
+          sessionStorage.removeItem(STORAGE_KEY);
+        }
       }
     } catch {
       // ignore parse errors
@@ -61,9 +70,18 @@ export default function BillDetailsPage() {
   }, []);
 
   // ---- derived values from resp ----
-  const bfr = resp?.billFetchResponse?.billerResponse;
+  const bfr = useMemo(() => {
+    const r = resp as any;
+    return (
+      r?.billFetchResponse?.billerResponse ||       // normalized
+      r?.data?.billFetchResponse?.billerResponse || // wrapped-normalized
+      r?.data?.billerResponse ||                    // pass-through like your example
+      r?.billerResponse ||                          // rare direct
+      null
+    );
+  }, [resp]);
+
   const amountPaise: string = useMemo(() => {
-    // billerResponse.billAmount might already be paise as a digits string; normalize
     const raw = bfr?.billAmount ?? 0;
     return isDigits(raw) ? String(raw) : toPaise(raw);
   }, [bfr?.billAmount]);
@@ -73,9 +91,6 @@ export default function BillDetailsPage() {
   const needsPAN = amountRupees > 49999; // > ₹49,999 rule
 
   const quickPay: "Y" | "N" = useMemo(() => {
-    // If biller is recharge-type OR no billerResponse present, use quickPay Y (bypass)
-    // If you store this on fetch response (common), prefer that flag:
-    // e.g., resp?.quickPay === 'Y'
     if (!bfr) return "Y";
     return "N";
   }, [bfr]);
@@ -83,22 +98,18 @@ export default function BillDetailsPage() {
   const displayAmount = paiseToRupees(amountPaise);
 
   async function handleProceedToPay() {
-    console.log("qwertyuioikjhgfcdx 1");
-    
     try {
       if (!resp) {
         warning("Missing bill details. Please fetch bill again.");
         return;
       }
 
-    console.log({resp});
       const svcIdCandidate = service_id || resp?.service_id;
       if (!svcIdCandidate || !isUUID(svcIdCandidate)) {
         error("Invalid or missing service_id.");
         return;
       }
       const svcId = svcIdCandidate;
-console.log(svcId);
 
       const billerId = resp?.billerId;
       const customerMobile = resp?.customerMobile;
@@ -106,36 +117,32 @@ console.log(svcId);
         error("Missing billerId or customerMobile.");
         return;
       }
-console.log({billerId, customerMobile, pan: resp?.customerPan});
 
       // PAN enforcement (UI-level guard; server will also enforce)
-      const pan: string | undefined = resp?.customerPan; // or from your auth/store profile
+      const pan: string | undefined = resp?.customerPan;
       if (needsPAN && !pan) {
         message.error("PAN is required for payments above ₹49,999. Please update user PAN and try again.");
         return;
       }
 
-      const requestId = Date.now().toString();
+      const requestId = resp?.requestId ?? "";
       const mappedPaymentMode = mapPaymentMode(paymentMode);
-console.log({requestId, mappedPaymentMode});
 
-      // Build inputParams (object or array). Keep it as the fetch returned where possible.
-      let inputParams = resp?.inputParams;
+      // Build inputParams (object or array). Prefer what we stored or what upstream returned.
+      let inputParams = resp?.inputParams ?? resp?.data?.inputParams;
       if (!inputParams?.input) {
-        // fallback to a simple single input
         inputParams = {
           input: {
-            paramName: resp?.inputParams?.input?.paramName || "CustomerId",
+            paramName: resp?.data?.inputParams?.input?.paramName || resp?.inputParams?.input?.paramName || "CustomerId",
             paramValue:
+              resp?.data?.inputParams?.input?.paramValue ||
               resp?.inputParams?.input?.paramValue ||
               resp?.customerId ||
               customerMobile,
           },
         };
       }
-console.log({inputParams});
 
-      // Pair with presentment vs quickPay flow
       const billerResponse =
         quickPay === "N" && bfr
           ? {
@@ -147,55 +154,55 @@ console.log({inputParams});
             dueDate: bfr.dueDate || undefined,
           }
           : undefined;
-console.log({billerResponse});
-
-      // paymentInfo rule:
-      // - If omitted, client/API layer (endpoints.ts preprocess) will auto-pick:
-      //   > 50,000 => Payment Account Info/Cash
-      //   <= 50,000 => Remarks/Received
-      // We'll omit here and let the preprocessor do the right thing.
-      // If you want to set explicitly from UI, uncomment this block:
-      // const paymentInfo =
-      //   amountRupees > 50000
-      //     ? { info: { infoName: "Payment Account Info", infoValue: "Cash" } }
-      //     : { info: { infoName: "Remarks", infoValue: "Received" } };
 
       const body = {
         requestId,
         billerId,
         customerInfo: {
           customerMobile,
-          REMITTER_NAME: bfr?.customerName || resp?.customerName || "Customer",
+          customerName: bfr?.customerName || resp?.customerName || "Customer",
           customerEmail: resp?.customerInfo?.customerEmail || undefined,
-          customerPan: pan, // must be present if needsPAN === true
-          // customerAdhaar: resp?.customerInfo?.customerAdhaar, // if you have it
-          // customerName: bfr?.customerName || undefined,
+          customerPan: pan,
         },
-        inputParams, // object or array; both accepted downstream
-        billerResponse, // required only when quickPay === 'N'
+        inputParams,
+        billerResponse,
         amountInfo: {
           amount: amountPaise,
           currency: "356",
           custConvFee: "0",
         },
         paymentMethod: {
-          paymentMode: mappedPaymentMode, // "Cash" or "UPI"
+          paymentMode: mappedPaymentMode,
           quickPay,
           splitPay: "N",
         },
-        // paymentInfo, // let preprocessor auto-fill; or uncomment block above
-        additionalInfo: resp?.additionalInfo, // optional passthrough
+        additionalInfo: resp?.additionalInfo ?? resp?.data?.additionalInfo,
       } as const;
-console.log({body});
 
-      await billPaymentAsync({ service_id: svcId, body });
+      // ✅ STORE the payment response for the success page
+      const paymentResp = await billPaymentAsync({ service_id: svcId, body });
+      try {
+        const carry = {
+          amountPaise,
+          displayAmount,
+          paymentMode: mappedPaymentMode,
+          billerId,
+          customerMobile,
+          billNumber: bfr?.billNumber ?? null,
+          billDate: bfr?.billDate ?? null,
+          dueDate: bfr?.dueDate ?? null,
+          customerName: bfr?.customerName ?? resp?.customerName ?? "Customer",
+        };
+        sessionStorage.setItem(PAYMENT_KEY, JSON.stringify({ resp: paymentResp, context: carry }));
+      } catch {
+        // ignore storage errors
+      }
+
       setIsModalOpen(false);
       router.push("/bill_payment/bbps-online/bbps-successful");
     } catch (e: any) {
-      // AntD friendly error surface
       const msg = e?.message || "Payment failed";
       message.error(msg);
-      // Still log full error for debugging
       console.error("❌ Bill Payment Error:", e);
     }
   }
@@ -269,7 +276,6 @@ console.log({body});
 
               <div>
                 <div className="text-gray-500">Payment Mode</div>
-                {/* Keep this select if you want; the modal radios control the actual selection */}
                 <Select
                   defaultValue="Cash"
                   className="w-full mt-1"

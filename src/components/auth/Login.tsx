@@ -50,7 +50,12 @@ export const LoginMain = () => {
 
       // status === 200
       success('Signed in successfully');
-      router.replace('/');
+      const next = searchParams.get('next') || '/';
+      if (typeof window !== 'undefined') {
+        window.location.replace(next); // <- hard navigation (not client router)
+      }
+      // router.replace('/');
+      // router.refresh();
     } catch (e) {
       if (e instanceof ApiError) {
         error(e.message || 'Unable to sign in. Please try again.');
@@ -95,7 +100,7 @@ export const LoginMain = () => {
         onFinishFailed={onFinishFailed}
         requiredMark={false}
         initialValues={{ username: usernameFromQuery || "" }}
-        // initialValues={{ username: usernameFromQuery || "RA175900435", password: "Asdf@1234" }}
+      // initialValues={{ username: usernameFromQuery || "RA175900435", password: "Asdf@1234" }}
       >
         {/* Username */}
         <Form.Item
