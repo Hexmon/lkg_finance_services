@@ -174,8 +174,8 @@ export default function AddCustomerModal({
                         <Input size="large" placeholder="Enter Email Address" />
                     </Form.Item>
 
-                    <Form.Item label="PAN / Aadhaar Number" name="idNumber">
-                        <Input size="large" placeholder="Enter PAN / Aadhaar Number" />
+                    <Form.Item label="PAN" name="idNumber">
+                        <Input size="large" placeholder="Enter PAN" />
                     </Form.Item>
 
                     {/* Hidden submit for footer button */}
