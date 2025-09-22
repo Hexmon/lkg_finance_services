@@ -243,8 +243,8 @@ console.log({resp});
                         <Input size="large" placeholder="Enter Email Address" />
                     </Form.Item>
 
-                    <Form.Item label="PAN / Aadhaar Number" name="idNumber">
-                        <Input size="large" placeholder="Enter PAN (ABCDE1234F) or 12-digit Aadhaar" />
+                    <Form.Item label="PAN" name="idNumber">
+                        <Input size="large" placeholder="Enter PAN" />
                     </Form.Item>
 
                     <button type="submit" className="hidden" />
