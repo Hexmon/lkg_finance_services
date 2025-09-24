@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import { apiAccountUpgrade } from './endpoints';
+import { apiRequestAccountUpgrade } from './endpoints';
 import { type AccountUpgradeRequest, type AccountUpgradeResponse } from '../domain/types';
 
 export function useAccountUpgrade() {
   const mutation = useMutation<AccountUpgradeResponse, unknown, AccountUpgradeRequest>({
-    mutationFn: apiAccountUpgrade,
+    mutationFn: apiRequestAccountUpgrade,
   });
 
   return {

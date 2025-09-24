@@ -1,18 +1,16 @@
-import { z } from 'zod';
+// src/features/upgrade-account/domain/types.ts
+import { z } from "zod";
 
-/** Request schema (BFF accepts all 4 fields; path params are mapped in route) */
 export const AccountUpgradeRequestSchema = z.object({
   user_id: z.string().min(1),
-  request_type: z.string().min(1),
+  request_type: z.string().min(1).transform(v => v.trim().toUpperCase()),
   description: z.string().min(1),
 }).strict();
-
 export type AccountUpgradeRequest = z.infer<typeof AccountUpgradeRequestSchema>;
 
-/** Upstream example: { message: "account successfully upgraded", status: "200" } */
 export const AccountUpgradeResponseSchema = z.object({
-  message: z.string().optional(),
-  status: z.union([z.string(), z.number()]).optional(),
+  status: z.union([z.string(), z.number()]),      // "201"
+  request_id: z.string(),                          // UUID
+  message: z.string(),                             // "Your request successfully submitted"
 }).passthrough();
-
 export type AccountUpgradeResponse = z.infer<typeof AccountUpgradeResponseSchema>;

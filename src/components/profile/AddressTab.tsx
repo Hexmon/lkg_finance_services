@@ -11,6 +11,7 @@ import {
   usePatchAddressLandmark,
 } from '@/features/address/data/hooks';
 import type { AddressRecord } from '@/features/address/domain/types';
+import { useMessage } from '@/hooks/useMessage';
 
 /* ---------------- Small UI atoms (unchanged visuals) ---------------- */
 
@@ -150,7 +151,7 @@ function AddressForm({
       <div className="grid grid-cols-2 gap-4">
         <Form.Item name="label" label="Address Label" rules={[{ required: true }]} className="!ml-3">
           <Select
-            options={[{ value: 'Current' }, { value: 'Billing' }, { value: 'Other' }]}
+            options={[{ value: 'Current' }, { value: 'Billing' }]}
             disabled={isEdit} // cannot change via PATCH/landmark-only
           />
         </Form.Item>
@@ -269,13 +270,14 @@ function toAddBody(values: FormValues, userId: string) {
 export default function AddressTab() {
   const profile = useAppSelector((s) => s.profile?.data);
   const userId = profile?.user_id || '';
+  const { error, success, warning } = useMessage()
 
   // Data
   const { data, isLoading } = useAddresses({ user_id: userId }, !!userId);
   const list = useMemo(() => data?.data ?? [], [data]);
 
   // Mutations
-  const { mutate: addAddress, isPending: isAdding } = useAddAddress();
+  const { mutateAsync: addAddressAsync, isPending: isAdding } = useAddAddress();
   const { mutate: patchLandmark, isPending: isPatching } = usePatchAddressLandmark(userId);
 
   // UI state
@@ -296,40 +298,40 @@ export default function AddressTab() {
   };
 
   // Save handler (POST for add, PATCH for edit-landmark)
-  const handleSave = (values: FormValues) => {
+  const handleSave = async (values: FormValues) => {
     if (!userId) {
-      message.error('Missing user id. Please sign in again.');
+      error('Missing user id. Please sign in again.');
       return;
     }
 
     if (!editing) {
       // ADD
       const body = toAddBody(values, userId);
-      addAddress(body, {
+      await addAddressAsync(body, {
         onSuccess: () => {
-          message.success('Address added');
+          success('Address added');
           closeForm();
         },
         onError: (e: any) => {
-          message.error(e?.message || 'Failed to add address');
+          error(e?.message || 'Failed to add address');
         },
       });
     } else {
       // EDIT (PATCH landmark only)
       const landmark = values.landmark?.trim();
       if (!landmark) {
-        message.warning('Please enter landmark');
+        warning('Please enter landmark');
         return;
       }
       patchLandmark(
         { landmark },
         {
           onSuccess: () => {
-            message.success('Landmark updated');
+            success('Landmark updated');
             closeForm();
           },
           onError: (e: any) => {
-            message.error(e?.message || 'Failed to update address');
+            error(e?.message || 'Failed to update address');
           },
         }
       );
