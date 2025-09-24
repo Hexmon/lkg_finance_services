@@ -88,6 +88,7 @@ const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({ setAddresses }) =
   const { data, isFetching } = useProfileQuery({ enabled: !!userId && !loaded });
 
   const p = data?.data;
+  
   useEffect(() => {
     setAddresses(p?.addresses ?? []);
   }, [p?.addresses]);

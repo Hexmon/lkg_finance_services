@@ -80,6 +80,7 @@ export default function BillPaymentServicePage() {
       subtitle: "Pay bills manually by entering customer details and bill information",
       isBlocked: offline_is_blocked ?? false,
       isSubscribe: offline_is_subscribed ?? false,
+      redirect: 'bill_payment/bbps-offline'
     },
     {
       id: online_service_id ?? "1",
@@ -88,6 +89,7 @@ export default function BillPaymentServicePage() {
       subtitle: "Pay bills online with automatic bill fetch and payment processing",
       isBlocked: online_is_blocked ?? false,
       isSubscribe: online_is_subscribed ?? false,
+      redirect: 'bill_payment/bbps-online'
     },
   ];
 
@@ -103,27 +105,27 @@ export default function BillPaymentServicePage() {
         subtitle={null}
         showBack
         arrowClassName="!text-[#3386FF]"
-        // dropdownItems={[
-        //   { key: "bill", label: "Bill Payment Service", path: "/bill-payment" },
-        //   { key: "complain", label: "Register Complain", path: "/bill_payment/raise-complaint" },
-        //   { key: "status", label: "Transaction Status", path: "/bill_payment/transaction-status" },
-        // ]}
-        // dropdownSelectedKey="bill"
-        // onDropdownSelect={(key) => console.log("selected:", key)}
-        // dropdownTriggerClassName="text-blue-500"
-        // dropdownClassName="!min-w-[220px]"
+      // dropdownItems={[
+      //   { key: "bill", label: "Bill Payment Service", path: "/bill-payment" },
+      //   { key: "complain", label: "Register Complain", path: "/bill_payment/raise-complaint" },
+      //   { key: "status", label: "Transaction Status", path: "/bill_payment/transaction-status" },
+      // ]}
+      // dropdownSelectedKey="bill"
+      // onDropdownSelect={(key) => console.log("selected:", key)}
+      // dropdownTriggerClassName="text-blue-500"
+      // dropdownClassName="!min-w-[220px]"
       />
       <div className="p-8 bg-gray-50">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-          {cardData.map((data) => {
-            const { icon, id, isSubscribe, subtitle, title, isBlocked } = data || {};
+          {(cardData ?? []).map((data) => {
+            const { icon, id, isSubscribe, subtitle, title, isBlocked, redirect } = data || {};
             return (
               <div
                 key={id}
                 className="cursor-pointer"
                 onClick={() => {
                   if (isSubscribe || isBlocked) {
-                    router.push(`/bill_payment/bbps-online/${id}`);
+                    router.push(`/${redirect}/${id}`);
                   }
                 }}
               >
