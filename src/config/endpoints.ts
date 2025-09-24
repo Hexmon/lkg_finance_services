@@ -39,7 +39,7 @@ export const RETAILER_ENDPOINTS = {
                 TXN_STATUS: "/secure/bbps/bills/txn-status",
                 COMPLAINT_REGISTER: "/secure/bbps/bills/complaint-Reg",
                 TRACK_COMPLAINT: "/secure/bbps/bills/track-complaint",
-                BILL_VALIDATION: "/secure/bbps/billavenue/bill-validation",
+                BILL_VALIDATION: "/secure/bbps/bills/bill-validation",
                 ALL_PLANS: "/secure/bbps/bills/all-plans",
             },
         },
