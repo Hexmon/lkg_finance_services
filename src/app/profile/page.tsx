@@ -11,10 +11,11 @@ import BankingDetailsTab from '@/components/profile/BankingDetailsTab';
 import AddressTab from '@/components/profile/AddressTab';
 import PasswordReset from '@/components/profile/ChangePassword';
 import { useState } from 'react';
-import { number } from 'zod';
+import { Address } from '@/features/profile';
 
 export default function ProfileTabsDemo() {
     const [activeTab, setActiveTab] = useState<string| number>("personal");
+    const [addresses, setAddresses] = useState<Address[]>([])
 
     const items: TabItem[] = [
         {
@@ -29,7 +30,7 @@ export default function ProfileTabsDemo() {
                     Personal Details
                 </span>
             ),
-            content: <ProfileDetailsTab />,
+            content: <ProfileDetailsTab setAddresses={setAddresses} />,
         },
         {
             key: "bank",

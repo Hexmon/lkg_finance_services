@@ -61,6 +61,12 @@ export type AddAddressRequest = z.infer<typeof AddAddressRequestSchema>;
 export const AddAddressResponseSchema = AddressRecordSchema.passthrough();
 export type AddAddressResponse = z.infer<typeof AddAddressResponseSchema>;
 
+
+export const UpstreamAddAddressResponseSchema = z.object({
+  message: z.string(),
+  data: AddAddressResponseSchema,
+}).passthrough();
+
 /** ---------- PATCH /secure/address/ (landmark only as per spec) ---------- */
 export const PatchAddressLandmarkBodySchema = z.object({
   landmark: z.string().min(1),

@@ -50,7 +50,7 @@ export default function SupportTickets() {
     const serverTickets: UiTicket[] = useMemo(() => {
         const list = data?.data ?? [];
         return list.map((t) => ({
-            id: t.ticket_id ?? t.transaction_id ?? "—",
+            id: t.transaction_id ?? "—",
             status: (t.status === "OPEN" || t.status === "IN_PROGRESS" ? "Active" : "Closed") as
                 | "Active"
                 | "Closed",
@@ -63,7 +63,7 @@ export default function SupportTickets() {
     // optional local-prepend list after create (keeps UX snappy)
     const [localTickets, setLocalTickets] = useState<UiTicket[]>([]);
 
-    const tickets: UiTicket[] = useMemo(
+    const tickets = useMemo(
         () => [...localTickets, ...serverTickets],
         [localTickets, serverTickets]
     );
@@ -88,7 +88,7 @@ export default function SupportTickets() {
                 // Optimistic local add
                 setLocalTickets((prev) => [
                     {
-                        id: res.data.ticket_id ?? res.data.transaction_id ?? "—",
+                        id: res.data.transaction_id ?? "—",
                         status: (res.data.status === "OPEN" || res.data.status === "IN_PROGRESS"
                             ? "Active"
                             : "Closed") as "Active" | "Closed",
@@ -132,54 +132,57 @@ export default function SupportTickets() {
                 {(error || false) && <Text type="danger">Failed to load tickets.</Text>}
 
                 <div className="space-y-4">
-                    {tickets.map((ticket, index) => (
-                        <Card
-                            key={`${ticket.id}-${index}`}
-                            className="!rounded-2xl !shadow-md !bg-[#FFFFFF] !border-none !mb-5"
-                        >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            className={`!w-[30px] !h-[30px] !flex !items-center !justify-center !rounded-2xl ${ticket.status === "Active" ? "bg-[#DFF5DD]" : "bg-[#E6F4FF]"
-                                                }`}
-                                        >
-                                            <Image
-                                                src={
-                                                    ticket.status === "Active" ? "/wallet-green.svg" : "/wallet-blue.svg"
-                                                }
-                                                alt="wallet status"
-                                                width={18}
-                                                height={18}
-                                            />
+                    {tickets.map((ticket) => {
+                        return (
+                            <Card
+                                key={ticket.id}
+                                className="!rounded-2xl !shadow-md !bg-[#FFFFFF] !border-none !mb-5"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`!w-[30px] !h-[30px] !flex !items-center !justify-center !rounded-2xl ${ticket.status === "Active" ? "bg-[#DFF5DD]" : "bg-[#E6F4FF]"
+                                                    }`}
+                                            >
+                                                <Image
+                                                    src={
+                                                        ticket.status === "Active" ? "/wallet-green.svg" : "/wallet-blue.svg"
+                                                    }
+                                                    alt="wallet status"
+                                                    width={18}
+                                                    height={18}
+                                                />
+                                            </div>
+                                            <Tag
+                                                className="!rounded-2xl !px-3 !py-1 !font-medium !w-[45px] !h-[14px] !text-[8px] !flex !items-center !text-center"
+                                                style={{
+                                                    backgroundColor: ticket.status === "Active" ? "#DFF5DD" : "#E6F4FF",
+                                                    color: ticket.status === "Active" ? "#0BA82F" : "#3386FF",
+                                                    border: "none",
+                                                }}
+                                            >
+                                                {ticket.status}
+                                            </Tag>
                                         </div>
-                                        <Tag
-                                            className="!rounded-2xl !px-3 !py-1 !font-medium !w-[45px] !h-[14px] !text-[8px] !flex !items-center !text-center"
-                                            style={{
-                                                backgroundColor: ticket.status === "Active" ? "#DFF5DD" : "#E6F4FF",
-                                                color: ticket.status === "Active" ? "#0BA82F" : "#3386FF",
-                                                border: "none",
-                                            }}
-                                        >
-                                            {ticket.status}
-                                        </Tag>
-                                    </div>
-                                    <div className="mt-2 ml-9 space-y-1 text-sm">
-                                        <Text className="!block !font-medium !text-[#232323]">
-                                            Transaction ID - {ticket.id}
-                                        </Text>
-                                        <Text className="!block !text-[#232323] !font-semibold">
-                                            Description - {ticket.desc}
-                                        </Text>
-                                        <Text className="!block text-gray-600">Mode - {ticket.mode}</Text>
-                                        <Text className="!block text-[#232323] font-semibold">
-                                            Date/Time - {ticket.datetime}
-                                        </Text>
+                                        <div className="mt-2 ml-9 space-y-1 text-sm">
+                                            <Text className="!block !font-medium !text-[#232323]">
+                                                Transaction ID - {ticket.id}
+                                            </Text>
+                                            <Text className="!block !text-[#232323] !font-semibold">
+                                                Description - {ticket.desc}
+                                            </Text>
+                                            <Text className="!block text-gray-600">Mode - {ticket.mode}</Text>
+                                            <Text className="!block text-[#232323] font-semibold">
+                                                Date/Time - {ticket.datetime}
+                                            </Text>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Card>
-                    ))}
+                            </Card>
+                        )
+                    }
+                    )}
                     {!isLoading && tickets.length === 0 && (
                         <Text type="secondary">No tickets yet. Create your first one!</Text>
                     )}
