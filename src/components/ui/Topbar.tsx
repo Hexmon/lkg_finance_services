@@ -9,9 +9,11 @@ import {
   DownOutlined,
 } from '@ant-design/icons';
 import { useAppSelector } from '@/lib/store';
-import { selectProfileLoaded, selectUserType, selectProfileCore, selectBalances } from '@/lib/store/slices/profileSlice';
+import { selectProfileLoaded, selectUserType, selectProfileCore, selectBalances, selectUserIdFromProfile } from '@/lib/store/slices/profileSlice';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useAccountUpgrade } from '@/features/upgrade-account/data/hooks';
+import { useMessage } from '@/hooks/useMessage';
 
 export type TopbarProps = {
   title?: string;
@@ -37,17 +39,30 @@ const Topbar: React.FC<TopbarProps> = ({
 }) => {
 
   const core = useAppSelector(selectProfileCore);
+  const userId = useAppSelector(selectUserIdFromProfile);
   const loaded = useAppSelector(selectProfileLoaded);
   const userType = useAppSelector(selectUserType);
   const balances = useAppSelector(selectBalances);
 
-  const { profile, name, aadhaar_verified, accepted_terms, email_verified, pan_verified } = core || {}
+  const { accountUpgradeAsync, isLoading: accUpgradeLoading, data, error: accUpgradeErr } = useAccountUpgrade();
+  const { profile, name, aadhaar_verified, accepted_terms, email_verified, pan_verified, profile_id } = core || {}
   const isVerified = aadhaar_verified && accepted_terms && email_verified && pan_verified
   const balanceAmount = (balances[0]?.balance ?? 0) + (balances[1]?.balance ?? 0)
 
   const router = useRouter();
-  const [role, setRole] = useState("Distributor");
+  const [role, setRole] = useState("Retailer");
+  const { success, error } = useMessage()
 
+  const handleUpdagradeAccount = async () => {
+    try {
+      await accountUpgradeAsync({ user_id: userId ?? "", request_type: "RETAILER_TO_DISTRIBUTOR", description: "Upgrade retail account to distributor" })
+      setRole('Distributor')
+      success("Account Uppdated Successfully !!")
+    } catch (err: any) {
+      console.log({ err });
+      error(err?.message ?? "")
+    }
+  }
   // Popover Content
   const content = (
     <div className="bg-[#FFFFFF] p-4 w-[300px] rounded-2xl shadow-lg">
@@ -61,46 +76,46 @@ const Topbar: React.FC<TopbarProps> = ({
 
       {/* Profile */}
       <div className="flex items-center gap-3 mb-5">
-        <Image
-          src="/girl-profile.svg"
+        {/* <Image
+          src={profile ?? ""}
           alt="profile"
           width={29}
           height={28}
           className='object-contain'
-        />
+        /> */}
         <div>
-          <p className="text-[14px] font-medium">Rajesh Saini</p>
-          <p className="text-[#3386FF] text-[11px] font-light">R0470140 (Retailer)</p>
+          <p className="text-[14px] font-medium">{name}</p>
+          <p className="text-[#3386FF] text-[11px] font-light">RA175900435 ({userType ?? ""})</p>
         </div>
       </div>
 
       {/* Role Selection */}
       <div className="flex gap-3 mb-5">
-        <button
-          onClick={() => setRole("Distributor")}
+        <Button
+          // onClick={handleUpdagradeAccount}
+          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${role === "Retailer"
+            ? "!bg-[#3386FF] !text-white"
+            : "!border-[#3386FF] !text-[#3386FF]"
+            }`}
+        >
+          Retailer
+        </Button>
+        <Button
+          // onClick={handleUpdagradeAccount}
           className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${role === "Distributor"
-            ? "bg-[#3386FF] text-white"
-            : "border-[#3386FF] text-[#3386FF]"
+            ? "!!bg-[#FCFCFC] !text-white"
+            : "border-blue-400 !text-[#3386FF]"
             }`}
         >
           Distributor
-        </button>
-        <button
-          onClick={() => setRole("Super Distributor")}
-          className={`flex-1 rounded-lg border px-4 py-2 w-[96px] h-[32px] text-[8px] font-normal ${role === "Super Distributor"
-            ? "bg-[#FCFCFC] text-white"
-            : "border-blue-400 text-[#3386FF]"
-            }`}
-        >
-          Super Distributor
-        </button>
+        </Button>
       </div>
 
       {/* Upgrade Button */}
       <div className='flex justify-center items-center'>
-        <button className="w-[136px] h-[32px] bg-[#3386FF] text-white py-2 rounded-lg font-medium shadow hover:bg-blue-600 transition text-[12px] ">
+        <Button type='primary' onClick={handleUpdagradeAccount} className="w-[136px] h-[32px] bg-[#3386FF] text-white py-2 rounded-lg font-medium shadow hover:bg-blue-600 transition text-[12px] ">
           Upgrade
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -274,7 +289,7 @@ const Topbar: React.FC<TopbarProps> = ({
               }}
             >
               {/* Blue verify/“badge” button */}
-              <Tooltip title="Verified">
+              <Tooltip>
                 <div className="w-[23px] h-[23px] rounded-full bg-[#3386FF] place-items-center shadow-sm flex items-center justify-center cursor-pointer">
                   <CrownOutlined
                     style={{
