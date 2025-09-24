@@ -70,7 +70,7 @@ export const RETAILER_ENDPOINTS = {
     },
     WALLET: {
         WALLET_BALANCE_BY_ID: "/secure/retailer/wallet-balance", // + /:walletId
-        GET_WALLET_BALANCE: "/secure/retailer/get-wallet-balance/",
+        GET_WALLET_BALANCE: "/secure/retailer/get-wallet-balance",
         GET_WALLET_STATEMENT: "/secure/retailer/get-wallet-statement",
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",

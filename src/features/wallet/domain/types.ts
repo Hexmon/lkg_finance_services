@@ -47,3 +47,57 @@ export const WalletStatementResponseSchema = z.object({
 
 export type WalletStatementItem = z.infer<typeof WalletStatementItemSchema>;
 export type WalletStatementResponse = z.infer<typeof WalletStatementResponseSchema>;
+
+// payout 
+// Request: accept number or string, normalize to string; mode strict to IMPS/NEFT (uppercase)
+export const PayoutRequestSchema = z.object({
+  account_id: z.string().min(1),
+  mode: z.enum(['IMPS', 'NEFT']).transform((v) => v.toUpperCase() as 'IMPS' | 'NEFT'),
+  amount: z.union([z.string(), z.number()]).transform((v) => String(v)),
+});
+export type PayoutRequest = z.infer<typeof PayoutRequestSchema>;
+
+// Response "data" (based on your sample)
+export const PayoutBeneficiaryInstrumentDetailsSchema = z
+  .object({
+    bank_account_number: z.string(),
+    bank_ifsc: z.string(),
+  })
+  .passthrough();
+
+export const PayoutBeneficiaryDetailsSchema = z
+  .object({
+    beneficiary_id: z.string(),
+    beneficiary_instrument_details: PayoutBeneficiaryInstrumentDetailsSchema,
+  })
+  .passthrough();
+
+export const PayoutDataSchema = z
+  .object({
+    added_on: z.string(),
+    beneficiary_details: PayoutBeneficiaryDetailsSchema,
+    cf_transfer_id: z.string(),
+    fundsource_id: z.string(),
+    status: z.string(),
+    status_code: z.string(),
+    status_description: z.string(),
+    transfer_amount: z.number(),
+    transfer_id: z.string(),
+    transfer_mode: z.string(),
+    transfer_service_charge: z.number(),
+    transfer_service_tax: z.number(),
+    transfer_utr: z.string(),
+    updated_on: z.string(),
+  })
+  .passthrough();
+
+export const PayoutResponseSchema = z
+  .object({
+    status: z.union([z.string(), z.number()]),
+    message: z.string().optional(),
+    data: PayoutDataSchema,
+  })
+  .passthrough();
+
+export type PayoutData = z.infer<typeof PayoutDataSchema>;
+export type PayoutResponse = z.infer<typeof PayoutResponseSchema>;
