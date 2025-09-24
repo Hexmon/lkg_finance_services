@@ -19,12 +19,13 @@ import {
   SendDeviceOtpRequest, SendDeviceOtpRequestSchema, SendDeviceOtpResponse, SendDeviceOtpResponseSchema,
   VerifyAccountOtpRequest, VerifyAccountOtpRequestSchema, VerifyAccountOtpResponse, VerifyAccountOtpResponseSchema,
   ForgotPasswordInitiateRequest, ForgotPasswordInitiateRequestSchema, ForgotPasswordInitiateResponse,
+  ChangePasswordResponse,
 } from '../domain/types';
 
 const p = {
   login: 'auth/login/signin',
   logout: 'auth/login/signout',
-  changePassword: 'auth/change-password',
+  changePassword: 'auth/login/change-password',
   resetPasswordInit: 'auth/reset-password/initiate',
   resetPasswordVerify: 'auth/reset-password/verify',
   forgotUsernameInit: 'auth/forgot-username/initiate',
@@ -54,10 +55,11 @@ export async function apiLogout(): Promise<{ success: true }> {
 }
 
 /** ---------- Change Password ---------- */
-export async function apiChangePassword(payload: ChangePasswordRequest): Promise<{ success: true }> {
+export async function apiChangePassword(
+  payload: ChangePasswordRequest
+): Promise<ChangePasswordResponse> {
   const body = ChangePasswordRequestSchema.parse(payload);
-  await postJSON(p.changePassword, body);
-  return { success: true };
+  return await postJSON<ChangePasswordResponse>(p.changePassword, body);
 }
 
 /** ---------- Reset Password: initiate ---------- */

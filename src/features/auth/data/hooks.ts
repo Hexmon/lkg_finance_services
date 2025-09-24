@@ -53,6 +53,8 @@ import type {
   VerifyAccountOtpResponse,
   ForgotPasswordInitiateResponse,
   ForgotPasswordInitiateRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
 } from '../domain/types';
 
 import { persistor, RootState, useAppDispatch } from '@/lib/store';
@@ -97,9 +99,11 @@ export function useLogoutMutation() {
 /** ---------- Change Password ---------- */
 export function useChangePasswordMutation() {
   const qc = useQueryClient();
-  return useMutation<{ success: true }, unknown, { oldpassword: string; password: string }>({
+
+  return useMutation<ChangePasswordResponse, unknown, ChangePasswordRequest>({
     mutationFn: apiChangePassword,
     onSuccess: async () => {
+      // optionally clear/refetch user cache etc.
       await qc.invalidateQueries();
     },
   });
