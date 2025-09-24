@@ -1,6 +1,10 @@
 // src/features/wallet/data/endpoints.ts
-import { getJSON } from "@/lib/api/client";
+import { getJSON, postJSON } from "@/lib/api/client";
 import {
+    PayoutRequest,
+    PayoutRequestSchema,
+    PayoutResponse,
+    PayoutResponseSchema,
     WalletStatementQuerySchema,
     type WalletStatementQuery,
     type WalletStatementResponse,
@@ -26,4 +30,18 @@ export async function apiGetWalletStatement(
     const qs = buildQuery(normalized);
     const path = `/wallet/statement?${qs}`;
     return await getJSON<WalletStatementResponse>(path);
+}
+
+/**
+ * Browser -> BFF:
+ * POST /api/v1/wallet/payout
+ * Body: { account_id, mode: "IMPS" | "NEFT", amount: string|number }
+ */
+export async function apiCreatePayout(payload: PayoutRequest): Promise<PayoutResponse> {
+  const body = PayoutRequestSchema.parse(payload);
+  const res = await postJSON<unknown>(`/wallet/payout`, body, {
+    redirectOn401: true,
+    redirectPath: "/signin",
+  });
+  return PayoutResponseSchema.parse(res);
 }
