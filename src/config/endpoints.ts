@@ -78,6 +78,9 @@ export const RETAILER_ENDPOINTS = {
     },
     SUPPORT: {
         TICKET_LIST: "/admin/tickets",
+    },
+    BANK_ACCOUNT: {
+        BANK_ACCOUNT: "/secure/retailer/bank_accounts"
     }
 }
 
