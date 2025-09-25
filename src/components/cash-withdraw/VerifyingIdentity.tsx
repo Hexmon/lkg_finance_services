@@ -12,7 +12,7 @@ type VerifyingIdentityProps = {
 };
 
 export default function VerifyingIdentity({
-  userName = "Rajesh Kumar",
+  userName = "",
   onSuccess,
   onFailure,
 }: VerifyingIdentityProps) {

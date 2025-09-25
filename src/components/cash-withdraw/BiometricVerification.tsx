@@ -18,7 +18,7 @@ type BiometricVerificationProps = {
 
 export default function BiometricVerification({
   onStart,
-  userName = "Rajesh Kumar",
+  userName = "",
   service_id,
   user_id,
 }: BiometricVerificationProps) {

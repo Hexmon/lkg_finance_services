@@ -30,13 +30,14 @@ type BeneficiaryManagementPageProps = {
     onSendCLick?: (b?: Beneficiary) => void;
     txnType: string;
     bankId: string;
+    onRefetch?: () => void;
 };
 
 export default function BeneficiaryManagementPage({
     service_id,
     beneficiaries,
     sender,
-    onSendCLick,txnType, bankId
+    onSendCLick, txnType, bankId, onRefetch
 }: BeneficiaryManagementPageProps) {
     const router = useRouter();
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -59,22 +60,10 @@ export default function BeneficiaryManagementPage({
         totalLimit,
     } = sender || {};
 
-    // When the modal closes, refresh sender (pull latest beneficiaries/limits)
     const handleModalClose = useCallback(async () => {
         setIsAddOpen(false);
-        if (mobile_no && service_id) {
-            try {
-                await checkSenderAsync({
-                    mobile_no,
-                    service_id,
-                    txnType,
-                    bankId
-                });
-            } catch {
-                // ignore; you can toast/log if you want
-            }
-        }
-    }, [checkSenderAsync, mobile_no, service_id]);
+        onRefetch?.(); // let parent (MoneyTransferPage) refresh via its checkSenderAsync
+    }, [onRefetch]);
 
     return (
         <>
@@ -177,6 +166,7 @@ export default function BeneficiaryManagementPage({
                     // initialValues={{ mobileNo: mobile_no ?? '' }} // optional prefill
                     service_id={service_id}
                     sender_id={sender_id}
+                    
                 />
             )}
         </>

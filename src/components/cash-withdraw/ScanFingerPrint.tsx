@@ -73,7 +73,7 @@ export default function ScanFingerPrint({
                         </div>
 
                         <div className="text-[12px] text-[#9A9595]">
-                            Verifying: <strong className="text-[#232323]">Rajesh Kumar</strong>
+                            Verifying: <strong className="text-[#232323]"></strong>
                         </div>
                         <div >
                             <Button className="!bg-[#3386FF] !text-white !w-[355px] !h-[38px] !rounded-[12px]"onClick={onStart}>Start Verification</Button>
