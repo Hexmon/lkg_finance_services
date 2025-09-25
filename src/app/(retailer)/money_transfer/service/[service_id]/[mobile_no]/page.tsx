@@ -1,7 +1,7 @@
 // src/app/(retailer)/money_transfer/service/[service_id]/[mobile_no]/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
@@ -79,6 +79,12 @@ export default function MoneyTransferPage() {
       error(err?.message ?? "Something went wrong while checking sender.");
     }
   };
+
+  const refreshSender = useCallback(() => {
+    // reuse the same fetch (keeps single source of truth in parent)
+    handleFetchSender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service_id, mobile_no, txnType, bankType]);
 
   useEffect(() => {
     handleFetchSender();
