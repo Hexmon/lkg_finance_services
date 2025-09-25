@@ -10,7 +10,7 @@ type VerificationFailedProps = {
 };
 
 export default function VerificationFailed({
-  userName = "Rajesh Kumar",
+  userName = "",
   onRetry,
 }: VerificationFailedProps) {
   return (

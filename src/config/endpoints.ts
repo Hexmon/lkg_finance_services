@@ -53,6 +53,9 @@ export const RETAILER_ENDPOINTS = {
         BENEFICIARIES: {
             VERIFY_IFSC: "/secure/retailer/verify_ifsc",
             ADD_BENIFICARY: "/secure/retailer/add_beneficiary"
+        },
+        FUND_REQUEST: {
+            BANK_LIST: "/secure/retailer/bank_info"
         }
     },
     CASH_WITHDRAWL: {

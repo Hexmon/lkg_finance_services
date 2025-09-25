@@ -49,3 +49,35 @@ export type FundTransferRequest = z.infer<typeof FundTransferRequestSchema>;
  */
 export const FundTransferResponseSchema = z.any();
 export type FundTransferResponse = z.infer<typeof FundTransferResponseSchema>;
+
+const StatusCodeSchema = z.union([z.number(), z.string().regex(/^\d+$/)]).transform(n => Number(n));
+const ynFlag = z.enum(['Y', 'N']);
+
+/** -------- Bank Info (list/search) --------
+ * GET /secure/retailer/bank_info?service_id=...&bank_name=Sta
+ */
+export const BankInfoQuerySchema = z.object({
+  service_id: z.string().uuid(),
+  bank_name: z.string().min(1).optional(), // prefix search
+}).strict();
+
+export type BankInfoQuery = z.infer<typeof BankInfoQuerySchema>;
+
+export const BankRecordSchema = z.object({
+  id: z.string().uuid(),
+  bank_code: z.string().min(1),
+  bank_name: z.string().min(1),
+  BankId: z.string().nullable().optional(),
+  account_verification_allowed: ynFlag,
+  imps_allowed: ynFlag,
+  neft_allowed: ynFlag,
+}).passthrough();
+
+export type BankRecord = z.infer<typeof BankRecordSchema>;
+
+export const BankInfoResponseSchema = z.object({
+  status: StatusCodeSchema,
+  banks: z.array(BankRecordSchema),
+}).passthrough();
+
+export type BankInfoResponse = z.infer<typeof BankInfoResponseSchema>;

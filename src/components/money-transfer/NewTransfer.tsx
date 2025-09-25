@@ -44,7 +44,7 @@ export default function NewTransfer({ sender_id, beneficiary }: NewTransferProps
   const sender_name = senderData?.sender?.sender_name ?? "Sender";
 
   // display (unchanged)
-  const displayName = beneficiary?.b_name ?? "Rajesh Kumar";
+  const displayName = beneficiary?.b_name ?? "";
   const displayBank = beneficiary?.bankname ?? "SBI";
   const maskedAccount = beneficiary?.lastfour ? `*****${beneficiary.lastfour}` : "*****1234";
   const displayIfsc = "—";
