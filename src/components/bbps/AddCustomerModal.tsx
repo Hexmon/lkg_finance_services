@@ -36,6 +36,7 @@ type AddCustomerModalProps = {
     bbps_category_id: string;
     fetchReq: string;             // e.g. "MANDATORY" | "NOT_REQUIRED" | "NOT_SUPPORTED"
     billValidation: string;
+    billerAdhoc: boolean;
     ccf1Config?: {
         feeCode?: string;
         flatFee?: string | number;
@@ -62,7 +63,7 @@ export default function AddCustomerModal({
     mode = "ONLINE",
     onSuccess,
     biller_category,
-    bbps_category_id, fetchReq, billValidation, ccf1Config
+    bbps_category_id, fetchReq, billValidation, ccf1Config, billerAdhoc
 }: AddCustomerModalProps) {
     const [form] = Form.useForm<CustomerFormValues>();
     const [errText, setErrText] = React.useState<string | null>(null);
@@ -242,7 +243,7 @@ export default function AddCustomerModal({
 
             const nextScreenPayload = {
                 ...respObj,
-
+                billerAdhoc,
                 // baseline fields you already store
                 service_id: serviceId,
                 billerId,

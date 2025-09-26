@@ -76,7 +76,7 @@ export default function BillerPage() {
       ),
     [billers, billerId]
   );
-  console.log({ billers });
+  // console.log({ selectedBiller: selectedBiller?.billerAdhoc });
 
   // read both snake_case and camelCase to be resilient to upstream shape
   const billerStatus = selectedBiller?.billerStatus ?? "INACTIVE";
@@ -84,6 +84,7 @@ export default function BillerPage() {
   const planReq = selectedBiller?.planMdmRequirement ?? "NOT_SUPPORTED";
   const fetchReq = selectedBiller?.billerFetchRequiremet ?? "NOT_REQUIRED";
   const billValidation = selectedBiller?.billerSupportBillValidation ?? "NOT_REQUIRED";
+  const billerAdhoc = selectedBiller?.billerAdhoc ?? false;
   const rawInputs: BillerInputParam[] = (selectedBiller as any)?.inputParams ?? [];
 
   const isActive = billerStatus === "ACTIVE";
@@ -335,6 +336,7 @@ const ccf1Config =
         fetchReq={fetchReq}
         ccf1Config={ccf1Config}
         billValidation={billValidation}
+        billerAdhoc={billerAdhoc}
         onSuccess={(resp) => {
           // Show preview on the page after success
           setPreviewResp(resp as any);
