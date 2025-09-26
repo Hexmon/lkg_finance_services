@@ -13,24 +13,20 @@ import { useMessage } from "@/hooks/useMessage";
 import { useAddOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
 
 const { Title } = Typography;
-const { Option } = Select;
 const STORAGE_KEY = "bbps:lastBillFetch";
-const PAYMENT_KEY = "bbps:lastBillPayment"; // ✅ NEW: for payment response
+const PAYMENT_KEY = "bbps:lastBillPayment";
 
-// ---- helpers ----
+type PayModeUI = "Wallet" | "Cashfree";
+
 const toPaise = (r: string | number) => String(Math.round(Number(r || 0) * 100));
 const isDigits = (s: unknown): s is string => typeof s === "string" && /^\d+$/.test(s);
 const isUUID = (s: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 
-type PayModeUI = "Wallet" | "Cashfree";
-
-/** UI -> upstream paymentMode mapping */
 function mapPaymentMode(ui: PayModeUI): string {
   return ui === "Wallet" ? "Cash" : "UPI";
 }
 
-/** Format paise to INR display */
 function paiseToRupees(paise?: string | number): string {
   const n = Number(paise ?? 0);
   const rupees = isFinite(n) ? n / 100 : 0;
@@ -46,27 +42,38 @@ export default function BillDetailsPage() {
 
   const { billPaymentAsync, isLoading: payLoading } = useBillPayment();
   const { biller_category, service_id } = useParams() as { biller_category?: string; service_id?: string };
-  const { addOnlineBillerAsync, data, error: addOnlineBillerErr, isLoading } = useAddOnlineBiller()
+  const { addOnlineBillerAsync } = useAddOnlineBiller();
+
+  // fee/local state
+  const [feeState, setFeeState] = useState<{
+    paymentAmountPaise: number;
+    flatFeePaise: number;
+    percentFee: number;
+    ccf1Paise: number;
+    gstPaise: number;
+    totalFeePaise: number;
+  }>({
+    paymentAmountPaise: 0,
+    flatFeePaise: 0,
+    percentFee: 0,
+    ccf1Paise: 0,
+    gstPaise: 0,
+    totalFeePaise: 0,
+  });
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
-      console.log({ raw });
       if (raw) {
         const parsed = JSON.parse(raw);
-        console.log({ parsed });
-
-        // ✅ unwrap if saved as { resp: { ... } }, else use as-is
         const payload = parsed?.resp ?? parsed;
         setResp(payload);
-
-        // Avoid clearing in dev (React 18 StrictMode runs effects twice)
         if (process.env.NODE_ENV === "production") {
           sessionStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch {
-      // ignore parse errors
+      // ignore
     }
   }, []);
 
@@ -74,29 +81,147 @@ export default function BillDetailsPage() {
   const bfr = useMemo(() => {
     const r = resp as any;
     return (
-      r?.billFetchResponse?.billerResponse ||       // normalized
-      r?.data?.billFetchResponse?.billerResponse || // wrapped-normalized
-      r?.data?.billerResponse ||                    // pass-through like your example
-      r?.billerResponse ||                          // rare direct
+      r?.billFetchResponse?.billerResponse ||
+      r?.data?.billFetchResponse?.billerResponse ||
+      r?.data?.billerResponse ||
+      r?.billerResponse ||
       null
     );
   }, [resp]);
 
-  const amountPaise: string = useMemo(() => {
+  const sessionCore = useMemo(() => resp ?? {}, [resp]);
+  const sessionCustomerName = sessionCore?.customerName ?? bfr?.customerName ?? "";
+  const sessionCustomerMobile = sessionCore?.customerMobile ?? "";
+  const sessionCustomerEmail = sessionCore?.customerInfo?.customerEmail ?? "";
+  const sessionBillerId = sessionCore?.billerId ?? "";
+  const sessionRequestId = sessionCore?.requestId ?? "";
+
+  const validationInfo: { infoName?: string; infoValue?: string } | null =
+    sessionCore?.data?.additionalInfo?.info ?? null;
+
+  // bill amount from fetch (optional, in paise)
+  const hasBillAmount =
+    !!bfr && bfr?.billAmount != null && String(bfr.billAmount).trim() !== "";
+  const billAmountPaiseStr: string | undefined = useMemo(() => {
+    if (!hasBillAmount) return undefined;
     const raw = bfr?.billAmount ?? 0;
     return isDigits(raw) ? String(raw) : toPaise(raw);
-  }, [bfr?.billAmount]);
+  }, [hasBillAmount, bfr?.billAmount]);
 
-  const amountRupees = useMemo(() => Number(amountPaise) / 100, [amountPaise]);
+  // compute fee state (base amount + CCF1 + GST)
+  useEffect(() => {
+    if (!resp) return;
 
-  const needsPAN = amountRupees > 49999; // > ₹49,999 rule
+    // 👀 gather all possible payment-amount candidates (in paise)
+    const candidates: Array<unknown> = [
+      resp?.amountInfo?.amount,
+      resp?.data?.amountInfo?.amount,
+      resp?.paymentAmountPaise,
+      resp?.paymentAmount,
+      resp?.amountPaise,
+      billAmountPaiseStr, // fallback to bill fetch amount (already paise string)
+    ];
 
-  const quickPay: "Y" | "N" = useMemo(() => {
-    if (!bfr) return "Y";
-    return "N";
-  }, [bfr]);
+    // 🔎 log raw inputs before we pick anything
+    console.log("🔎 Fee pre-calculation inputs", {
+      fromSession_amountInfo: resp?.amountInfo,
+      fromSession_data_amountInfo: resp?.data?.amountInfo,
+      billAmountPaiseStr,
+      candidates,
+    });
 
-  const displayAmount = paiseToRupees(amountPaise);
+    // pick the first valid candidate
+    let paymentAmountPaise = 0;
+    let pickedFrom: string | null = null;
+    for (const [idx, c] of candidates.entries()) {
+      if (typeof c === "string" && /^\d+$/.test(c)) {
+        paymentAmountPaise = Number(c);
+        pickedFrom = `candidates[${idx}] (string)`;
+        break;
+      }
+      if (typeof c === "number" && Number.isFinite(c)) {
+        paymentAmountPaise = Math.floor(c);
+        pickedFrom = `candidates[${idx}] (number)`;
+        break;
+      }
+    }
+
+    // fees (paise + %)
+    const flatFeePaise = Math.floor(
+      Number(resp?.interchangeFeeCCF1?.flatFee ?? resp?.amountInfo?.flatFee ?? resp?.data?.amountInfo?.flatFee ?? 0) || 0
+    );
+    const percentFee =
+      Number(resp?.interchangeFeeCCF1?.percentFee  ?? resp?.amountInfo?.percentFee ?? resp?.data?.amountInfo?.percentFee ?? 0) || 0;
+      
+    console.log("🧮 Fee base values", {
+      pickedFrom,
+      paymentAmountPaise,
+      flatFeePaise,
+      percentFee,
+    });
+
+    // CCF1 = floor(paymentAmount * percent/100 + flatFee)
+    const ccf1Raw = paymentAmountPaise * (percentFee / 100) + flatFeePaise;
+    const ccf1Paise = Math.floor(ccf1Raw);
+
+    // GST = floor(CCF1 * 18 / 100)
+    const gstRaw = (ccf1Paise * 18) / 100;
+    const gstPaise = Math.floor(gstRaw);
+
+    const totalFeePaise = ccf1Paise + gstPaise;
+
+    // 🧾 log computed values
+    console.log("🧾 Fee computed", {
+      ccf1Raw,
+      ccf1Paise,
+      gstRaw,
+      gstPaise,
+      totalFeePaise,
+      totalFeeRupees: paiseToRupees(totalFeePaise),
+    });
+
+    setFeeState({
+      paymentAmountPaise,
+      flatFeePaise,
+      percentFee,
+      ccf1Paise,
+      gstPaise,
+      totalFeePaise,
+    });
+  }, [resp, billAmountPaiseStr]);
+
+  // ---- CTA + UI “Amount to Pay” ----
+  const billPaise = Number(billAmountPaiseStr ?? 0);
+
+  // 👉 Total to display on CTA:
+  //    - If bill fetch ran: Bill Amount + (CCF1 + GST)
+  //    - Else: only (CCF1 + GST)
+  const ctaTotalPaise = feeState.totalFeePaise + (billPaise > 0 ? billPaise : 0);
+  const ctaAmount = paiseToRupees(ctaTotalPaise);
+  console.log("💳 CTA computation", {
+    billPaise,
+    feeState,
+    ctaTotalPaise,
+    ctaAmount,
+  });
+  // show CTA if we have any positive total to pay
+  const canPay = ctaTotalPaise >= 0;
+
+  const amountToPayLabel =
+    billPaise > 0 ? "Amount to Pay (Bill + Fee + GST)" : "Amount to Pay (Fee + GST)";
+
+  const displayBillAmount = billAmountPaiseStr ? paiseToRupees(billAmountPaiseStr) : undefined;
+
+  const Row: React.FC<{ label: string; value?: any }> = ({ label, value }) => {
+    const v = value ?? "";
+    if (String(v).trim() === "") return null;
+    return (
+      <div>
+        <div className="text-gray-500">{label}</div>
+        <div>{v}</div>
+      </div>
+    );
+  };
 
   async function handleProceedToPay() {
     try {
@@ -119,7 +244,8 @@ export default function BillDetailsPage() {
         return;
       }
 
-      // PAN enforcement (UI-level guard; server will also enforce)
+      // Keep existing PAN guard (based on bill amount)
+      const needsPAN = (billPaise / 100) > 49999;
       const pan: string | undefined = resp?.customerPan;
       if (needsPAN && !pan) {
         message.error("PAN is required for payments above ₹49,999. Please update user PAN and try again.");
@@ -129,12 +255,15 @@ export default function BillDetailsPage() {
       const requestId = resp?.requestId ?? "";
       const mappedPaymentMode = mapPaymentMode(paymentMode);
 
-      // Build inputParams (object or array). Prefer what we stored or what upstream returned.
+      // Build input params (prefer what was stored/returned)
       let inputParams = resp?.inputParams ?? resp?.data?.inputParams;
       if (!inputParams?.input) {
         inputParams = {
           input: {
-            paramName: resp?.data?.inputParams?.input?.paramName || resp?.inputParams?.input?.paramName || "CustomerId",
+            paramName:
+              resp?.data?.inputParams?.input?.paramName ||
+              resp?.inputParams?.input?.paramName ||
+              "CustomerId",
             paramValue:
               resp?.data?.inputParams?.input?.paramValue ||
               resp?.inputParams?.input?.paramValue ||
@@ -145,9 +274,9 @@ export default function BillDetailsPage() {
       }
 
       const billerResponse =
-        quickPay === "N" && bfr
+        billPaise > 0 && bfr
           ? {
-            billAmount: amountPaise,
+            billAmount: String(billPaise),
             billDate: bfr.billDate || undefined,
             billNumber: bfr.billNumber || undefined,
             billPeriod: bfr.billPeriod || undefined,
@@ -156,6 +285,7 @@ export default function BillDetailsPage() {
           }
           : undefined;
 
+      // ❗ Not changing your existing payment body; still sending bill amount only.
       const body = {
         requestId,
         billerId,
@@ -168,24 +298,31 @@ export default function BillDetailsPage() {
         inputParams,
         billerResponse,
         amountInfo: {
-          amount: amountPaise,
+          amount: String(billPaise), // unchanged
           currency: "356",
           custConvFee: "0",
         },
         paymentMethod: {
           paymentMode: mappedPaymentMode,
-          quickPay,
+          quickPay: billPaise > 0 ? "N" : "Y",
           splitPay: "N",
         },
         additionalInfo: resp?.additionalInfo ?? resp?.data?.additionalInfo,
       } as const;
 
-      // ✅ STORE the payment response for the success page
       const paymentResp = await billPaymentAsync({ service_id: svcId, body });
       try {
         const carry = {
-          amountPaise,
-          displayAmount,
+          amountPaise: String(billPaise),
+          displayAmount: paiseToRupees(billPaise),
+          // store fee breakdown too
+          fee: {
+            paymentAmountPaise: feeState.paymentAmountPaise,
+            ccf1Paise: feeState.ccf1Paise,
+            gstPaise: feeState.gstPaise,
+            totalFeePaise: feeState.totalFeePaise,
+            ctaTotalPaise, // bill + fee + gst
+          },
           paymentMode: mappedPaymentMode,
           billerId,
           customerMobile,
@@ -207,11 +344,9 @@ export default function BillDetailsPage() {
       console.error("❌ Bill Payment Error:", e);
     }
   }
-console.log({resp});
 
   const handleAddtoBiller = async () => {
     try {
-
       await addOnlineBillerAsync({
         service_id: resp?.service_id ?? "",
         is_direct: false,
@@ -219,9 +354,9 @@ console.log({resp});
           request_id: resp?.requestId ?? "",
           customerInfo: {
             customerMobile: resp?.customerMobile ?? "",
-            customerAdhaar: resp?.customerAdhaar ?? '',
-            customerName: resp?.data?.billerResponse?.customerName ?? '',
-            customerPan: resp?.customerPan ?? '',
+            customerAdhaar: resp?.customerAdhaar ?? "",
+            customerName: resp?.data?.billerResponse?.customerName ?? "",
+            customerPan: resp?.customerPan ?? "",
           },
           billerId: resp?.billerId ?? "",
           inputParams: resp?.inputParams ?? {},
@@ -234,19 +369,18 @@ console.log({resp});
             dueDate: resp?.data?.billerResponse?.dueDate,
           },
           amountInfo: {
-            amount: '5459',      // per sample (note: this looks like rupees string, not paise)
-            currency: '356',
-            custConvFee: '0',
-            amountTags: { amountTag: '', value: '' },
-            CCF1: '',
+            amount: "5459",
+            currency: "356",
+            custConvFee: "0",
+            amountTags: { amountTag: "", value: "" },
+            CCF1: "",
           },
         },
       });
-
-    } catch (error) {
-
+    } catch {
+      // ignore
     }
-  }
+  };
 
   return (
     <DashboardLayout
@@ -280,58 +414,42 @@ console.log({resp});
           {/* Bill Info */}
           <div className="bg-[#FFFFFF] p-6 rounded-xl shadow-md">
             <div className="!grid !grid-cols-4 md:grid-cols-3 gap-y-6 gap-x-4 text-sm font-medium text-[#333]">
-              <div>
-                <div className="text-gray-500">Customer Name</div>
-                <div>{bfr?.customerName ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Customer Number</div>
-                <div>{resp?.customerMobile ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Biller Id</div>
-                <div>{resp?.billerId ?? ""}</div>
-              </div>
+              <Row label="Customer Name" value={sessionCustomerName} />
+              <Row label="Customer Number" value={sessionCustomerMobile} />
+              <Row label="Email" value={sessionCustomerEmail} />
+              <Row label="Biller Id" value={sessionBillerId} />
+              {/* <Row label="Request Id" value={sessionRequestId} /> */}
 
-              <div>
-                <div className="text-gray-500">Bill Period</div>
-                <div>{bfr?.billPeriod ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Bill Number</div>
-                <div>{bfr?.billNumber ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Due Date</div>
-                <div>{bfr?.dueDate ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Bill Date</div>
-                <div>{bfr?.billDate ?? ""}</div>
-              </div>
-              <br />
-              <div>
-                <div className="text-gray-500">Customer Convenience Fees</div>
-                <div>₹0</div>
-              </div>
+              <Row label="Bill Period" value={bfr?.billPeriod} />
+              <Row label="Bill Number" value={bfr?.billNumber} />
+              <Row label="Due Date" value={bfr?.dueDate} />
+              <Row label="Bill Date" value={bfr?.billDate} />
 
-              <div>
-                <div className="text-gray-500">Payment Mode</div>
-                <Select
-                  defaultValue="Cash"
-                  className="w-full mt-1"
-                  onChange={(v) => setPaymentMode(v === "Cash" ? "Wallet" : "Cashfree")}
-                  options={[
-                    { value: "Cash", label: "Cash (Wallet)" },
-                    { value: "UPI", label: "UPI (Cashfree)" },
-                  ]}
-                />
-              </div>
+              {/* Validation-only info (e.g., Meter Balance) */}
+              {validationInfo?.infoName && validationInfo?.infoValue && (
+                <Row label={validationInfo.infoName!} value={validationInfo.infoValue} />
+              )}
 
-              <div>
-                <div className="text-gray-500">Bill Amount</div>
-                <div className="text-[#3386FF] text-base font-semibold">₹{displayAmount}</div>
-              </div>
+              {/* --- Fee breakdown --- */}
+              <Row
+                label="Payment Amount (Base)"
+                value={feeState.paymentAmountPaise > 0 ? `₹${paiseToRupees(feeState.paymentAmountPaise)}` : ""}
+              />
+              <Row
+                label="Convenience Fee (CCF1)"
+                value={feeState.ccf1Paise > 0 ? `₹${paiseToRupees(feeState.ccf1Paise)}` : ""}
+              />
+              <Row
+                label="GST on CCF1 (18%)"
+                value={feeState.gstPaise > 0 ? `₹${paiseToRupees(feeState.gstPaise)}` : ""}
+              />
+              <Row
+                label={amountToPayLabel}
+                value={ctaTotalPaise >= 0 ? `₹${paiseToRupees(ctaTotalPaise)}` : ""}
+              />
+
+              {/* Bill Amount (if fetched) */}
+              <Row label="Bill Amount" value={displayBillAmount ? `₹${displayBillAmount}` : ""} />
             </div>
 
             {/* Warning */}
@@ -345,14 +463,17 @@ console.log({resp});
               <Button block className="!h-[42px] !rounded-xl !shadow-md" disabled={payLoading} onClick={() => history.back()}>
                 Back to Edit
               </Button>
-              <Button
-                block
-                className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
-                onClick={() => setIsModalOpen(true)}
-                disabled={payLoading}
-              >
-                {payLoading ? "Processing..." : `Pay ₹${displayAmount}`}
-              </Button>
+
+              {canPay && (
+                <Button
+                  block
+                  className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
+                  onClick={() => setIsModalOpen(true)}
+                  disabled={payLoading}
+                >
+                  {payLoading ? "Processing..." : `Pay ₹${ctaAmount}`}
+                </Button>
+              )}
             </div>
 
             <div className="!pt-2 !flex !items-center !justify-center">
@@ -360,7 +481,7 @@ console.log({resp});
                 block
                 className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
                 disabled={payLoading}
-                // onClick={handleAddtoBiller}
+              // onClick={handleAddtoBiller}
               >
                 Add to Biller
               </Button>
@@ -370,45 +491,46 @@ console.log({resp});
       </div>
 
       {/* 💳 Payment Modal */}
-      <Modal
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-        closable={!payLoading}
-        centered
-        width={340}
-        className="!rounded-2xl !p-0"
-      >
-        <div className="text-center py-6 px-4">
-          <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
-          <div className="text-[#3386FF] text-2xl font-bold mb-4">₹{displayAmount}</div>
+      {canPay && (
+        <Modal
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={null}
+          closable={!payLoading}
+          centered
+          width={340}
+          className="!rounded-2xl !p-0"
+        >
+          <div className="text-center py-6 px-4">
+            <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
+            <div className="text-[#3386FF] text-2xl font-bold mb-4">₹{ctaAmount}</div>
 
-          {/* Payment Mode */}
-          <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
-            <Radio.Group
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value)}
+            <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
+              <Radio.Group
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value)}
+                disabled={payLoading}
+              >
+                <Radio value="Wallet">Wallet</Radio>
+                <Radio value="Cashfree">
+                  <Image src="/cashfree.svg" alt="Cashfree" width={70} height={20} className="inline-block" />
+                </Radio>
+              </Radio.Group>
+            </div>
+
+            <Button
+              type="primary"
+              block
+              className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
+              onClick={handleProceedToPay}
+              loading={payLoading}
               disabled={payLoading}
             >
-              <Radio value="Wallet">Wallet</Radio>
-              <Radio value="Cashfree">
-                <Image src="/cashfree.svg" alt="Cashfree" width={70} height={20} className="inline-block" />
-              </Radio>
-            </Radio.Group>
+              {payLoading ? "Processing..." : "Proceed to Pay"}
+            </Button>
           </div>
-
-          <Button
-            type="primary"
-            block
-            className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
-            onClick={handleProceedToPay}
-            loading={payLoading}
-            disabled={payLoading}
-          >
-            {payLoading ? "Processing..." : "Proceed to Pay"}
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 }

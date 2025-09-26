@@ -76,7 +76,7 @@ export default function BillerPage() {
       ),
     [billers, billerId]
   );
-  console.log({ selectedBiller });
+  console.log({ billers });
 
   // read both snake_case and camelCase to be resilient to upstream shape
   const billerStatus = selectedBiller?.billerStatus ?? "INACTIVE";
@@ -209,6 +209,10 @@ export default function BillerPage() {
     setCustomerModalOpen(true);
   };
 
+const ccf1Config =
+  (selectedBiller as any)?.interchangeFeeCCF1 ??
+  (selectedBiller as any)?.interchange_fee_ccf1 ??
+  null;
 
   // Errors
   const billerErr =
@@ -329,7 +333,8 @@ export default function BillerPage() {
         bbps_category_id={bbps_category_id}
         biller_category={decodedCategory}
         fetchReq={fetchReq}
-  billValidation={billValidation}
+        ccf1Config={ccf1Config}
+        billValidation={billValidation}
         onSuccess={(resp) => {
           // Show preview on the page after success
           setPreviewResp(resp as any);
