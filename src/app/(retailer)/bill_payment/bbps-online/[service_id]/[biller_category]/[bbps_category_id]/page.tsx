@@ -311,7 +311,10 @@ export default function BillDetailsPage() {
 
       const paymentResp = await billPaymentAsync({ service_id: svcId, body });
 
-      const topStatus = Number(paymentResp?.status);
+      const topStatus =
+        paymentResp && typeof paymentResp === "object" && "status" in paymentResp
+          ? Number((paymentResp as any).status)
+          : "";
       const innerStatus = Number((paymentResp as any)?.paymentResp?.status);
       const responseCode =
         (paymentResp as any)?.data?.responseCode ??
