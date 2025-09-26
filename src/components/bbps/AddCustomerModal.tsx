@@ -36,6 +36,14 @@ type AddCustomerModalProps = {
     bbps_category_id: string;
     fetchReq: string;             // e.g. "MANDATORY" | "NOT_REQUIRED" | "NOT_SUPPORTED"
     billValidation: string;
+    ccf1Config?: {
+        feeCode?: string;
+        flatFee?: string | number;
+        feeMaxAmt?: string | number;
+        feeMinAmt?: string | number;
+        percentFee?: string | number;
+        feeDirection?: string;
+    } | null;
 };
 
 const STORAGE_KEY = "bbps:lastBillFetch";
@@ -54,7 +62,7 @@ export default function AddCustomerModal({
     mode = "ONLINE",
     onSuccess,
     biller_category,
-    bbps_category_id, fetchReq, billValidation
+    bbps_category_id, fetchReq, billValidation, ccf1Config
 }: AddCustomerModalProps) {
     const [form] = Form.useForm<CustomerFormValues>();
     const [errText, setErrText] = React.useState<string | null>(null);
@@ -221,32 +229,53 @@ export default function AddCustomerModal({
                     ? crypto.randomUUID()
                     : `req_${Date.now()}`;
 
+            const normalizedCcf1 = ccf1Config
+                ? {
+                    feeCode: ccf1Config.feeCode ?? "CCF1",
+                    flatFee: String(ccf1Config.flatFee ?? "0"),
+                    percentFee: String(ccf1Config.percentFee ?? "0"),
+                    feeMinAmt: String(ccf1Config.feeMinAmt ?? "0"),
+                    feeMaxAmt: String(ccf1Config.feeMaxAmt ?? "0"),
+                    feeDirection: ccf1Config.feeDirection ?? "C2B",
+                }
+                : undefined;
+
             const nextScreenPayload = {
-                // keep whatever the API returned (validation or fetch) so the next page can use it if present
                 ...respObj,
 
-                // 🔹 Always include these baseline fields
+                // baseline fields you already store
                 service_id: serviceId,
                 billerId,
                 customerMobile: values.mobileNumber,
                 customerPan: values.idNumber || undefined,
-
-                // the next screen reads resp.customerName and resp.customerInfo.customerEmail
                 customerName: values.customerName,
-                customerInfo: {
-                    customerEmail: values.email || undefined,
-                },
-
-                // make input shape consistent
+                customerInfo: { customerEmail: values.email || undefined },
                 inputParams: { input: payloadInput },
-
-                // ensure a requestId exists even if no API ran
                 requestId: requestIdFromApis || fallbackRequestId,
 
-                // optional: useful marker for debugging and downstream logic
+                // 👇 NEW: carry full CCF1 object
+                interchangeFeeCCF1: normalizedCcf1,
+
+                // 👇 NEW: also expose flat/percent via amountInfo for the next screen’s existing logic
+                amountInfo: {
+                    ...(respObj as any)?.amountInfo,             // keep anything API might have set
+                    ...(respObj as any)?.data?.amountInfo,       // or nested
+                    flatFee: (respObj as any)?.amountInfo?.flatFee
+                        ?? (respObj as any)?.data?.amountInfo?.flatFee
+                        ?? normalizedCcf1?.flatFee,
+                    percentFee: (respObj as any)?.amountInfo?.percentFee
+                        ?? (respObj as any)?.data?.amountInfo?.percentFee
+                        ?? normalizedCcf1?.percentFee,
+                },
+
                 source:
-                    fetchReq === "MANDATORY" ? (billValidation === "MANDATORY" ? "fetch+validation" : "fetch")
-                        : (billValidation === "MANDATORY" ? "validation" : "manual"),
+                    fetchReq === "MANDATORY"
+                        ? billValidation === "MANDATORY"
+                            ? "fetch+validation"
+                            : "fetch"
+                        : billValidation === "MANDATORY"
+                            ? "validation"
+                            : "manual",
             };
 
             if (typeof window !== "undefined") {
