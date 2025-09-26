@@ -210,26 +210,57 @@ export default function AddCustomerModal({
                 }
             }
 
-            // 3) Persist full payload for the next screen (always include customer details & inputs)
+            // 3) Build a robust payload for the next screen (even if no API was mandatory)
+            const requestIdFromApis =
+                (respObj as any)?.requestId ??
+                (respObj as any)?.data?.requestId ??
+                null;
+
+            const fallbackRequestId =
+                typeof crypto !== "undefined" && "randomUUID" in crypto
+                    ? crypto.randomUUID()
+                    : `req_${Date.now()}`;
+
             const nextScreenPayload = {
-                ...respObj,                                 // if validation ran, this is validation response; else bill fetch; else {}
+                // keep whatever the API returned (validation or fetch) so the next page can use it if present
+                ...respObj,
+
+                // 🔹 Always include these baseline fields
                 service_id: serviceId,
                 billerId,
                 customerMobile: values.mobileNumber,
-                customerPan: values.idNumber,
+                customerPan: values.idNumber || undefined,
+
+                // the next screen reads resp.customerName and resp.customerInfo.customerEmail
+                customerName: values.customerName,
+                customerInfo: {
+                    customerEmail: values.email || undefined,
+                },
+
+                // make input shape consistent
                 inputParams: { input: payloadInput },
+
+                // ensure a requestId exists even if no API ran
+                requestId: requestIdFromApis || fallbackRequestId,
+
+                // optional: useful marker for debugging and downstream logic
+                source:
+                    fetchReq === "MANDATORY" ? (billValidation === "MANDATORY" ? "fetch+validation" : "fetch")
+                        : (billValidation === "MANDATORY" ? "validation" : "manual"),
             };
+
             if (typeof window !== "undefined") {
                 sessionStorage.setItem(STORAGE_KEY, JSON.stringify(nextScreenPayload));
             }
 
-            // 4) Bubble up success (so page can optionally preview)
+            // 4) Bubble up success (so parent can optionally preview)
             onSuccess?.(respObj);
 
             // 5) Close & navigate
             onClose();
             const safeCategory = encodeURIComponent(biller_category);
             router.push(`/bill_payment/bbps-online/${serviceId}/${safeCategory}/${bbps_category_id}`);
+
         } catch {
             // onError already handled by hooks → setErrText
         }

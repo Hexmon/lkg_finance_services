@@ -329,7 +329,7 @@ export default function BillerPage() {
         bbps_category_id={bbps_category_id}
         biller_category={decodedCategory}
         fetchReq={fetchReq}
-  billValidation={billValidation}
+        billValidation={billValidation}
         onSuccess={(resp) => {
           // Show preview on the page after success
           setPreviewResp(resp as any);

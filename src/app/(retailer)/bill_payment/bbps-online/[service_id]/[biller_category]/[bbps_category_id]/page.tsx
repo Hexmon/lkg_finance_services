@@ -82,12 +82,29 @@ export default function BillDetailsPage() {
     );
   }, [resp]);
 
-  const amountPaise: string = useMemo(() => {
+  // 🔹 session-first values so validation-only still shows details
+  const sessionCore = useMemo(() => resp ?? {}, [resp]);
+  const sessionCustomerName = sessionCore?.customerName ?? bfr?.customerName ?? "";
+  const sessionCustomerMobile = sessionCore?.customerMobile ?? "";
+  const sessionCustomerEmail = sessionCore?.customerInfo?.customerEmail ?? "";
+  const sessionBillerId = sessionCore?.billerId ?? "";
+  const sessionRequestId = sessionCore?.requestId ?? "";
+
+  // 🔹 validation-only info (e.g., "Meter Balance in Rs": "200.00")
+  const validationInfo: { infoName?: string; infoValue?: string } | null =
+    sessionCore?.data?.additionalInfo?.info ?? null;
+
+  // 🔹 only show amount / pay UI if a bill amount exists
+  const hasBillAmount =
+    !!bfr && bfr?.billAmount != null && String(bfr.billAmount).trim() !== "";
+
+  const amountPaise: string | undefined = useMemo(() => {
+    if (!hasBillAmount) return undefined;
     const raw = bfr?.billAmount ?? 0;
     return isDigits(raw) ? String(raw) : toPaise(raw);
-  }, [bfr?.billAmount]);
+  }, [hasBillAmount, bfr?.billAmount]);
 
-  const amountRupees = useMemo(() => Number(amountPaise) / 100, [amountPaise]);
+  const amountRupees = useMemo(() => (amountPaise ? Number(amountPaise) / 100 : 0), [amountPaise]);
 
   const needsPAN = amountRupees > 49999; // > ₹49,999 rule
 
@@ -96,7 +113,20 @@ export default function BillDetailsPage() {
     return "N";
   }, [bfr]);
 
-  const displayAmount = paiseToRupees(amountPaise);
+  const displayAmount = amountPaise ? paiseToRupees(amountPaise) : undefined;
+  const canPay = Boolean(hasBillAmount);
+
+  // helper to render a row only when value exists
+  const Row: React.FC<{ label: string; value?: any }> = ({ label, value }) => {
+    const v = value ?? "";
+    if (String(v).trim() === "") return null;
+    return (
+      <div>
+        <div className="text-gray-500">{label}</div>
+        <div>{v}</div>
+      </div>
+    );
+  };
 
   async function handleProceedToPay() {
     try {
@@ -147,7 +177,7 @@ export default function BillDetailsPage() {
       const billerResponse =
         quickPay === "N" && bfr
           ? {
-            billAmount: amountPaise,
+            billAmount: amountPaise!,
             billDate: bfr.billDate || undefined,
             billNumber: bfr.billNumber || undefined,
             billPeriod: bfr.billPeriod || undefined,
@@ -168,7 +198,7 @@ export default function BillDetailsPage() {
         inputParams,
         billerResponse,
         amountInfo: {
-          amount: amountPaise,
+          amount: amountPaise!,
           currency: "356",
           custConvFee: "0",
         },
@@ -184,8 +214,8 @@ export default function BillDetailsPage() {
       const paymentResp = await billPaymentAsync({ service_id: svcId, body });
       try {
         const carry = {
-          amountPaise,
-          displayAmount,
+          amountPaise: amountPaise!,
+          displayAmount: displayAmount!,
           paymentMode: mappedPaymentMode,
           billerId,
           customerMobile,
@@ -207,7 +237,7 @@ export default function BillDetailsPage() {
       console.error("❌ Bill Payment Error:", e);
     }
   }
-console.log({resp});
+  console.log({ resp });
 
   const handleAddtoBiller = async () => {
     try {
@@ -280,58 +310,50 @@ console.log({resp});
           {/* Bill Info */}
           <div className="bg-[#FFFFFF] p-6 rounded-xl shadow-md">
             <div className="!grid !grid-cols-4 md:grid-cols-3 gap-y-6 gap-x-4 text-sm font-medium text-[#333]">
-              <div>
-                <div className="text-gray-500">Customer Name</div>
-                <div>{bfr?.customerName ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Customer Number</div>
-                <div>{resp?.customerMobile ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Biller Id</div>
-                <div>{resp?.billerId ?? ""}</div>
-              </div>
+              {/* Show only when present */}
+              <Row label="Customer Name" value={sessionCustomerName} />
+              <Row label="Customer Number" value={sessionCustomerMobile} />
+              <Row label="Email" value={sessionCustomerEmail} />
+              <Row label="Biller Id" value={sessionBillerId} />
+              {/* <Row label="Request Id" value={sessionRequestId} /> */}
 
-              <div>
-                <div className="text-gray-500">Bill Period</div>
-                <div>{bfr?.billPeriod ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Bill Number</div>
-                <div>{bfr?.billNumber ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Due Date</div>
-                <div>{bfr?.dueDate ?? ""}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Bill Date</div>
-                <div>{bfr?.billDate ?? ""}</div>
-              </div>
-              <br />
-              <div>
-                <div className="text-gray-500">Customer Convenience Fees</div>
-                <div>₹0</div>
-              </div>
+              <Row label="Bill Period" value={bfr?.billPeriod} />
+              <Row label="Bill Number" value={bfr?.billNumber} />
+              <Row label="Due Date" value={bfr?.dueDate} />
+              <Row label="Bill Date" value={bfr?.billDate} />
 
-              <div>
-                <div className="text-gray-500">Payment Mode</div>
-                <Select
-                  defaultValue="Cash"
-                  className="w-full mt-1"
-                  onChange={(v) => setPaymentMode(v === "Cash" ? "Wallet" : "Cashfree")}
-                  options={[
-                    { value: "Cash", label: "Cash (Wallet)" },
-                    { value: "UPI", label: "UPI (Cashfree)" },
-                  ]}
-                />
-              </div>
+              {/* Validation-only info (e.g., Meter Balance) */}
+              {validationInfo?.infoName && validationInfo?.infoValue && (
+                <Row label={validationInfo.infoName!} value={validationInfo.infoValue} />
+              )}
 
-              <div>
-                <div className="text-gray-500">Bill Amount</div>
-                <div className="text-[#3386FF] text-base font-semibold">₹{displayAmount}</div>
-              </div>
+              {/* Payment-only fields */}
+              {canPay && (
+                <>
+                  <div>
+                    <div className="text-gray-500">Customer Convenience Fees</div>
+                    <div>₹0</div>
+                  </div>
+
+                  <div>
+                    <div className="text-gray-500">Payment Mode</div>
+                    <Select
+                      defaultValue="Cash"
+                      className="w-full mt-1"
+                      onChange={(v) => setPaymentMode(v === "Cash" ? "Wallet" : "Cashfree")}
+                      options={[
+                        { value: "Cash", label: "Cash (Wallet)" },
+                        { value: "UPI", label: "UPI (Cashfree)" },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="text-gray-500">Bill Amount</div>
+                    <div className="text-[#3386FF] text-base font-semibold">₹{displayAmount}</div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Warning */}
@@ -345,14 +367,17 @@ console.log({resp});
               <Button block className="!h-[42px] !rounded-xl !shadow-md" disabled={payLoading} onClick={() => history.back()}>
                 Back to Edit
               </Button>
-              <Button
-                block
-                className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
-                onClick={() => setIsModalOpen(true)}
-                disabled={payLoading}
-              >
-                {payLoading ? "Processing..." : `Pay ₹${displayAmount}`}
-              </Button>
+
+              {canPay && (
+                <Button
+                  block
+                  className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
+                  onClick={() => setIsModalOpen(true)}
+                  disabled={payLoading}
+                >
+                  {payLoading ? "Processing..." : `Pay ₹${displayAmount}`}
+                </Button>
+              )}
             </div>
 
             <div className="!pt-2 !flex !items-center !justify-center">
@@ -360,7 +385,7 @@ console.log({resp});
                 block
                 className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
                 disabled={payLoading}
-                // onClick={handleAddtoBiller}
+              // onClick={handleAddtoBiller}
               >
                 Add to Biller
               </Button>
@@ -369,46 +394,48 @@ console.log({resp});
         </div>
       </div>
 
-      {/* 💳 Payment Modal */}
-      <Modal
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-        closable={!payLoading}
-        centered
-        width={340}
-        className="!rounded-2xl !p-0"
-      >
-        <div className="text-center py-6 px-4">
-          <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
-          <div className="text-[#3386FF] text-2xl font-bold mb-4">₹{displayAmount}</div>
+      {/* 💳 Payment Modal — only when amount exists */}
+      {canPay && (
+        <Modal
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={null}
+          closable={!payLoading}
+          centered
+          width={340}
+          className="!rounded-2xl !p-0"
+        >
+          <div className="text-center py-6 px-4">
+            <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
+            <div className="text-[#3386FF] text-2xl font-bold mb-4">₹{displayAmount}</div>
 
-          {/* Payment Mode */}
-          <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
-            <Radio.Group
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value)}
+            {/* Payment Mode */}
+            <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
+              <Radio.Group
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value)}
+                disabled={payLoading}
+              >
+                <Radio value="Wallet">Wallet</Radio>
+                <Radio value="Cashfree">
+                  <Image src="/cashfree.svg" alt="Cashfree" width={70} height={20} className="inline-block" />
+                </Radio>
+              </Radio.Group>
+            </div>
+
+            <Button
+              type="primary"
+              block
+              className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
+              onClick={handleProceedToPay}
+              loading={payLoading}
               disabled={payLoading}
             >
-              <Radio value="Wallet">Wallet</Radio>
-              <Radio value="Cashfree">
-                <Image src="/cashfree.svg" alt="Cashfree" width={70} height={20} className="inline-block" />
-              </Radio>
-            </Radio.Group>
+              {payLoading ? "Processing..." : "Proceed to Pay"}
+            </Button>
           </div>
-
-          <Button
-            type="primary"
-            block
-            className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
-            onClick={handleProceedToPay}
-            loading={payLoading}
-            disabled={payLoading}
-          >
-            {payLoading ? "Processing..." : "Proceed to Pay"}
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 }
