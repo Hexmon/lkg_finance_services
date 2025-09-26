@@ -95,6 +95,7 @@ export default function BillDetailsPage() {
   const sessionCustomerEmail = sessionCore?.customerInfo?.customerEmail ?? "";
   const sessionBillerId = sessionCore?.billerId ?? "";
   const sessionRequestId = sessionCore?.requestId ?? "";
+  const billerAdhoc = resp?.billerAdhboc ?? false
 
   const validationInfo: { infoName?: string; infoValue?: string } | null =
     sessionCore?.data?.additionalInfo?.info ?? null;
@@ -112,7 +113,6 @@ export default function BillDetailsPage() {
   useEffect(() => {
     if (!resp) return;
 
-    // 👀 gather all possible payment-amount candidates (in paise)
     const candidates: Array<unknown> = [
       resp?.amountInfo?.amount,
       resp?.data?.amountInfo?.amount,
@@ -122,7 +122,6 @@ export default function BillDetailsPage() {
       billAmountPaiseStr, // fallback to bill fetch amount (already paise string)
     ];
 
-    // 🔎 log raw inputs before we pick anything
     console.log("🔎 Fee pre-calculation inputs", {
       fromSession_amountInfo: resp?.amountInfo,
       fromSession_data_amountInfo: resp?.data?.amountInfo,
@@ -151,8 +150,8 @@ export default function BillDetailsPage() {
       Number(resp?.interchangeFeeCCF1?.flatFee ?? resp?.amountInfo?.flatFee ?? resp?.data?.amountInfo?.flatFee ?? 0) || 0
     );
     const percentFee =
-      Number(resp?.interchangeFeeCCF1?.percentFee  ?? resp?.amountInfo?.percentFee ?? resp?.data?.amountInfo?.percentFee ?? 0) || 0;
-      
+      Number(resp?.interchangeFeeCCF1?.percentFee ?? resp?.amountInfo?.percentFee ?? resp?.data?.amountInfo?.percentFee ?? 0) || 0;
+
     console.log("🧮 Fee base values", {
       pickedFrom,
       paymentAmountPaise,
@@ -248,7 +247,7 @@ export default function BillDetailsPage() {
       const needsPAN = (billPaise / 100) > 49999;
       const pan: string | undefined = resp?.customerPan;
       if (needsPAN && !pan) {
-        message.error("PAN is required for payments above ₹49,999. Please update user PAN and try again.");
+        error("PAN is required for payments above ₹49,999. Please update user PAN and try again.");
         return;
       }
 
@@ -311,76 +310,113 @@ export default function BillDetailsPage() {
       } as const;
 
       const paymentResp = await billPaymentAsync({ service_id: svcId, body });
-      try {
-        const carry = {
-          amountPaise: String(billPaise),
-          displayAmount: paiseToRupees(billPaise),
-          // store fee breakdown too
-          fee: {
-            paymentAmountPaise: feeState.paymentAmountPaise,
-            ccf1Paise: feeState.ccf1Paise,
-            gstPaise: feeState.gstPaise,
-            totalFeePaise: feeState.totalFeePaise,
-            ctaTotalPaise, // bill + fee + gst
-          },
-          paymentMode: mappedPaymentMode,
-          billerId,
-          customerMobile,
-          billNumber: bfr?.billNumber ?? null,
-          billDate: bfr?.billDate ?? null,
-          dueDate: bfr?.dueDate ?? null,
-          customerName: bfr?.customerName ?? resp?.customerName ?? "Customer",
-        };
-        sessionStorage.setItem(PAYMENT_KEY, JSON.stringify({ resp: paymentResp, context: carry }));
-      } catch {
-        // ignore storage errors
+
+      const topStatus = Number(paymentResp?.status);
+      const innerStatus = Number((paymentResp as any)?.paymentResp?.status);
+      const responseCode =
+        (paymentResp as any)?.data?.responseCode ??
+        (paymentResp as any)?.paymentResp?.data?.responseCode ??
+        (paymentResp as any)?.data?.ResponseCode ??
+        (paymentResp as any)?.paymentResp?.data?.ResponseCode;
+
+      const isHttpOk = topStatus === 200 || innerStatus === 200;
+      const isDomainOk = String(responseCode) === "000";
+
+      // Treat success when either HTTP-like status is 200 AND domain response is "000"
+      if (isHttpOk && isDomainOk) {
+        // ---- SAFETY: make sure these are defined ----
+        const safeBillPaise = typeof billPaise === "number" ? billPaise : 0;
+        const safeCtaTotalPaise =
+          typeof (globalThis as any).ctaTotalPaise === "number" ? (globalThis as any).ctaTotalPaise
+            : (feeState?.paymentAmountPaise ?? 0) + (feeState?.totalFeePaise ?? 0);
+
+        try {
+          const carry = {
+            amountPaise: String(safeBillPaise),
+            displayAmount: paiseToRupees(safeBillPaise),
+            fee: {
+              paymentAmountPaise: feeState.paymentAmountPaise,
+              ccf1Paise: feeState.ccf1Paise,
+              gstPaise: feeState.gstPaise,
+              totalFeePaise: feeState.totalFeePaise,
+              ctaTotalPaise: safeCtaTotalPaise, // grand total if you need it
+            },
+            paymentMode: mappedPaymentMode,
+            billerId,
+            customerMobile,
+            billNumber: bfr?.billNumber ?? null,
+            billDate: bfr?.billDate ?? null,
+            dueDate: bfr?.dueDate ?? null,
+            customerName: bfr?.customerName ?? resp?.customerName ?? "Customer",
+            txnRefId:
+              (paymentResp as any)?.paymentResp?.data?.txnRefId ??
+              (paymentResp as any)?.data?.txnRefId ??
+              null,
+            approvalRefNumber:
+              (paymentResp as any)?.paymentResp?.data?.approvalRefNumber ??
+              (paymentResp as any)?.data?.approvalRefNumber ??
+              null,
+          };
+          sessionStorage.setItem(PAYMENT_KEY, JSON.stringify({ resp: paymentResp, context: carry }));
+        } catch {
+          // ignore storage errors
+        }
+
+        setIsModalOpen(false);
+        router.push("/bill_payment/bbps-online/bbps-successful");
+      } else {
+        const errMsg =
+          (paymentResp as any)?.data?.errorInfo?.error?.errorMessage ??
+          (paymentResp as any)?.paymentResp?.data?.errorInfo?.error?.errorMessage ??
+          (paymentResp as any)?.paymentResp?.data?.responseReason ??
+          (paymentResp as any)?.data?.responseReason ??
+          "Error while payment !!";
+        warning(errMsg);
       }
 
-      setIsModalOpen(false);
-      router.push("/bill_payment/bbps-online/bbps-successful");
     } catch (e: any) {
       const msg = e?.message || "Payment failed";
-      message.error(msg);
+      error(e.message);
       console.error("❌ Bill Payment Error:", e);
     }
   }
 
-  const handleAddtoBiller = async () => {
-    try {
-      await addOnlineBillerAsync({
-        service_id: resp?.service_id ?? "",
-        is_direct: false,
-        input_json: {
-          request_id: resp?.requestId ?? "",
-          customerInfo: {
-            customerMobile: resp?.customerMobile ?? "",
-            customerAdhaar: resp?.customerAdhaar ?? "",
-            customerName: resp?.data?.billerResponse?.customerName ?? "",
-            customerPan: resp?.customerPan ?? "",
-          },
-          billerId: resp?.billerId ?? "",
-          inputParams: resp?.inputParams ?? {},
-          billerResponse: {
-            billAmount: resp?.data?.billerResponse?.billAmount ?? "",
-            billDate: resp?.data?.billerResponse?.billDate ?? "",
-            billNumber: resp?.data?.billerResponse?.billNumber ?? "",
-            billPeriod: resp?.data?.billerResponse?.billPeriod ?? "",
-            customerName: resp?.data?.billerResponse?.customerName ?? "",
-            dueDate: resp?.data?.billerResponse?.dueDate,
-          },
-          amountInfo: {
-            amount: "5459",
-            currency: "356",
-            custConvFee: "0",
-            amountTags: { amountTag: "", value: "" },
-            CCF1: "",
-          },
-        },
-      });
-    } catch {
-      // ignore
-    }
-  };
+  // const handleAddtoBiller = async () => {
+  //   try {
+  //     await addOnlineBillerAsync({
+  //       service_id: resp?.service_id ?? "",
+  //       is_direct: false,
+  //       input_json: {
+  //         request_id: resp?.requestId ?? "",
+  //         customerInfo: {
+  //           customerMobile: resp?.customerMobile ?? "",
+  //           customerAdhaar: resp?.customerAdhaar ?? "",
+  //           customerName: resp?.data?.billerResponse?.customerName ?? "",
+  //           customerPan: resp?.customerPan ?? "",
+  //         },
+  //         billerId: resp?.billerId ?? "",
+  //         inputParams: resp?.inputParams ?? {},
+  //         billerResponse: {
+  //           billAmount: resp?.data?.billerResponse?.billAmount ?? "",
+  //           billDate: resp?.data?.billerResponse?.billDate ?? "",
+  //           billNumber: resp?.data?.billerResponse?.billNumber ?? "",
+  //           billPeriod: resp?.data?.billerResponse?.billPeriod ?? "",
+  //           customerName: resp?.data?.billerResponse?.customerName ?? "",
+  //           dueDate: resp?.data?.billerResponse?.dueDate,
+  //         },
+  //         amountInfo: {
+  //           amount: "5459",
+  //           currency: "356",
+  //           custConvFee: "0",
+  //           amountTags: { amountTag: "", value: "" },
+  //           CCF1: "",
+  //         },
+  //       },
+  //     });
+  //   } catch {
+  //     // ignore
+  //   }
+  // };
 
   return (
     <DashboardLayout
