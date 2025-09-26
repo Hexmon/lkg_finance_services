@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const serviceId = req.nextUrl.searchParams.get("service_id");
+  if (!serviceId) {
+    return NextResponse.json({ error: "Missing service_id" }, { status: 400 });
+  }
+
   // mode
   const modeRaw = req.nextUrl.searchParams.get("mode") ?? "ONLINE";
   const mode = String(modeRaw).toUpperCase();
@@ -56,7 +61,7 @@ export async function POST(req: NextRequest) {
   try {
     // Upstream call
     const raw = await bbpsFetch<unknown>(
-      `/${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_AVENUE.BILL_VALIDATION}`,
+      `/${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.BILL_AVENUE.BILL_VALIDATION}/${serviceId}`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

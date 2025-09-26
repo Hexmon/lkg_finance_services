@@ -46,8 +46,6 @@ export function useBbpsCategoryListQuery(
 /** -------- Biller List (query) --------
  * Matches BFF route: /bill-fetch/biller-list/[service_id]/[bbps_category_id]
  */
-
-// ✅ useBbpsBillerListQuery — add default select(normalize) + stability
 export function useBbpsBillerListQuery<T = unknown>(
   params: {
     service_id: string;
@@ -58,6 +56,7 @@ export function useBbpsBillerListQuery<T = unknown>(
     is_active?: boolean | string;
   },
   _opt?: {
+    raw?: boolean; // 👈 NEW
     token?: string | null;
     query?: Omit<UseQueryOptions<T, Error, T, QueryKey>, "queryKey" | "queryFn">;
   },
@@ -72,25 +71,37 @@ export function useBbpsBillerListQuery<T = unknown>(
   const userEnabled = _opt?.query?.enabled ?? true;
   const enabled = baseEnabled && userEnabled;
 
-  // normalize biller shapes to consistent keys
+  // Identity select if raw; otherwise you can plug your normalizer
+  const identity = (d: any) => d;
+
+  // (Optional) your previous normalizer could live here:
   const normalize = (raw: any) => {
-    const list = raw?.data ?? [];
-    const data = Array.isArray(list)
-      ? list.map((b: any) => ({
-          ...b,
-          biller_id: b?.biller_id ?? b?.billerId ?? b?.id ?? "",
-          biller_status: b?.biller_status ?? b?.billerStatus ?? "INACTIVE",
-          biller_payment_exactness:
-            b?.biller_payment_exactness ?? b?.billerPaymentExactness ?? null,
-          plan_mdm_requirement:
-            b?.plan_mdm_requirement ?? b?.planMdmRequirement ?? "NOT_SUPPORTED",
-          biller_fetch_requiremet:
-            b?.biller_fetch_requiremet ?? b?.billerFetchRequiremet ?? "NOT_REQUIRED",
-          inputParams: b?.inputParams ?? b?.input_params ?? [],
-        }))
+    // tolerant: accept {data: [...]}, [...] or {billerList: [...]}
+    const list = Array.isArray(raw?.data)
+      ? raw.data
+      : Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.billerList)
+      ? raw.billerList
       : [];
+
+    const data = list.map((b: any) => ({
+      ...b,
+      biller_id: b?.biller_id ?? b?.billerId ?? b?.id ?? "",
+      biller_status: b?.biller_status ?? b?.billerStatus ?? "INACTIVE",
+      biller_payment_exactness:
+        b?.biller_payment_exactness ?? b?.billerPaymentExactness ?? null,
+      plan_mdm_requirement:
+        b?.plan_mdm_requirement ?? b?.planMdmRequirement ?? "NOT_SUPPORTED",
+      biller_fetch_requiremet:
+        b?.biller_fetch_requiremet ?? b?.billerFetchRequiremet ?? "NOT_REQUIRED",
+      inputParams: b?.inputParams ?? b?.input_params ?? [],
+    }));
+
     return { ...raw, data };
   };
+
+  const selectFn = (_opt?.raw ? identity : normalize) as any;
 
   return useQuery<T, Error>({
     queryKey: [
@@ -101,17 +112,18 @@ export function useBbpsBillerListQuery<T = unknown>(
       params.mode,
       params.is_offline ? "offline" : "online",
       params.opr_id ?? "",
-      String(params.is_active ?? "true"), // ← CHANGED: default active
+      String(params.is_active ?? "true"),
+      _opt?.raw ? "raw" : "normalized",
     ],
     queryFn: ({ signal }) => apiGetBillerList<T>(params, { signal }),
     enabled,
-    // prefer caller's select if provided; otherwise normalize
-    select: (_opt?.query as any)?.select ?? ((d: any) => normalize(d)),
-    staleTime: 60_000, // 1 min
-    placeholderData: (prev) => prev, // keeps old list during refetch
+    select: (_opt?.query as any)?.select ?? selectFn,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
     ...(_opt?.query ?? {}),
   });
 }
+
 
 
 /** -------- Plan Pull (query) --------

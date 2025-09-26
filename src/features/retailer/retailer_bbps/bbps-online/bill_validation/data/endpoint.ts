@@ -7,6 +7,7 @@ import { postJSON } from '@/lib/api/client';
  */
 export async function apiPostBillValidation<TResp = unknown>(
   params: {
+    serviceId: string;
     mode: 'ONLINE' | 'OFFLINE';
     body: BillValidationRequest;
   },
@@ -15,7 +16,7 @@ export async function apiPostBillValidation<TResp = unknown>(
   // validate the request
   const validated = BillValidationRequestSchema.parse(params.body);
 
-  const qs = new URLSearchParams({ mode: params.mode }).toString();
+  const qs = new URLSearchParams({ mode: params.mode, service_id: params.serviceId }).toString();
   const path = `retailer/bbps/bbps-online/bill-validation?${qs}`;
 
   // do NOT parse the response; return as-is

@@ -10,6 +10,7 @@ import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { useParams, useRouter } from "next/navigation";
 import { useBillPayment } from "@/features/retailer/retailer_bbps/bbps-online/bill_avenue/data/hooks";
 import { useMessage } from "@/hooks/useMessage";
+import { useAddOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -42,10 +43,10 @@ export default function BillDetailsPage() {
   const router = useRouter();
   const { error, warning } = useMessage();
   const [resp, setResp] = useState<any | null>(null);
-  console.log({ resp });
 
   const { billPaymentAsync, isLoading: payLoading } = useBillPayment();
   const { biller_category, service_id } = useParams() as { biller_category?: string; service_id?: string };
+  const { addOnlineBillerAsync, data, error: addOnlineBillerErr, isLoading } = useAddOnlineBiller()
 
   useEffect(() => {
     try {
@@ -206,6 +207,46 @@ export default function BillDetailsPage() {
       console.error("❌ Bill Payment Error:", e);
     }
   }
+console.log({resp});
+
+  const handleAddtoBiller = async () => {
+    try {
+
+      await addOnlineBillerAsync({
+        service_id: resp?.service_id ?? "",
+        is_direct: false,
+        input_json: {
+          request_id: resp?.requestId ?? "",
+          customerInfo: {
+            customerMobile: resp?.customerMobile ?? "",
+            customerAdhaar: resp?.customerAdhaar ?? '',
+            customerName: resp?.data?.billerResponse?.customerName ?? '',
+            customerPan: resp?.customerPan ?? '',
+          },
+          billerId: resp?.billerId ?? "",
+          inputParams: resp?.inputParams ?? {},
+          billerResponse: {
+            billAmount: resp?.data?.billerResponse?.billAmount ?? "",
+            billDate: resp?.data?.billerResponse?.billDate ?? "",
+            billNumber: resp?.data?.billerResponse?.billNumber ?? "",
+            billPeriod: resp?.data?.billerResponse?.billPeriod ?? "",
+            customerName: resp?.data?.billerResponse?.customerName ?? "",
+            dueDate: resp?.data?.billerResponse?.dueDate,
+          },
+          amountInfo: {
+            amount: '5459',      // per sample (note: this looks like rupees string, not paise)
+            currency: '356',
+            custConvFee: '0',
+            amountTags: { amountTag: '', value: '' },
+            CCF1: '',
+          },
+        },
+      });
+
+    } catch (error) {
+
+    }
+  }
 
   return (
     <DashboardLayout
@@ -319,6 +360,7 @@ export default function BillDetailsPage() {
                 block
                 className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
                 disabled={payLoading}
+                // onClick={handleAddtoBiller}
               >
                 Add to Biller
               </Button>

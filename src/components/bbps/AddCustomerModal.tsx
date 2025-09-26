@@ -12,6 +12,7 @@ import type {
     BillFetchRequest,
 } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch/domain/types";
 import { useRouter } from "next/navigation";
+import { useBbpsBillValidationMutation } from "@/features/retailer/retailer_bbps/bbps-online/bill_validation/data/hooks";
 
 type CustomerFormValues = {
     customerName: string;
@@ -33,6 +34,8 @@ type AddCustomerModalProps = {
     /** now raw/unknown by default; you can narrow at call site if you want */
     onSuccess?: (resp: unknown) => void;
     bbps_category_id: string;
+    fetchReq: string;             // e.g. "MANDATORY" | "NOT_REQUIRED" | "NOT_SUPPORTED"
+    billValidation: string;
 };
 
 const STORAGE_KEY = "bbps:lastBillFetch";
@@ -51,7 +54,7 @@ export default function AddCustomerModal({
     mode = "ONLINE",
     onSuccess,
     biller_category,
-    bbps_category_id,
+    bbps_category_id, fetchReq, billValidation
 }: AddCustomerModalProps) {
     const [form] = Form.useForm<CustomerFormValues>();
     const [errText, setErrText] = React.useState<string | null>(null);
@@ -89,6 +92,18 @@ export default function AddCustomerModal({
             onSuccess?.(data);
         },
     });
+
+    const { mutateAsync: billValidationAsync } = useBbpsBillValidationMutation<unknown>({
+        onError: (e: any) => {
+            const raw = e?.data ?? e?.response?.data ?? e?.body ?? e?.payload ?? e?.raw ?? e;
+            const msg =
+                (typeof raw === "object" && (raw?.responseReason || raw?.message)) ||
+                (typeof raw === "string" ? raw : undefined) ||
+                "Bill validation failed";
+            setErrText(String(msg));
+        },
+    });
+
 
     const buildPreflightErrors = (values: CustomerFormValues): string[] => {
         const errors: string[] = [];
@@ -133,50 +148,90 @@ export default function AddCustomerModal({
             return;
         }
 
+        // Always normalize to an array for both APIs
+        const payloadInput: InputParam[] = inputParams.map((p) => ({
+            paramName: String(p.paramName ?? ""),
+            paramValue: String(p.paramValue ?? ""),
+        }));
+
+        // Build customer info (for Bill Fetch only)
+        const customerInfo: BillFetchRequest["customerInfo"] = {
+            customerMobile: values.mobileNumber,
+        };
+        if (values.email) customerInfo.customerEmail = values.email;
+        if (values.idNumber) customerInfo.customerPan = values.idNumber;
+        if (values.customerName) customerInfo.customerName = values.customerName;
+
+        // this will be saved to session — prefer Bill Validation resp if it ran
+        let respObj: Record<string, unknown> = {};
+
         try {
-            // Matches your BillFetchRequest (customerName/REM… handled by BFF schema)
-            const customerInfo: BillFetchRequest["customerInfo"] = {
-                customerMobile: values.mobileNumber,
-            };
-            if (values.email) customerInfo.customerEmail = values.email;
-            if (values.idNumber) customerInfo.customerPan = values.idNumber;
-            if (values.customerName) customerInfo.customerName = values.customerName; // or set REMITTER_NAME if you prefer
+            // 1) If bill fetch is mandatory → Call Bill Fetch first
+            if (fetchReq === "MANDATORY") {
+                const fetchResp = await billFetchAsync({
+                    service_id: serviceId,
+                    mode,
+                    body: {
+                        billerId,
+                        customerInfo,
+                        inputParams: { input: payloadInput }, // ALWAYS array
+                    },
+                });
+                respObj = (fetchResp ?? {}) as Record<string, unknown>;
 
-            const payloadInput = inputParams.length === 1 ? inputParams[0] : inputParams;
+                // if Bill Validation is mandatory → run it after bill fetch
+                if (billValidation === "MANDATORY") {
+                    const validateResp = await billValidationAsync({
+                        serviceId,  // BFF needs this to route to `/.../bill-validation/{serviceId}`
+                        mode: "ONLINE",
+                        body: {
+                            billerId,
+                            inputParams: { input: payloadInput }, // object | array supported by BFF; we send array
+                        },
+                    });
+                    // per your requirement: store validation response if present
+                    respObj = (validateResp ?? {}) as Record<string, unknown>;
+                }
+            } else {
+                // 2) Fetch is NOT mandatory → do NOT call Bill Fetch
+                //    Only call Bill Validation if it's mandatory
+                if (billValidation === "MANDATORY") {
+                    const validateResp = await billValidationAsync({
+                        serviceId,
+                        mode: "ONLINE",
+                        body: {
+                            billerId,
+                            inputParams: { input: payloadInput },
+                        },
+                    });
+                    respObj = (validateResp ?? {}) as Record<string, unknown>;
+                } else {
+                    // neither fetch nor validation ran; keep respObj as {}
+                }
+            }
 
-            const resp = await billFetchAsync({
-                service_id: serviceId,
-                mode,
-                body: {
-                    billerId,
-                    customerInfo,
-                    inputParams: { input: payloadInput },
-                },
-            });
-console.log({resp});
-
-            // ✅ Store a complete, self-contained payload for the next page
-            const respObj = (resp ?? {}) as Record<string, unknown>;
+            // 3) Persist full payload for the next screen (always include customer details & inputs)
             const nextScreenPayload = {
-                ...respObj,                                  // upstream response as-is
-                service_id: serviceId,                       // explicit for next page
-                billerId,                                    // explicit
-                customerMobile: values.mobileNumber,         // explicit
-                customerPan: values.idNumber,                // explicit
-                inputParams: { input: payloadInput },        // explicit for payment step
+                ...respObj,                                 // if validation ran, this is validation response; else bill fetch; else {}
+                service_id: serviceId,
+                billerId,
+                customerMobile: values.mobileNumber,
+                customerPan: values.idNumber,
+                inputParams: { input: payloadInput },
             };
-
             if (typeof window !== "undefined") {
                 sessionStorage.setItem(STORAGE_KEY, JSON.stringify(nextScreenPayload));
             }
 
-            onSuccess?.(resp);
-            onClose();
+            // 4) Bubble up success (so page can optionally preview)
+            onSuccess?.(respObj);
 
+            // 5) Close & navigate
+            onClose();
             const safeCategory = encodeURIComponent(biller_category);
             router.push(`/bill_payment/bbps-online/${serviceId}/${safeCategory}/${bbps_category_id}`);
         } catch {
-            // onError already handled
+            // onError already handled by hooks → setErrText
         }
     };
 
