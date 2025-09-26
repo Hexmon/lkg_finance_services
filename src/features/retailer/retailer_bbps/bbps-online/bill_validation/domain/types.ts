@@ -21,15 +21,28 @@ export const BillValidationResponseSchema = z.object({
   }),
 });
 
-export const BillValidationRequestSchema = z.object({
-  customerId: z.string(),
-  billerId: z.string(),
-  amount: z.string().or(z.number()),
-  additionalInfo: AdditionalInfoSchema.optional(),
+/** 👇 NEW: input param schemas to match upstream */
+export const ValidationInputParamSchema = z.object({
+  paramName: z.string(),
+  paramValue: z.string(),
 });
 
-export function isBillValidationSuccessShape(input: unknown): input is BillValidationResponse {
-  if (!input || typeof input !== 'object') return false;
+export const ValidationInputParamsSchema = z.object({
+  /** upstream accepts either ONE object or an ARRAY of objects */
+  input: z.union([
+    ValidationInputParamSchema,
+    z.array(ValidationInputParamSchema),
+  ]),
+});
+
+/** 👇 FIX: include billerId + inputParams; customerId/amount not required here */
+export const BillValidationRequestSchema = z.object({
+  billerId: z.string(),
+  inputParams: ValidationInputParamsSchema,
+  // additionalInfo: AdditionalInfoSchema.optional(),
+});
+
+export function isBillValidationSuccessShape(input: unknown) {
   try {
     BillValidationResponseSchema.parse(input);
     return true;
@@ -41,5 +54,6 @@ export function isBillValidationSuccessShape(input: unknown): input is BillValid
 export type Info = z.infer<typeof InfoSchema>;
 export type AdditionalInfo = z.infer<typeof AdditionalInfoSchema>;
 export type BillValidationResponse = z.infer<typeof BillValidationResponseSchema>;
+export type ValidationInputParam = z.infer<typeof ValidationInputParamSchema>;
+export type ValidationInputParams = z.infer<typeof ValidationInputParamsSchema>;
 export type BillValidationRequest = z.infer<typeof BillValidationRequestSchema>;
-

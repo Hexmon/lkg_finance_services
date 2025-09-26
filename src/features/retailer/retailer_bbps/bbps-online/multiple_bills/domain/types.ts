@@ -34,16 +34,15 @@ export const AddOBCustomerInfoSchema = z.object({
 
 export const AddOBBillerResponseSchema = z.object({
   billAmount: z.string(),
-  billDate: z.string(),
+  billDate: z.string().optional(),
   billNumber: z.string(),
-  billPeriod: z.string(),
+  billPeriod: z.string().optional(),
   customerName: z.string(),
-  dueDate: z.string(),
+  dueDate: z.string().optional(),
 });
 
 export const AddOnlineBillerRequestSchema = z.object({
-  opr_id: z.string(), // UUID
-  is_direct: z.boolean(),
+  is_direct: z.boolean().default(false),
   input_json: z.object({
     request_id: z.string(),
     customerInfo: AddOBCustomerInfoSchema,
@@ -55,11 +54,18 @@ export const AddOnlineBillerRequestSchema = z.object({
 });
 export type AddOnlineBillerRequest = z.infer<typeof AddOnlineBillerRequestSchema>;
 
+export const AddOnlineBillerBffRequestSchema = AddOnlineBillerRequestSchema.extend({
+  service_id: z.string().uuid(),
+}).strict();
+
+export type AddOnlineBillerBffRequest = z.infer<typeof AddOnlineBillerBffRequestSchema>;
+
 export const AddOnlineBillerResponseSchema = z
   .object({
     status: z.union([z.string(), z.number()]).optional(),
     message: z.string().optional(),
     data: z.unknown().optional(),
+    // data: z.unknown().optional(),
     biller_batch_id: z.string().optional(),
     requestId: z.string().optional(),
   })

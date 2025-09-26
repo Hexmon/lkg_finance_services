@@ -1,5 +1,5 @@
-import { getJSON } from "@/lib/api/client";
-import { OnlineBillerListQuery, OnlineBillerListResponse, OnlineBillerListResponseSchema, OnlineBillProceedRequest, OnlineBillProceedRequestSchema, OnlineBillProceedResponse, OnlineBillProceedResponseSchema, RemoveOnlineBillerResponse, RemoveOnlineBillerResponseSchema } from "../domain/types";
+import { getJSON, postJSON } from "@/lib/api/client";
+import { AddOnlineBillerBffRequest, AddOnlineBillerBffRequestSchema, AddOnlineBillerRequest, AddOnlineBillerRequestSchema, AddOnlineBillerResponse, AddOnlineBillerResponseSchema, OnlineBillerListQuery, OnlineBillerListResponse, OnlineBillerListResponseSchema, OnlineBillProceedRequest, OnlineBillProceedRequestSchema, OnlineBillProceedResponse, OnlineBillProceedResponseSchema, RemoveOnlineBillerResponse, RemoveOnlineBillerResponseSchema } from "../domain/types";
 
 /**
  * GET /api/v1/retailer/bbps/bbps-online/multiple-bills/online-biller-list/[service_id]
@@ -116,6 +116,23 @@ export async function apiOnlineBillProceed(
   }
 
   return OnlineBillProceedResponseSchema.parse(json);
+}
+
+const ADD_ONLINE_BILLER_PATH =
+  '/retailer/bbps/bbps-online/multiple-bills/add-online-biller';
+
+export async function apiAddOnlineBiller(
+  body: AddOnlineBillerBffRequest
+): Promise<AddOnlineBillerResponse> {
+  // Validate on the client as well (helps during dev)
+  const payload = AddOnlineBillerBffRequestSchema.parse(body);
+
+  const res = await postJSON<unknown>(ADD_ONLINE_BILLER_PATH, payload, {
+    redirectOn401: true,
+    redirectPath: '/signin',
+  });
+
+  return AddOnlineBillerResponseSchema.parse(res);
 }
 
 export type { OnlineBillProceedResponse, OnlineBillProceedRequest, RemoveOnlineBillerResponse };

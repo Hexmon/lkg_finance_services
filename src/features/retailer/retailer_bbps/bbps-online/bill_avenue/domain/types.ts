@@ -667,7 +667,6 @@ export const BillValidationInputParamsSchema = z.object({
 export type BillValidationInputParams = z.infer<typeof BillValidationInputParamsSchema>;
 
 export const BillValidationInnerSchema = z.object({
-  agentId: z.string(),
   billerId: z.string(),
   inputParams: BillValidationInputParamsSchema,
 });

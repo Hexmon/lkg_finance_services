@@ -4,6 +4,7 @@ import { BillValidationRequest } from '../domain/types';
 
 /** -------- Bill Validation (mutation, POST) -------- */
 type BillValidationVars = {
+  serviceId: string; 
   mode: 'ONLINE' | 'OFFLINE';
   body: BillValidationRequest;
 };
@@ -15,9 +16,9 @@ export function useBbpsBillValidationMutation<TResp = unknown>(
     mutationKey: ['bbps', 'bill-validation'],
     mutationFn: (vars) =>
       apiPostBillValidation<TResp>(
-        { mode: vars.mode, body: vars.body },
+        { serviceId: vars.serviceId, mode: vars.mode, body: vars.body },
         undefined
       ),
-    ..._opt,
+    ..._opt, 
   });
 }
