@@ -34,7 +34,7 @@ export class ApiError extends Error {
 }
 
 const API_BASE = '/api/v1';
-const TIMEOUT_MS = 10000;
+const TIMEOUT_MS = 20000;
 
 /** ---- Timeout helper (no abort on normal completion) ---- */
 function withTimeout(signal?: AbortSignal | null) {

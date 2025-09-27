@@ -6,24 +6,26 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
 export default function FastTagCustomerOtpVerification() {
+    const router = useRouter();
+
     return (
         <DashboardLayout
             sections={moneyTransferSidebarConfig}
-            activePath="/fastag/onboarding"
+            activePath="/fastag/otpverfication"
             pageTitle="FASTag"
         >
             {/* Section Header */}
             <DashboardSectionHeader
-                title="New Customer Onboarding"
-                subtitle="Fastag Recharge"
+                title="Fastag"
                 titleClassName="!text-[#2F2F2F] !font-semibold !text-[22px]"
                 arrowClassName="!text-[#2F2F2F]"
-                imgSrc="/logo.svg"
-                imgClassName="!w-[98px] !h-[36px] !mr-8"
+            // imgSrc="/logo.svg"
+            // imgClassName="!w-[98px] !h-[36px] !mr-8"
             />
 
             <div className="p-6 min-h-screen w-full ">
@@ -38,7 +40,7 @@ export default function FastTagCustomerOtpVerification() {
                             height={18}
                             className="object-contain"
                         />
-                        <Text className="!text-[16px] font-medium">Customer Onboarding</Text>
+                        <Text className="!text-[16px] font-medium">OTP Verification</Text>
                     </div>
                     <Text className="block text-gray-500 mb-6 ml-10.5">
                         Register new customers for FASTag services
@@ -79,11 +81,27 @@ export default function FastTagCustomerOtpVerification() {
                             height={2}
                             className="object-contain self-center mb-6.5"
                         />
-
                         {/* Step 3 */}
                         <div className="flex flex-col items-center">
                             <div className="w-8 h-8 rounded-full bg-[#82828240] text-white flex items-center justify-center">
                                 3
+                            </div>
+                            <span className="text-sm mt-2">Vehicle Registration</span>
+                        </div>
+
+                        {/* Line */}
+                        <Image
+                            src="/str-line.svg"
+                            alt="line"
+                            width={60}
+                            height={2}
+                            className="object-contain self-center mb-6.5"
+                        />
+
+                        {/* Step 4 */}
+                        <div className="flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-full bg-[#82828240] text-white flex items-center justify-center">
+                                4
                             </div>
                             <span className="text-sm mt-2">KYC Upload</span>
                         </div>
@@ -95,23 +113,24 @@ export default function FastTagCustomerOtpVerification() {
                             Step 1 : OTP Verification
                         </Text>
 
-                        <div className="space-y-4 max-w-3xl mx-auto">
+                        <div className="space-y-4 max-w-5xl mx-auto">
                             {/* Full Name */}
                             <div>
-                                <Text className="block mb-1 text-black-600 font-medium text-[12px]">Phone Number</Text>
+                                <Text className="block mb-1 text-black-600 font-medium text-[12px]">Mobile Number</Text>
                                 <Input
                                     placeholder="Enter 10 digit Number"
                                     className="!h-[42px] rounded-md"
                                 />
                             </div>
 
-                            
-                        </div>  
+
+                        </div>
 
                         <div className="flex justify-center mt-8">
                             <Button
                                 type="default"
-                                className="!bg-[#5298FF54] !h-[42px] !rounded-lg !text-[#3386FF] !font-medium hover:!bg-[#E2E8F0] !w-[445px]"
+                                className="!bg-[#3386FF] !h-[42px] !rounded-lg !text-[#FFFFFF] !font-medium hover:!bg-[#E2E8F0] !w-[445px]"
+                                onClick={()=> router.push("/fastag/customer_registration")}
                             >
                                 Send OTP
                             </Button>
