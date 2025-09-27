@@ -22,19 +22,60 @@ export type ClientInit = ReqInit & {
   redirectPath?: string;
 };
 
+export interface BackendErrorData {
+  created_at: string;
+  error: {
+    code: string;
+    message: string;
+    [key: string]: unknown;
+  };
+  method: string;
+  request_id: string;
+  status: number;
+  user_id?: string;
+  [key: string]: unknown;
+}
+
 export class ApiError extends Error {
   status: number;
-  data?: unknown;
-  constructor(status: number, message: string, data?: unknown) {
+  data?: BackendErrorData | string;
+  constructor(status: number, message: string, data?: BackendErrorData | string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.data = data;
   }
+
+  /** Convenience getters for UI */
+  get code(): string | undefined {
+    return typeof this.data === 'object' && this.data
+      ? (this.data as BackendErrorData).error?.code
+      : undefined;
+  }
+
+  get requestId(): string | undefined {
+    return typeof this.data === 'object' && this.data
+      ? (this.data as BackendErrorData).request_id
+      : undefined;
+  }
+
+  get backendMessage(): string | undefined {
+    if (typeof this.data === 'object' && this.data) {
+      const d = this.data as BackendErrorData;
+      return d.error?.message ?? (d as any).message;
+    }
+    return undefined;
+  }
+}
+
+function isBackendErrorData(x: unknown): x is BackendErrorData {
+  return !!x && typeof x === 'object'
+    && 'created_at' in (x as any)
+    && 'error' in (x as any);
 }
 
 const API_BASE = '/api/v1';
-const TIMEOUT_MS = 20000;
+const TIMEOUT_MS = 30000;
 
 /** ---- Timeout helper (no abort on normal completion) ---- */
 function withTimeout(signal?: AbortSignal | null) {
@@ -122,10 +163,9 @@ export async function request<T>(
     if (res.status === 204) return undefined as unknown as T;
 
     const text = await res.text().catch(() => '');
-    const json = text ? safeJson<unknown>(text) : null;
+    const json: unknown = text ? safeJson<unknown>(text) : null;
 
     if (!res.ok) {
-      // ...inside request(), after you parsed `json` and before throwing:
       if (res.status === 401 && typeof window !== 'undefined') {
         const shouldRedirect = init?.redirectOn401 ?? true;
         if (shouldRedirect) {
@@ -134,18 +174,23 @@ export async function request<T>(
 
           if (!window.location.pathname.startsWith(signinPath) && !redirectingToSignin) {
             redirectingToSignin = true;
-            try { await onUnauthorized?.(); } catch { }
-            try { await apiLogout?.(); } catch { }
+            try { await onUnauthorized?.(); } catch {}
+            try { await apiLogout?.(); } catch {}
             window.location.replace(`${signinPath}?next=${encodeURIComponent(here)}`);
           }
-          return new Promise<never>(() => { });
+          return new Promise<never>(() => {});
         }
       }
 
-
       const message =
         getMessageFromJson(json) ?? (res.statusText || `HTTP ${res.status}`) ?? 'Request failed';
-      throw new ApiError(res.status, message, json ?? text);
+
+      // ✅ Narrow json to the right union before throwing
+      const errorData: BackendErrorData | string | undefined =
+        isBackendErrorData(json) ? json :
+        (text || undefined);
+
+      throw new ApiError(res.status, message, errorData);
     }
 
     return (json as T) ?? ({} as T);
@@ -153,6 +198,7 @@ export async function request<T>(
     cancel();
   }
 }
+
 
 export const getJSON = <T>(path: string, init?: ClientInit) => request<T>(path, 'GET', undefined, init);
 export const postJSON = <T>(path: string, body?: unknown, init?: ClientInit) => request<T>(path, 'POST', body, init);
