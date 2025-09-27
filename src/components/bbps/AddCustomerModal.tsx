@@ -186,6 +186,7 @@ export default function AddCustomerModal({
                         inputParams: { input: payloadInput }, // ALWAYS array
                     },
                 });
+                
                 respObj = (fetchResp ?? {}) as Record<string, unknown>;
 
                 // if Bill Validation is mandatory → run it after bill fetch
@@ -244,20 +245,12 @@ export default function AddCustomerModal({
             const nextScreenPayload = {
                 ...respObj,
                 billerAdhoc,
-                // baseline fields you already store
                 service_id: serviceId,
                 billerId,
-                customerMobile: values.mobileNumber,
-                customerPan: values.idNumber || undefined,
-                customerName: values.customerName,
-                customerInfo: { customerEmail: values.email || undefined },
+                customerInfo: { customerEmail: values.email || undefined, customerName: values.customerName, customerPan: values.idNumber || undefined, customerMobile: values.mobileNumber },
                 inputParams: { input: payloadInput },
                 requestId: requestIdFromApis || fallbackRequestId,
-
-                // 👇 NEW: carry full CCF1 object
                 interchangeFeeCCF1: normalizedCcf1,
-
-                // 👇 NEW: also expose flat/percent via amountInfo for the next screen’s existing logic
                 amountInfo: {
                     ...(respObj as any)?.amountInfo,             // keep anything API might have set
                     ...(respObj as any)?.data?.amountInfo,       // or nested
@@ -337,7 +330,7 @@ export default function AddCustomerModal({
                         name="customerName"
                         rules={[{ required: true, message: "Please enter customer name" }]}
                     >
-                        <Input size="large" placeholder="Enter Customer Name" />
+                        <Input size="large" placeholder="Enter Customer Name" disabled={isPending} />
                     </Form.Item>
 
                     <Form.Item
@@ -348,7 +341,7 @@ export default function AddCustomerModal({
                             { pattern: MOBILE_REGEX, message: "Enter a valid 10-digit number" },
                         ]}
                     >
-                        <Input size="large" placeholder="Enter Mobile Number" />
+                        <Input size="large" placeholder="Enter Mobile Number" disabled={isPending} />
                     </Form.Item>
 
                     <Form.Item
@@ -356,14 +349,14 @@ export default function AddCustomerModal({
                         name="email"
                         rules={[{ type: "email", message: "Enter a valid email" }]}
                     >
-                        <Input size="large" placeholder="Enter Email Address" />
+                        <Input size="large" placeholder="Enter Email Address" disabled={isPending} />
                     </Form.Item>
 
                     <Form.Item label="PAN" name="idNumber">
-                        <Input size="large" placeholder="Enter PAN" />
+                        <Input size="large" placeholder="Enter PAN" disabled={isPending} />
                     </Form.Item>
 
-                    <button type="submit" className="hidden" />
+                    <button type="submit" className="hidden" disabled={isPending} />
                 </Form>
             </SmartModal.Body>
 

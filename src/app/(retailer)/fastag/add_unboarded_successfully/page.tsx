@@ -6,10 +6,12 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
 export default function FastTagSuccessPage() {
+    const router = useRouter();
   return (
     <DashboardLayout
       sections={moneyTransferSidebarConfig}
@@ -18,12 +20,12 @@ export default function FastTagSuccessPage() {
     >
       {/* Section Header */}
       <DashboardSectionHeader
-        title="Tag Replacement"
-        subtitle="Replace expired, stolen, or damaged FASTag"
+        title="New Customer Onboarding"
+        subtitle="Fastag Recharge"
         titleClassName="!text-[#2F2F2F] !font-semibold !text-[22px]"
         arrowClassName="!text-[#2F2F2F]"
-        imgSrc="/logo.svg"
-        imgClassName="!w-[98px] !h-[36px] !mr-8"
+        // imgSrc="/logo.svg"
+        // imgClassName="!w-[98px] !h-[36px] !mr-8"
       />
 
       {/* Page Content */}
@@ -52,14 +54,15 @@ export default function FastTagSuccessPage() {
               />
             </div>
             <Text className="!block !text-[#00A321] !font-normal !text-[20px] !mb-2">
-              Tag Replacement fulfilled
+              Vehicle Onboarded Successfully
             </Text>
             <Text className="!block !text-[#00A321] !font-medium !text-[15px] !mb-6">
-              Tag Replacement fulfilled. Get new KIT Number
+              Vehicle Onboarded Successfully, Move to Fastag Recharge
             </Text>
             <Button
               type="default"
               className="!bg-[#00A321] !text-white w-[425px] h-[39px] rounded-[8px] rotate-0 opacity-100 !text-[12px]"
+              onClick={()=>router.push("/fastag/dashboard")}
             >
               Proceed to Fastag Recharge
             </Button>

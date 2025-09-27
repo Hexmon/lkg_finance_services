@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Modal, Radio, Select, Typography, message } from "antd";
+import { Button, Typography } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
-import Image from "next/image";
-import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useBillPayment } from "@/features/retailer/retailer_bbps/bbps-online/bill_avenue/data/hooks";
 import { useMessage } from "@/hooks/useMessage";
 import { useAddOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
+import BillDetailsHeader from "@/components/bbps/BillDetails/BillDetailsHeader";
+import BillInfoGrid, { BillerResponseLite } from "@/components/bbps/BillDetails/BillInfoGrid";
+import FeeBreakdown, { FeeState } from "@/components/bbps/BillDetails/FeeBreakdown";
+import PayModal from "@/components/bbps/BillDetails/PayModal";
 
 const { Title } = Typography;
 const STORAGE_KEY = "bbps:lastBillFetch";
@@ -37,22 +39,17 @@ export default function BillDetailsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentMode, setPaymentMode] = useState<PayModeUI>("Wallet");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { error, warning } = useMessage();
   const [resp, setResp] = useState<any | null>(null);
+  const [paymentAmountPaise, setPaymentAmountPaise] = useState(resp?.data?.billerResponse?.billAmount ?? '')
 
   const { billPaymentAsync, isLoading: payLoading } = useBillPayment();
   const { biller_category, service_id } = useParams() as { biller_category?: string; service_id?: string };
-  const { addOnlineBillerAsync } = useAddOnlineBiller();
+  const billerCategory = searchParams.get("biller_category") ?? biller_category ?? "";
+  // const { addOnlineBillerAsync } = useAddOnlineBiller();
 
-  // fee/local state
-  const [feeState, setFeeState] = useState<{
-    paymentAmountPaise: number;
-    flatFeePaise: number;
-    percentFee: number;
-    ccf1Paise: number;
-    gstPaise: number;
-    totalFeePaise: number;
-  }>({
+  const [feeState, setFeeState] = useState<FeeState>({
     paymentAmountPaise: 0,
     flatFeePaise: 0,
     percentFee: 0,
@@ -61,6 +58,7 @@ export default function BillDetailsPage() {
     totalFeePaise: 0,
   });
 
+  // load session payload
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -72,112 +70,87 @@ export default function BillDetailsPage() {
           sessionStorage.removeItem(STORAGE_KEY);
         }
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }, []);
 
-  // ---- derived values from resp ----
-  const bfr = useMemo(() => {
+  // billerResponse extraction (handles adhoc by fabricating minimal)
+  const bfr: BillerResponseLite | null = useMemo(() => {
     const r = resp as any;
-    return (
+    const nested =
       r?.billFetchResponse?.billerResponse ||
       r?.data?.billFetchResponse?.billerResponse ||
       r?.data?.billerResponse ||
-      r?.billerResponse ||
-      null
-    );
+      r?.billerResponse;
+
+    if (nested) return nested;
+
+    return r
+      ? {
+        customerName: r?.customerName ?? r?.customerInfo?.customerName ?? "",
+      }
+      : null;
   }, [resp]);
 
+  // session fields
   const sessionCore = useMemo(() => resp ?? {}, [resp]);
   const sessionCustomerName = sessionCore?.customerName ?? bfr?.customerName ?? "";
   const sessionCustomerMobile = sessionCore?.customerMobile ?? "";
   const sessionCustomerEmail = sessionCore?.customerInfo?.customerEmail ?? "";
   const sessionBillerId = sessionCore?.billerId ?? "";
-  const sessionRequestId = sessionCore?.requestId ?? "";
-  const billerAdhoc = resp?.billerAdhboc ?? false
-
   const validationInfo: { infoName?: string; infoValue?: string } | null =
     sessionCore?.data?.additionalInfo?.info ?? null;
 
-  // bill amount from fetch (optional, in paise)
-  const hasBillAmount =
-    !!bfr && bfr?.billAmount != null && String(bfr.billAmount).trim() !== "";
+  // bill amount (if real bill fetched)
+  const hasBillAmount = !!bfr && bfr?.billAmount != null && String(bfr.billAmount).trim() !== "";
   const billAmountPaiseStr: string | undefined = useMemo(() => {
     if (!hasBillAmount) return undefined;
-    const raw = bfr?.billAmount ?? 0;
+    const raw: any = bfr?.billAmount ?? 0;
     return isDigits(raw) ? String(raw) : toPaise(raw);
   }, [hasBillAmount, bfr?.billAmount]);
 
-  // compute fee state (base amount + CCF1 + GST)
+  // optional adhoc input via query (?amount= in rupees)
+  const qpAmountRupees = searchParams.get("amount");
+  const qpAmountPaise = qpAmountRupees ? toPaise(qpAmountRupees) : undefined;
+
+  // compute fees
   useEffect(() => {
     if (!resp) return;
 
     const candidates: Array<unknown> = [
+      qpAmountPaise, // adhoc via URL
       resp?.amountInfo?.amount,
       resp?.data?.amountInfo?.amount,
       resp?.paymentAmountPaise,
       resp?.paymentAmount,
       resp?.amountPaise,
-      billAmountPaiseStr, // fallback to bill fetch amount (already paise string)
+      billAmountPaiseStr, // bill-fetch
     ];
 
-    console.log("🔎 Fee pre-calculation inputs", {
-      fromSession_amountInfo: resp?.amountInfo,
-      fromSession_data_amountInfo: resp?.data?.amountInfo,
-      billAmountPaiseStr,
-      candidates,
-    });
+    // for (const c of candidates) {
+    //   if (typeof c === "string" && /^\d+$/.test(c)) { setPaymentAmountPaise(Number(c)); break; }
+    //   if (typeof c === "number" && Number.isFinite(c)) { setPaymentAmountPaise(Math.floor(c)); break; }
+    // }
 
-    // pick the first valid candidate
-    let paymentAmountPaise = 0;
-    let pickedFrom: string | null = null;
-    for (const [idx, c] of candidates.entries()) {
-      if (typeof c === "string" && /^\d+$/.test(c)) {
-        paymentAmountPaise = Number(c);
-        pickedFrom = `candidates[${idx}] (string)`;
-        break;
-      }
-      if (typeof c === "number" && Number.isFinite(c)) {
-        paymentAmountPaise = Math.floor(c);
-        pickedFrom = `candidates[${idx}] (number)`;
-        break;
-      }
-    }
-
-    // fees (paise + %)
     const flatFeePaise = Math.floor(
-      Number(resp?.interchangeFeeCCF1?.flatFee ?? resp?.amountInfo?.flatFee ?? resp?.data?.amountInfo?.flatFee ?? 0) || 0
+      Number(
+        resp?.interchangeFeeCCF1?.flatFee ??
+        resp?.amountInfo?.flatFee ??
+        resp?.data?.amountInfo?.flatFee ??
+        0
+      ) || 0
     );
+
     const percentFee =
-      Number(resp?.interchangeFeeCCF1?.percentFee ?? resp?.amountInfo?.percentFee ?? resp?.data?.amountInfo?.percentFee ?? 0) || 0;
+      Number(
+        resp?.interchangeFeeCCF1?.percentFee ??
+        resp?.amountInfo?.percentFee ??
+        resp?.data?.amountInfo?.percentFee ??
+        0
+      ) || 0;
 
-    console.log("🧮 Fee base values", {
-      pickedFrom,
-      paymentAmountPaise,
-      flatFeePaise,
-      percentFee,
-    });
-
-    // CCF1 = floor(paymentAmount * percent/100 + flatFee)
-    const ccf1Raw = paymentAmountPaise * (percentFee / 100) + flatFeePaise;
-    const ccf1Paise = Math.floor(ccf1Raw);
-
-    // GST = floor(CCF1 * 18 / 100)
-    const gstRaw = (ccf1Paise * 18) / 100;
-    const gstPaise = Math.floor(gstRaw);
-
+    const ccf1Paise = Math.floor(paymentAmountPaise * (percentFee / 100) + flatFeePaise);
+    const gstPaise = Math.floor((ccf1Paise * 18) / 100);
     const totalFeePaise = ccf1Paise + gstPaise;
-
-    // 🧾 log computed values
-    console.log("🧾 Fee computed", {
-      ccf1Raw,
-      ccf1Paise,
-      gstRaw,
-      gstPaise,
-      totalFeePaise,
-      totalFeeRupees: paiseToRupees(totalFeePaise),
-    });
 
     setFeeState({
       paymentAmountPaise,
@@ -187,40 +160,16 @@ export default function BillDetailsPage() {
       gstPaise,
       totalFeePaise,
     });
-  }, [resp, billAmountPaiseStr]);
+  }, [resp, billAmountPaiseStr, qpAmountPaise]);
 
-  // ---- CTA + UI “Amount to Pay” ----
   const billPaise = Number(billAmountPaiseStr ?? 0);
-
-  // 👉 Total to display on CTA:
-  //    - If bill fetch ran: Bill Amount + (CCF1 + GST)
-  //    - Else: only (CCF1 + GST)
-  const ctaTotalPaise = feeState.totalFeePaise + (billPaise > 0 ? billPaise : 0);
-  const ctaAmount = paiseToRupees(ctaTotalPaise);
-  console.log("💳 CTA computation", {
-    billPaise,
-    feeState,
-    ctaTotalPaise,
-    ctaAmount,
-  });
-  // show CTA if we have any positive total to pay
-  const canPay = ctaTotalPaise >= 0;
-
-  const amountToPayLabel =
-    billPaise > 0 ? "Amount to Pay (Bill + Fee + GST)" : "Amount to Pay (Fee + GST)";
-
+  const ctaTotalPaise = feeState.totalFeePaise + billPaise;
+  const ctaAmountText = paiseToRupees(ctaTotalPaise);
+  const amountToPayLabel = billPaise > 0 ? "Amount to Pay (Bill + Fee + GST)" : "Amount to Pay (Fee + GST)";
   const displayBillAmount = billAmountPaiseStr ? paiseToRupees(billAmountPaiseStr) : undefined;
 
-  const Row: React.FC<{ label: string; value?: any }> = ({ label, value }) => {
-    const v = value ?? "";
-    if (String(v).trim() === "") return null;
-    return (
-      <div>
-        <div className="text-gray-500">{label}</div>
-        <div>{v}</div>
-      </div>
-    );
-  };
+  // Only enable pay if there is some positive payable
+  const canPay = (billPaise >= 0 || feeState.paymentAmountPaise > 0) && ctaTotalPaise > 0;
 
   async function handleProceedToPay() {
     try {
@@ -236,16 +185,22 @@ export default function BillDetailsPage() {
       }
       const svcId = svcIdCandidate;
 
-      const billerId = resp?.billerId;
-      const customerMobile = resp?.customerMobile;
+      const billerId = resp?.billerId ?? "";
+      const customerMobile = resp?.customerInfo?.customerMobile ?? "";
       if (!billerId || !customerMobile) {
         error("Missing billerId or customerMobile.");
         return;
       }
 
-      // Keep existing PAN guard (based on bill amount)
-      const needsPAN = (billPaise / 100) > 49999;
-      const pan: string | undefined = resp?.customerPan;
+      // const effectivePaise = billPaise > 0 ? billPaise : feeState.paymentAmountPaise;
+      // if (effectivePaise <= 0) {
+      //   warning("Please enter/select a valid amount before proceeding.");
+      //   return;
+      // }
+
+      // PAN guard (fixed)
+      const needsPAN = (ctaTotalPaise / 100) > 49999;
+      const pan: string | undefined = resp?.customerInfo?.customerPan;
       if (needsPAN && !pan) {
         error("PAN is required for payments above ₹49,999. Please update user PAN and try again.");
         return;
@@ -254,23 +209,7 @@ export default function BillDetailsPage() {
       const requestId = resp?.requestId ?? "";
       const mappedPaymentMode = mapPaymentMode(paymentMode);
 
-      // Build input params (prefer what was stored/returned)
-      let inputParams = resp?.inputParams ?? resp?.data?.inputParams;
-      if (!inputParams?.input) {
-        inputParams = {
-          input: {
-            paramName:
-              resp?.data?.inputParams?.input?.paramName ||
-              resp?.inputParams?.input?.paramName ||
-              "CustomerId",
-            paramValue:
-              resp?.data?.inputParams?.input?.paramValue ||
-              resp?.inputParams?.input?.paramValue ||
-              resp?.customerId ||
-              customerMobile,
-          },
-        };
-      }
+      let inputParams = resp?.inputParams ?? {};
 
       const billerResponse =
         billPaise > 0 && bfr
@@ -284,20 +223,15 @@ export default function BillDetailsPage() {
           }
           : undefined;
 
-      // ❗ Not changing your existing payment body; still sending bill amount only.
       const body = {
         requestId,
         billerId,
-        customerInfo: {
-          customerMobile,
-          customerName: bfr?.customerName || resp?.customerName || "Customer",
-          customerEmail: resp?.customerInfo?.customerEmail || undefined,
-          customerPan: pan,
-        },
+        customerInfo: resp?.customerInfo ?? {},
         inputParams,
         billerResponse,
         amountInfo: {
-          amount: String(billPaise), // unchanged
+          // IMPORTANT: send the actual bill/recharge amount (paise), NOT total incl. fee
+          amount: String(ctaTotalPaise),
           currency: "356",
           custConvFee: "0",
         },
@@ -308,6 +242,7 @@ export default function BillDetailsPage() {
         },
         additionalInfo: resp?.additionalInfo ?? resp?.data?.additionalInfo,
       } as const;
+      console.log({ body });
 
       const paymentResp = await billPaymentAsync({ service_id: svcId, body });
 
@@ -325,24 +260,17 @@ export default function BillDetailsPage() {
       const isHttpOk = topStatus === 200 || innerStatus === 200;
       const isDomainOk = String(responseCode) === "000";
 
-      // Treat success when either HTTP-like status is 200 AND domain response is "000"
       if (isHttpOk && isDomainOk) {
-        // ---- SAFETY: make sure these are defined ----
-        const safeBillPaise = typeof billPaise === "number" ? billPaise : 0;
-        const safeCtaTotalPaise =
-          typeof (globalThis as any).ctaTotalPaise === "number" ? (globalThis as any).ctaTotalPaise
-            : (feeState?.paymentAmountPaise ?? 0) + (feeState?.totalFeePaise ?? 0);
-
         try {
           const carry = {
-            amountPaise: String(safeBillPaise),
-            displayAmount: paiseToRupees(safeBillPaise),
+            amountPaise: String(ctaTotalPaise),
+            displayAmount: paiseToRupees(ctaTotalPaise),
             fee: {
               paymentAmountPaise: feeState.paymentAmountPaise,
               ccf1Paise: feeState.ccf1Paise,
               gstPaise: feeState.gstPaise,
               totalFeePaise: feeState.totalFeePaise,
-              ctaTotalPaise: safeCtaTotalPaise, // grand total if you need it
+              ctaTotalPaise, // grand total if you need it
             },
             paymentMode: mappedPaymentMode,
             billerId,
@@ -361,9 +289,7 @@ export default function BillDetailsPage() {
               null,
           };
           sessionStorage.setItem(PAYMENT_KEY, JSON.stringify({ resp: paymentResp, context: carry }));
-        } catch {
-          // ignore storage errors
-        }
+        } catch { /* ignore */ }
 
         setIsModalOpen(false);
         router.push("/bill_payment/bbps-online/bbps-successful");
@@ -376,50 +302,11 @@ export default function BillDetailsPage() {
           "Error while payment !!";
         warning(errMsg);
       }
-
     } catch (e: any) {
-      const msg = e?.message || "Payment failed";
-      error(e.message);
+      error(e?.message || "Payment failed");
       console.error("❌ Bill Payment Error:", e);
     }
   }
-
-  // const handleAddtoBiller = async () => {
-  //   try {
-  //     await addOnlineBillerAsync({
-  //       service_id: resp?.service_id ?? "",
-  //       is_direct: false,
-  //       input_json: {
-  //         request_id: resp?.requestId ?? "",
-  //         customerInfo: {
-  //           customerMobile: resp?.customerMobile ?? "",
-  //           customerAdhaar: resp?.customerAdhaar ?? "",
-  //           customerName: resp?.data?.billerResponse?.customerName ?? "",
-  //           customerPan: resp?.customerPan ?? "",
-  //         },
-  //         billerId: resp?.billerId ?? "",
-  //         inputParams: resp?.inputParams ?? {},
-  //         billerResponse: {
-  //           billAmount: resp?.data?.billerResponse?.billAmount ?? "",
-  //           billDate: resp?.data?.billerResponse?.billDate ?? "",
-  //           billNumber: resp?.data?.billerResponse?.billNumber ?? "",
-  //           billPeriod: resp?.data?.billerResponse?.billPeriod ?? "",
-  //           customerName: resp?.data?.billerResponse?.customerName ?? "",
-  //           dueDate: resp?.data?.billerResponse?.dueDate,
-  //         },
-  //         amountInfo: {
-  //           amount: "5459",
-  //           currency: "356",
-  //           custConvFee: "0",
-  //           amountTags: { amountTag: "", value: "" },
-  //           CCF1: "",
-  //         },
-  //       },
-  //     });
-  //   } catch {
-  //     // ignore
-  //   }
-  // };
 
   return (
     <DashboardLayout
@@ -428,147 +315,83 @@ export default function BillDetailsPage() {
       pageTitle="Bill Details"
     >
       <div className="min-h-screen w-full mb-3">
-        <div className="flex justify-between items-center">
-          <DashboardSectionHeader
-            title={biller_category ?? ""}
-            titleClassName="!font-medium text-[20px] !mt-0"
-            subtitle="Bill Payment"
-            subtitleClassName="!mb-4 !text-[14px]"
-            showBack
-          />
-          <Image src="/logo.svg" alt="logo" width={100} height={100} className="p-1" />
-        </div>
+        <BillDetailsHeader title={billerCategory ?? ""} />
 
         <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-full space-y-4 relative">
-          {/* Header */}
+          {/* Header strip */}
           <div className="flex justify-between items-center">
-            <Title level={5} className="!mb-0">
-              Bill Details
-            </Title>
+            <Title level={5} className="!mb-0">Bill Details</Title>
             <span className="bg-[#FFECB3] text-[#D97A00] px-4 py-1 rounded-lg text-sm font-medium">
               Pending Payment
             </span>
           </div>
 
-          {/* Bill Info */}
-          <div className="bg-[#FFFFFF] p-6 rounded-xl shadow-md">
-            <div className="!grid !grid-cols-4 md:grid-cols-3 gap-y-6 gap-x-4 text-sm font-medium text-[#333]">
-              <Row label="Customer Name" value={sessionCustomerName} />
-              <Row label="Customer Number" value={sessionCustomerMobile} />
-              <Row label="Email" value={sessionCustomerEmail} />
-              <Row label="Biller Id" value={sessionBillerId} />
-              {/* <Row label="Request Id" value={sessionRequestId} /> */}
-
-              <Row label="Bill Period" value={bfr?.billPeriod} />
-              <Row label="Bill Number" value={bfr?.billNumber} />
-              <Row label="Due Date" value={bfr?.dueDate} />
-              <Row label="Bill Date" value={bfr?.billDate} />
-
-              {/* Validation-only info (e.g., Meter Balance) */}
-              {validationInfo?.infoName && validationInfo?.infoValue && (
-                <Row label={validationInfo.infoName!} value={validationInfo.infoValue} />
-              )}
-
-              {/* --- Fee breakdown --- */}
-              <Row
-                label="Payment Amount (Base)"
-                value={feeState.paymentAmountPaise > 0 ? `₹${paiseToRupees(feeState.paymentAmountPaise)}` : ""}
+          {/* Info grid + fee breakdown */}
+          <BillInfoGrid
+            customerName={sessionCustomerName}
+            customerMobile={sessionCustomerMobile}
+            customerEmail={sessionCustomerEmail}
+            billerId={sessionBillerId}
+            bfr={bfr}
+            validationInfo={validationInfo}
+            extra={
+              <FeeBreakdown
+                billerAdhoc={resp?.billerAdhoc ?? false}
+                feeState={feeState}
+                billPaise={billPaise}
+                amountToPayLabel={amountToPayLabel}
+                displayBillAmount={displayBillAmount}
+                paiseToRupees={paiseToRupees}
               />
-              <Row
-                label="Convenience Fee (CCF1)"
-                value={feeState.ccf1Paise > 0 ? `₹${paiseToRupees(feeState.ccf1Paise)}` : ""}
-              />
-              <Row
-                label="GST on CCF1 (18%)"
-                value={feeState.gstPaise > 0 ? `₹${paiseToRupees(feeState.gstPaise)}` : ""}
-              />
-              <Row
-                label={amountToPayLabel}
-                value={ctaTotalPaise >= 0 ? `₹${paiseToRupees(ctaTotalPaise)}` : ""}
-              />
+            }
+          />
 
-              {/* Bill Amount (if fetched) */}
-              <Row label="Bill Amount" value={displayBillAmount ? `₹${displayBillAmount}` : ""} />
-            </div>
+          {/* Warning */}
+          <div className="bg-[#FEEFC3] text-[#D97A00] p-3 rounded-md text-sm flex items-center gap-2 mt-6">
+            <ExclamationCircleOutlined />
+            Please verify all details before making the payment. This transaction cannot be reversed.
+          </div>
 
-            {/* Warning */}
-            <div className="bg-[#FEEFC3] text-[#D97A00] p-3 rounded-md text-sm flex items-center gap-2 mt-6">
-              <ExclamationCircleOutlined />
-              Please verify all details before making the payment. This transaction cannot be reversed.
-            </div>
+          {/* Actions */}
+          <div className="flex flex-col md:flex-row gap-8 mt-6">
+            <Button
+              block
+              className="!h-[42px] !rounded-xl !shadow-md"
+              disabled={payLoading}
+              onClick={() => history.back()}
+            >
+              Back to Edit
+            </Button>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col md:flex-row gap-8 mt-6">
-              <Button block className="!h-[42px] !rounded-xl !shadow-md" disabled={payLoading} onClick={() => history.back()}>
-                Back to Edit
-              </Button>
-
-              {canPay && (
-                <Button
-                  block
-                  className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
-                  onClick={() => setIsModalOpen(true)}
-                  disabled={payLoading}
-                >
-                  {payLoading ? "Processing..." : `Pay ₹${ctaAmount}`}
-                </Button>
-              )}
-            </div>
-
-            <div className="!pt-2 !flex !items-center !justify-center">
+            {canPay && (
               <Button
                 block
-                className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md !mt-6 !w-[445px]"
+                className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
+                onClick={() => setIsModalOpen(true)}
                 disabled={payLoading}
-              // onClick={handleAddtoBiller}
-              >
-                Add to Biller
+              >{
+                  resp?.billerAdhoc ?
+                    payLoading ? "Processing..." : `Pay`
+                    :
+                    payLoading ? "Processing..." : `Pay ₹${ctaAmountText}`
+                }
               </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 💳 Payment Modal */}
+      {/* Modal */}
       {canPay && (
-        <Modal
+        <PayModal
           open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
-          footer={null}
-          closable={!payLoading}
-          centered
-          width={340}
-          className="!rounded-2xl !p-0"
-        >
-          <div className="text-center py-6 px-4">
-            <h3 className="text-[#3386FF] text-sm font-medium mb-1">Payable Amount</h3>
-            <div className="text-[#3386FF] text-2xl font-bold mb-4">₹{ctaAmount}</div>
-
-            <div className="flex items-center justify-center gap-6 mb-6 text-sm text-gray-700">
-              <Radio.Group
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                disabled={payLoading}
-              >
-                <Radio value="Wallet">Wallet</Radio>
-                <Radio value="Cashfree">
-                  <Image src="/cashfree.svg" alt="Cashfree" width={70} height={20} className="inline-block" />
-                </Radio>
-              </Radio.Group>
-            </div>
-
-            <Button
-              type="primary"
-              block
-              className="!bg-[#0BA82F] !text-white !rounded-lg !h-[38px]"
-              onClick={handleProceedToPay}
-              loading={payLoading}
-              disabled={payLoading}
-            >
-              {payLoading ? "Processing..." : "Proceed to Pay"}
-            </Button>
-          </div>
-        </Modal>
+          onClose={() => setIsModalOpen(false)}
+          payLoading={payLoading}
+          ctaAmountText={ctaAmountText}
+          paymentMode={paymentMode}
+          setPaymentMode={(m) => setPaymentMode(m)}
+          onProceed={handleProceedToPay}
+          billerAdhoc={resp?.billerAdhoc ?? false} paymentAmount={paymentAmountPaise} setPaymentAmount={setPaymentAmountPaise} />
       )}
     </DashboardLayout>
   );
