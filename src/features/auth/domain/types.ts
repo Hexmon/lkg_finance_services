@@ -60,6 +60,13 @@ export const ChangePasswordRequestSchema = z.object({
 });
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
+export const ChangePasswordResponseSchema = z.object({
+  status: z.union([z.number(), z.string()]),
+  message: z.string(),
+});
+export type ChangePasswordResponse = z.infer<typeof ChangePasswordResponseSchema>;
+
+
 /** ---------- Reset Password (initiate; API Key) ---------- */
 export const ResetPasswordRequestSchema = z.object({
   user_id: z.string().min(1),

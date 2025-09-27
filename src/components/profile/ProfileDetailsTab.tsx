@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useProfileQuery } from '@/features/profile/data/hooks';
 import { selectUserId, useAppSelector } from '@/lib/store';
 import { selectProfileLoaded } from '@/lib/store/slices/profileSlice';
+import { Address, AddressesSchema } from '@/features/profile/domain/types';
+import z from 'zod';
 
 type FieldProps = {
   id: string;
@@ -75,13 +77,21 @@ const ProfileBlock: React.FC<{ name?: string; urn?: string; profile?: string }> 
   );
 };
 
-const ProfileDetailsTab: React.FC = () => {
+type ProfileDetailsTabProps = {
+  setAddresses: React.Dispatch<React.SetStateAction<Address[]>>;
+};
+
+const ProfileDetailsTab: React.FC<ProfileDetailsTabProps> = ({ setAddresses }) => {
   const userId = useAppSelector(selectUserId);
   const loaded = useAppSelector(selectProfileLoaded);
 
   const { data, isFetching } = useProfileQuery({ enabled: !!userId && !loaded });
 
   const p = data?.data;
+  
+  useEffect(() => {
+    setAddresses(p?.addresses ?? []);
+  }, [p?.addresses]);
 
   const genderPretty =
     typeof p?.gender === 'string'
@@ -117,16 +127,15 @@ const ProfileDetailsTab: React.FC = () => {
             <Field id="mobile" label="Mobile No.:" value={p?.mobile} disabled readOnly />
             <Field id="dob" label="Date Of Birth:" value={p?.dob} disabled readOnly />
             <Field id="gender" label="Gender:" value={genderPretty} disabled readOnly />
-            <Field id="acceptedTerms" label="Accepted Terms:" value={p?.accepted_terms ? 'Yes' : 'No'} disabled readOnly />
+            {/* <Field id="acceptedTerms" label="Accepted Terms:" value={p?.accepted_terms ? 'Yes' : 'No'} disabled readOnly /> */}
           </div>
+          <Field id="address" className='my-3' label="Address :" value={p?.address ?? ""} disabled readOnly />
 
-          {/* IDs */}
-          <div className="grid grid-cols-3 gap-[28px] mt-5">
+          {/* <div className="grid grid-cols-3 gap-[28px] mt-5">
             <Field id="profileId" label="Profile ID:" value={p?.profile_id} disabled readOnly />
             <Field id="urn" label="URN:" value={p?.urn} disabled readOnly />
           </div>
 
-          {/* Verification + timestamps */}
           <div className="grid grid-cols-3 gap-[28px] mt-3">
             <Field id="createdAt" label="Created At:" value={p?.created_at} disabled readOnly />
             <Field id="updatedAt" label="Updated At:" value={p?.updated_at ?? ''} disabled readOnly />
@@ -137,7 +146,7 @@ const ProfileDetailsTab: React.FC = () => {
               disabled
               readOnly
             />
-          </div>
+          </div> */}
         </div>
       </div>
 

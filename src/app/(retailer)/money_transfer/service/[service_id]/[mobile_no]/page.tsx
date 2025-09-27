@@ -1,12 +1,12 @@
 // src/app/(retailer)/money_transfer/service/[service_id]/[mobile_no]/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import { CardLayout } from "@/lib/layouts/CardLayout";
-import { getUiSenderAndBeneficiaries, getWalletStats } from "@/config/app.config";
+import { getWalletStats } from "@/config/app.config";
 import Image from "next/image";
 import SmartTabs, { TabItem } from "@/components/ui/SmartTabs";
 import NewTransfer from "@/components/money-transfer/NewTransfer";
@@ -20,6 +20,7 @@ import { useMessage } from "@/hooks/useMessage";
 export default function MoneyTransferPage() {
   const [activeTab, setActiveTab] = useState<string | number>("beneficiaries");
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | undefined>(undefined);
+  const [beneficiariesCount, setBeneficiariesCount] = useState(0)
   const { error, info, success } = useMessage();
 
   type RouteParams = { service_id: string; mobile_no: string };
@@ -55,7 +56,7 @@ export default function MoneyTransferPage() {
       getWalletStats({
         totalTxnCount,
         successRateRatio: success_rate_ratio,
-        totalBeneficiaries: null,
+        totalBeneficiaries: beneficiariesCount ?? 0,
         commissionOverall: overall ?? 0,
       }),
     [totalTxnCount, success_rate_ratio, overall]
@@ -66,13 +67,24 @@ export default function MoneyTransferPage() {
       if ((service_id ?? "").length === 0) {
         error("Missing Service Id!! Retry after selectin DMT servie");
         return;
-      } else {
-        await checkSenderAsync({ mobile_no, service_id, txnType, bankId: bankType });
+      } else if (txnType === undefined) {
+        error('Retry transaction type is not defined !!')
+      }
+      else {
+        const res = await checkSenderAsync({ mobile_no, service_id, txnType, bankId: bankType });
+        // console.log({inside: res.beneficiaries?.length});
+        setBeneficiariesCount(res.beneficiaries?.length ?? 0)
       }
     } catch (err: any) {
       error(err?.message ?? "Something went wrong while checking sender.");
     }
   };
+
+  const refreshSender = useCallback(() => {
+    // reuse the same fetch (keeps single source of truth in parent)
+    handleFetchSender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service_id, mobile_no, txnType, bankType]);
 
   useEffect(() => {
     handleFetchSender();

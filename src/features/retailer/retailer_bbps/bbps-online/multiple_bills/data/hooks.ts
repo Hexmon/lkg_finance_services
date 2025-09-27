@@ -9,12 +9,15 @@ import {
 } from "@tanstack/react-query";
 
 import {
+  apiAddOnlineBiller,
   apiGetOnlineBillerList,
   apiOnlineBillProceed,
   apiRemoveOnlineBiller,
 } from "./endpoints";
 
 import type {
+  AddOnlineBillerBffRequest,
+  AddOnlineBillerResponse,
   OnlineBillerListQuery,
   OnlineBillerListResponse,
   OnlineBillProceedRequest,
@@ -143,5 +146,20 @@ export function useRemoveOnlineBiller(
     reset: mutation.reset,
     isSuccess: mutation.isSuccess,
     status: mutation.status,
+  };
+}
+
+export function useAddOnlineBiller() {
+  const mutation = useMutation<AddOnlineBillerResponse, unknown, AddOnlineBillerBffRequest>({
+    mutationFn: apiAddOnlineBiller,
+  });
+
+  return {
+    data: mutation.data,
+    error: mutation.error,
+    isLoading: mutation.isPending,
+    addOnlineBiller: mutation.mutate,
+    addOnlineBillerAsync: mutation.mutateAsync,
+    reset: mutation.reset,
   };
 }

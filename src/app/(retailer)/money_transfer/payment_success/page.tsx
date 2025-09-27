@@ -42,7 +42,7 @@ export default function PaymentSuccessPage() {
                 <div className="bg-green-50 border border-green-200 rounded-xl shadow-md p-6 w-full">
 
                     {/* Top-right Logo */}
-                    <div className="flex justify-end mb-4">
+                    {/* <div className="flex justify-end mb-4">
                         <Image
                             src="/logo-as.svg"
                             alt="logo"
@@ -50,7 +50,7 @@ export default function PaymentSuccessPage() {
                             height={80}
                             className="p-1"
                         />
-                    </div>
+                    </div> */}
 
                     {/* Success Icon */}
                     <div className="flex justify-center mb-4">
@@ -92,12 +92,6 @@ export default function PaymentSuccessPage() {
 
                     {/* Buttons */}
                     <div className="flex gap-4 justify-center mt-8 mb-5">
-                        <button
-                            className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-medium w-full cursor-pointer"
-                            onClick={() => router.push("/bill_payment/bbps-online/bbps-mobile-receipt")}
-                        >
-                            Download Receipt
-                        </button>
                         <button
                             className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 w-full"
                             onClick={() => router.push("/money_transfer")}

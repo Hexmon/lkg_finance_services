@@ -6,6 +6,7 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "antd";
 
 const PAYMENT_KEY = "bbps:lastBillPayment"; // ✅ read what we stored
 
@@ -194,10 +195,10 @@ export default function PaymentSuccessPage() {
                 <p className="font-medium">0.00</p>
               </div>
 
-              <div>
+              {/* <div>
                 <p className="text-gray-500">Status</p>
                 <p className="font-semibold text-green-600">{status}</p>
-              </div>
+              </div> */}
 
               <div>
                 <p className="text-gray-500">Due Date (dd/mm/yyyy)</p>
@@ -215,9 +216,9 @@ export default function PaymentSuccessPage() {
             >
               Download Receipt
             </button>
-            <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 w-full">
+            <Button onClick={() => {router.replace('/bill_payment/bbps-online/d7c001c5-bf23-455b-acde-206965d147a7')}} className="!bg-green-600 !text-white px-6 py-2 rounded-lg font-medium !hover:bg-green-700 w-full">
               Make Another Payment
-            </button>
+            </Button>
           </div>
         </div>
       </div>

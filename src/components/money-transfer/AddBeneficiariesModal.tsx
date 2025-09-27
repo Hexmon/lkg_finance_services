@@ -10,6 +10,8 @@ import { useVerifyIfsc } from "@/features/retailer/dmt/beneficiaries/data/hooks"
 import { useAepsBankList } from "@/features/retailer/cash_withdrawl/data/hooks";
 import { useAddBeneficiary } from "@/features/retailer/dmt/beneficiaries/data/hooks"; // <-- ADD THIS
 import type { AddBeneficiaryRequest } from "@/features/retailer/dmt/beneficiaries/domain/types";
+import { useBankInfo } from "@/features/retailer/dmt/fund-transfer/data/hooks";
+import { useCheckSender } from "@/features/retailer/dmt/sender";
 
 export type AddBeneficiaryFormValues = {
   beneficiaryAccountNo: string;
@@ -29,6 +31,8 @@ type Props = {
   loading?: boolean; // deprecated by hook loading, but we’ll respect it if passed
   service_id: string;
   sender_id: string; // <-- ADD THIS (required by API)
+  bankType?: string
+  txnType?: string
 };
 
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
@@ -40,7 +44,8 @@ export default function AddBeneficiariesModal({
   initialValues,
   loading,
   service_id,
-  sender_id, // <-- ADD THIS
+  sender_id,
+  txnType, bankType
 }: Props) {
   const [form] = Form.useForm<AddBeneficiaryFormValues>();
 
@@ -77,30 +82,31 @@ export default function AddBeneficiariesModal({
 
   // Fetch bank list using service_id + bank_name
   const {
-    data: bankListData,
+    data: { banks } = {},
     error: bankListError,
     isLoading: bankListLoading,
-  } = useAepsBankList(
+  } = useBankInfo(
     { service_id, bank_name: bankQuery },
     Boolean(service_id && bankQuery)
   );
+
+  const { checkSenderAsync } = useCheckSender()
 
   // Track matched bank object so we can send bank_id/bank_code if available
   const [matchedBank, setMatchedBank] = useState<any | null>(null);
 
   useEffect(() => {
     const bn = (bankNameField ?? "").trim();
-    if (!bn || !bankListData?.bankList?.length) {
+    if (!bn || !banks?.length) {
       setMatchedBank(null);
       return;
     }
-    const match = bankListData.bankList.find(
+    const match = banks.find(
       (it: any) => (it?.["Bank Name"] ?? it?.bank_name ?? "").toLowerCase() === bn.toLowerCase()
     );
     setMatchedBank(match ?? null);
     // eslint-disable-next-line no-console
-    console.log("[AEPS bank match]", match ?? "No exact match");
-  }, [bankListData, bankNameField]);
+  }, [banks, bankNameField]);
 
   // debounced IFSC verify
   const debouncedVerify = useMemo(
@@ -149,10 +155,8 @@ export default function AddBeneficiariesModal({
     }
   }, [ifsc, debouncedVerify]);
 
-  // Disable input fields while verifying IFSC or while submitting
   const disableOthers = isVerifying || isAdding;
 
-  // SUBMIT: build AddBeneficiaryRequest and call hook
   const handleFinish = async (values: AddBeneficiaryFormValues) => {
     // Optionally let parent observe raw form values
     if (onSubmit) {
@@ -175,10 +179,11 @@ export default function AddBeneficiariesModal({
         matchedBank?.id ??
         matchedBank?.BankId ??
         undefined,
-      bank_code:
-        matchedBank?.["Bank Code"] ??
-        matchedBank?.bank_code ??
-        undefined,
+      bank_code: matchedBank?.bank_code ?? ""
+      // bank_code:
+      //   matchedBank?.["Bank Code"] ??
+      //   matchedBank?.bank_code ??
+      //   undefined,
       // lat/lng optional—add if you have them
       // lat: '...',
       // lng: '...',
@@ -192,6 +197,7 @@ export default function AddBeneficiariesModal({
       form.resetFields();
       setMatchedBank(null);
       onClose?.();
+      await checkSenderAsync({ mobile_no: values.mobileNo, service_id, bankId: bankType, txnType, })
     } catch (e: any) {
       // show a friendly error
       const msg =

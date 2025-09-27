@@ -16,7 +16,6 @@ import TransactionsPaged from "@/components/money-transfer/Transaction";
 // import SenderCheckFormPaypoint from "@/components/money-transfer/form/SenderCheckFormPaypoint";
 import SenderCheckFormBillAvenue, { BankId, SenderCheckWithOptionsValues } from "@/components/money-transfer/form/SenderCheckFormBillAvenue";
 import AddBeneficiariesModal from "@/components/money-transfer/AddBeneficiariesModal";
-import SmartModal from "@/components/ui/SmartModal";
 
 const { Title } = Typography;
 
@@ -25,6 +24,7 @@ export default function MoneyTransferServicePage() {
   const [isBeneficiaryModalOpen, setIsBeneficiaryModalOpen] = useState(false);
   const router = useRouter();
   const [bankType, setBankType] = useState<BankId | undefined>('ARTL')
+  const [txnType, setTxnType] = useState("")
 
   type RouteParams = { service_id: string };
   const { service_id } = useParams<RouteParams>();
@@ -36,6 +36,21 @@ export default function MoneyTransferServicePage() {
   // in MoneyTransferServicePage()
   const [senderId, setSenderId] = useState<string | null>(null);
 
+  // Somewhere top-level in the file (or a shared constants file)
+  const SENDER_CACHE_KEY = "dmt.sender.lookup";
+
+  type SenderLookupCache = {
+    at: number;
+    params: {
+      mobile_no: string;
+      bankId?: string;
+      txnType?: string;
+      service_id: string;
+    };
+    response: any;               // keep raw for maximum compatibility
+    sender_id: string | null;
+  };
+
   const onSubmitWithOptions = async (values: SenderCheckWithOptionsValues) => {
     try {
       const res = await checkSenderAsync({
@@ -45,36 +60,66 @@ export default function MoneyTransferServicePage() {
         service_id,
       });
 
-      // If no sender → open onboarding modal
-      if (!res?.sender) {
+      if (res?.message?.includes("Sender not found")) {
         info(res?.message ?? "Sender not found. Please verify to onboard.");
         setIsModalOpen(true);
         setSenderId(null);
+        // clear any stale cache
+        if (typeof window !== "undefined") sessionStorage.removeItem(SENDER_CACHE_KEY);
         return;
       }
 
-      // ✅ Extract sender_id from the response (try a few common shapes)
+      // Try common shapes for sender_id
       const sid =
-        (res as any)?.sender_id ??
         (res as any)?.sender?.sender_id ??
         (res as any)?.sender?.id ??
         (res as any)?.sender?.SenderId ??
+        (res as any)?.data?.sender?.sender_id ??
         null;
 
       setSenderId(sid);
-      // Optionally: info("Sender verified");
+
+      // ✅ cache the whole payload (plus request params)
+      if (typeof window !== "undefined") {
+        // const payload = {
+        //   at: Date.now(),
+        //   params: {
+        //     mobile_no: values.senderMobile,
+        //     bankId: values.bankId,
+        //     txnType: values.txnType,
+        //     service_id,
+        //   },
+        //   response: res,
+        //   sender_id: sid,
+        // };
+        sessionStorage.setItem(SENDER_CACHE_KEY, JSON.stringify(res));
+      }
+      const mobile_no = res.sender?.mobile_no
+      const txnType = values.txnType
+      const bankType = values.bankId
+
+      const nextUrl = `/money_transfer/service/${service_id}/${mobile_no}${txnType || bankType
+        ? `?${[
+          txnType ? `txnType=${encodeURIComponent(txnType)}` : "",
+          bankType ? `bankType=${encodeURIComponent(bankType)}` : "",
+        ]
+          .filter(Boolean)
+          .join("&")}`
+        : ""
+        }`;
+      router.push(nextUrl);
     } catch (err: any) {
       const status = err?.status ?? err?.response?.status;
       if (status === 400) {
         info(err?.message ?? "Sender not found. Please verify to onboard.");
         setIsModalOpen(true);
         setSenderId(null);
+        if (typeof window !== "undefined") sessionStorage.removeItem(SENDER_CACHE_KEY);
       } else {
         error(err?.message ?? "Something went wrong while checking sender.");
       }
     }
   };
-
 
   const handleAddBeneficiary = async () => {
     // TODO: call your API here
@@ -116,24 +161,24 @@ export default function MoneyTransferServicePage() {
               <TransactionsPaged isLoading={transactionLoading} transactionData={transactionData ?? []} />
             </>
           }
-          // footer={
-          //   <div className="flex justify-end">
-          //     <Button
-          //       type="primary"
-          //       className="!bg-[#3386FF] w-[111px] !rounded-[9px] !text-[10px]"
-          //       onClick={() => {
-          //         if (!senderId) {
-          //           info("Please verify sender first.");
-          //           return;
-          //         }
-          //         setIsBeneficiaryModalOpen(true);
-          //       }}
-          //     >
-          //       + Add Beneficiary
-          //     </Button>
+        // footer={
+        //   <div className="flex justify-end">
+        //     <Button
+        //       type="primary"
+        //       className="!bg-[#3386FF] w-[111px] !rounded-[9px] !text-[10px]"
+        //       onClick={() => {
+        //         if (!senderId) {
+        //           info("Please verify sender first.");
+        //           return;
+        //         }
+        //         setIsBeneficiaryModalOpen(true);
+        //       }}
+        //     >
+        //       + Add Beneficiary
+        //     </Button>
 
-          //   </div>
-          // }
+        //   </div>
+        // }
         />
 
         {/* Add Beneficiary Modal */}
@@ -142,7 +187,9 @@ export default function MoneyTransferServicePage() {
           onClose={() => setIsBeneficiaryModalOpen(false)}
           onSubmit={handleAddBeneficiary}
           // loading={isAddingBeneficiary}
-          service_id={senderId ?? ""} sender_id={senderId ?? ""}        />
+          txnType={txnType}
+          bankType={bankType}
+          service_id={senderId ?? ""} sender_id={senderId ?? ""} />
 
         {/* Add Sender Modal */}
         <AddsenderModal

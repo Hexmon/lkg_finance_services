@@ -17,6 +17,9 @@ export const RETAILER_ENDPOINTS = {
     },
     FUND_REQUEST: {
         COMPANY_BANK_ACCOUNTS: "/secure/retailer/company_bank_accounts",
+        RECEIPT_FILE_UPLOAD: "/secure/retailer/receipt-file-upload",
+        REQUEST_FUND: "/secure/retailer/request_fund",
+        
     },
     RETAILER_BBPS: {
         BBPS_ONLINE: {
@@ -39,7 +42,7 @@ export const RETAILER_ENDPOINTS = {
                 TXN_STATUS: "/secure/bbps/bills/txn-status",
                 COMPLAINT_REGISTER: "/secure/bbps/bills/complaint-Reg",
                 TRACK_COMPLAINT: "/secure/bbps/bills/track-complaint",
-                BILL_VALIDATION: "/secure/bbps/billavenue/bill-validation",
+                BILL_VALIDATION: "/secure/bbps/bills/bill-validation",
                 ALL_PLANS: "/secure/bbps/bills/all-plans",
             },
         },
@@ -53,6 +56,9 @@ export const RETAILER_ENDPOINTS = {
         BENEFICIARIES: {
             VERIFY_IFSC: "/secure/retailer/verify_ifsc",
             ADD_BENIFICARY: "/secure/retailer/add_beneficiary"
+        },
+        FUND_REQUEST: {
+            BANK_LIST: "/secure/retailer/bank_info"
         }
     },
     CASH_WITHDRAWL: {
@@ -70,7 +76,7 @@ export const RETAILER_ENDPOINTS = {
     },
     WALLET: {
         WALLET_BALANCE_BY_ID: "/secure/retailer/wallet-balance", // + /:walletId
-        GET_WALLET_BALANCE: "/secure/retailer/get-wallet-balance/",
+        GET_WALLET_BALANCE: "/secure/retailer/get-wallet-balance",
         GET_WALLET_STATEMENT: "/secure/retailer/get-wallet-statement",
         TRANSFER_AEPS_TO_MAIN: "/secure/retailer/transfer-aeps-to-main",
         PAYOUT: "/secure/retailer/payout",
@@ -78,6 +84,9 @@ export const RETAILER_ENDPOINTS = {
     },
     SUPPORT: {
         TICKET_LIST: "/admin/tickets",
+    },
+    BANK_ACCOUNT: {
+        BANK_ACCOUNT: "/secure/retailer/bank_accounts"
     }
 }
 

@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     // ---- Validate incoming body ----
     const json = await req.json().catch(() => null);
     const parsed = CheckSenderBodySchema.safeParse(json);
+    
     if (!parsed.success) {
         return NextResponse.json(
             { error: 'Invalid request body', issues: parsed.error.issues },

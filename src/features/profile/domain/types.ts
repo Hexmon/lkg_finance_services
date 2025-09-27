@@ -13,6 +13,31 @@ import { z } from "zod";
  * }
  */
 
+export const AddressesSchema = z.object({
+  user_type: z.string(),
+  address_type: z.string(),
+  address_id: z.string(),
+  user_id: z.string(),
+  house: z.string(),
+  street: z.string(),
+  dist: z.string(),
+  city: z.string().nullable(),
+  landmark: z.string(),
+  po: z.string(),
+  locality: z.string(),
+  vtc: z.string(),
+  state: z.string(),
+  country: z.string(),
+  pincode: z.string(),
+  latitude: z.string().nullable(),
+  longitude: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string().nullable(),
+  is_active: z.boolean()
+}).passthrough();
+
+export type Address = z.infer<typeof AddressesSchema>;
+
 export const ProfileCoreSchema = z.object({
   profile: z.string().optional(), // base64 image string
   email: z.string().email(),
@@ -29,6 +54,9 @@ export const ProfileCoreSchema = z.object({
   accepted_terms: z.boolean(),
   created_at: z.string(),
   updated_at: z.string().nullable(),
+  address: z.string(),
+  account_status: z.string(),
+  addresses: z.array(AddressesSchema).default([])
 }).passthrough(); // keep any future/extra fields
 
 export type ProfileCore = z.infer<typeof ProfileCoreSchema>;

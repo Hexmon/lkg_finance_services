@@ -12,6 +12,7 @@ import type {
     BillFetchRequest,
 } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch/domain/types";
 import { useRouter } from "next/navigation";
+import { useBbpsBillValidationMutation } from "@/features/retailer/retailer_bbps/bbps-online/bill_validation/data/hooks";
 
 type CustomerFormValues = {
     customerName: string;
@@ -33,6 +34,17 @@ type AddCustomerModalProps = {
     /** now raw/unknown by default; you can narrow at call site if you want */
     onSuccess?: (resp: unknown) => void;
     bbps_category_id: string;
+    fetchReq: string;             // e.g. "MANDATORY" | "NOT_REQUIRED" | "NOT_SUPPORTED"
+    billValidation: string;
+    billerAdhoc: boolean;
+    ccf1Config?: {
+        feeCode?: string;
+        flatFee?: string | number;
+        feeMaxAmt?: string | number;
+        feeMinAmt?: string | number;
+        percentFee?: string | number;
+        feeDirection?: string;
+    } | null;
 };
 
 const STORAGE_KEY = "bbps:lastBillFetch";
@@ -51,7 +63,7 @@ export default function AddCustomerModal({
     mode = "ONLINE",
     onSuccess,
     biller_category,
-    bbps_category_id,
+    bbps_category_id, fetchReq, billValidation, ccf1Config, billerAdhoc
 }: AddCustomerModalProps) {
     const [form] = Form.useForm<CustomerFormValues>();
     const [errText, setErrText] = React.useState<string | null>(null);
@@ -89,6 +101,18 @@ export default function AddCustomerModal({
             onSuccess?.(data);
         },
     });
+
+    const { mutateAsync: billValidationAsync } = useBbpsBillValidationMutation<unknown>({
+        onError: (e: any) => {
+            const raw = e?.data ?? e?.response?.data ?? e?.body ?? e?.payload ?? e?.raw ?? e;
+            const msg =
+                (typeof raw === "object" && (raw?.responseReason || raw?.message)) ||
+                (typeof raw === "string" ? raw : undefined) ||
+                "Bill validation failed";
+            setErrText(String(msg));
+        },
+    });
+
 
     const buildPreflightErrors = (values: CustomerFormValues): string[] => {
         const errors: string[] = [];
@@ -133,50 +157,142 @@ export default function AddCustomerModal({
             return;
         }
 
+        // Always normalize to an array for both APIs
+        const payloadInput: InputParam[] = inputParams.map((p) => ({
+            paramName: String(p.paramName ?? ""),
+            paramValue: String(p.paramValue ?? ""),
+        }));
+
+        // Build customer info (for Bill Fetch only)
+        const customerInfo: BillFetchRequest["customerInfo"] = {
+            customerMobile: values.mobileNumber,
+        };
+        if (values.email) customerInfo.customerEmail = values.email;
+        if (values.idNumber) customerInfo.customerPan = values.idNumber;
+        if (values.customerName) customerInfo.customerName = values.customerName;
+
+        // this will be saved to session — prefer Bill Validation resp if it ran
+        let respObj: Record<string, unknown> = {};
+
         try {
-            // Matches your BillFetchRequest (customerName/REM… handled by BFF schema)
-            const customerInfo: BillFetchRequest["customerInfo"] = {
-                customerMobile: values.mobileNumber,
-            };
-            if (values.email) customerInfo.customerEmail = values.email;
-            if (values.idNumber) customerInfo.customerPan = values.idNumber;
-            if (values.customerName) customerInfo.customerName = values.customerName; // or set REMITTER_NAME if you prefer
+            // 1) If bill fetch is mandatory → Call Bill Fetch first
+            if (fetchReq === "MANDATORY") {
+                const fetchResp = await billFetchAsync({
+                    service_id: serviceId,
+                    mode,
+                    body: {
+                        billerId,
+                        customerInfo,
+                        inputParams: { input: payloadInput }, // ALWAYS array
+                    },
+                });
+                respObj = (fetchResp ?? {}) as Record<string, unknown>;
 
-            const payloadInput = inputParams.length === 1 ? inputParams[0] : inputParams;
+                // if Bill Validation is mandatory → run it after bill fetch
+                if (billValidation === "MANDATORY") {
+                    const validateResp = await billValidationAsync({
+                        serviceId,  // BFF needs this to route to `/.../bill-validation/{serviceId}`
+                        mode: "ONLINE",
+                        body: {
+                            billerId,
+                            inputParams: { input: payloadInput }, // object | array supported by BFF; we send array
+                        },
+                    });
+                    // per your requirement: store validation response if present
+                    respObj = (validateResp ?? {}) as Record<string, unknown>;
+                }
+            } else {
+                // 2) Fetch is NOT mandatory → do NOT call Bill Fetch
+                //    Only call Bill Validation if it's mandatory
+                if (billValidation === "MANDATORY") {
+                    const validateResp = await billValidationAsync({
+                        serviceId,
+                        mode: "ONLINE",
+                        body: {
+                            billerId,
+                            inputParams: { input: payloadInput },
+                        },
+                    });
+                    respObj = (validateResp ?? {}) as Record<string, unknown>;
+                } else {
+                    // neither fetch nor validation ran; keep respObj as {}
+                }
+            }
 
-            const resp = await billFetchAsync({
-                service_id: serviceId,
-                mode,
-                body: {
-                    billerId,
-                    customerInfo,
-                    inputParams: { input: payloadInput },
-                },
-            });
-console.log({resp});
+            // 3) Build a robust payload for the next screen (even if no API was mandatory)
+            const requestIdFromApis =
+                (respObj as any)?.requestId ??
+                (respObj as any)?.data?.requestId ??
+                null;
 
-            // ✅ Store a complete, self-contained payload for the next page
-            const respObj = (resp ?? {}) as Record<string, unknown>;
+            const fallbackRequestId =
+                typeof crypto !== "undefined" && "randomUUID" in crypto
+                    ? crypto.randomUUID()
+                    : `req_${Date.now()}`;
+
+            const normalizedCcf1 = ccf1Config
+                ? {
+                    feeCode: ccf1Config.feeCode ?? "CCF1",
+                    flatFee: String(ccf1Config.flatFee ?? "0"),
+                    percentFee: String(ccf1Config.percentFee ?? "0"),
+                    feeMinAmt: String(ccf1Config.feeMinAmt ?? "0"),
+                    feeMaxAmt: String(ccf1Config.feeMaxAmt ?? "0"),
+                    feeDirection: ccf1Config.feeDirection ?? "C2B",
+                }
+                : undefined;
+
             const nextScreenPayload = {
-                ...respObj,                                  // upstream response as-is
-                service_id: serviceId,                       // explicit for next page
-                billerId,                                    // explicit
-                customerMobile: values.mobileNumber,         // explicit
-                customerPan: values.idNumber,                // explicit
-                inputParams: { input: payloadInput },        // explicit for payment step
+                ...respObj,
+                billerAdhoc,
+                // baseline fields you already store
+                service_id: serviceId,
+                billerId,
+                customerMobile: values.mobileNumber,
+                customerPan: values.idNumber || undefined,
+                customerName: values.customerName,
+                customerInfo: { customerEmail: values.email || undefined },
+                inputParams: { input: payloadInput },
+                requestId: requestIdFromApis || fallbackRequestId,
+
+                // 👇 NEW: carry full CCF1 object
+                interchangeFeeCCF1: normalizedCcf1,
+
+                // 👇 NEW: also expose flat/percent via amountInfo for the next screen’s existing logic
+                amountInfo: {
+                    ...(respObj as any)?.amountInfo,             // keep anything API might have set
+                    ...(respObj as any)?.data?.amountInfo,       // or nested
+                    flatFee: (respObj as any)?.amountInfo?.flatFee
+                        ?? (respObj as any)?.data?.amountInfo?.flatFee
+                        ?? normalizedCcf1?.flatFee,
+                    percentFee: (respObj as any)?.amountInfo?.percentFee
+                        ?? (respObj as any)?.data?.amountInfo?.percentFee
+                        ?? normalizedCcf1?.percentFee,
+                },
+
+                source:
+                    fetchReq === "MANDATORY"
+                        ? billValidation === "MANDATORY"
+                            ? "fetch+validation"
+                            : "fetch"
+                        : billValidation === "MANDATORY"
+                            ? "validation"
+                            : "manual",
             };
 
             if (typeof window !== "undefined") {
                 sessionStorage.setItem(STORAGE_KEY, JSON.stringify(nextScreenPayload));
             }
 
-            onSuccess?.(resp);
-            onClose();
+            // 4) Bubble up success (so parent can optionally preview)
+            onSuccess?.(respObj);
 
+            // 5) Close & navigate
+            onClose();
             const safeCategory = encodeURIComponent(biller_category);
             router.push(`/bill_payment/bbps-online/${serviceId}/${safeCategory}/${bbps_category_id}`);
+
         } catch {
-            // onError already handled
+            // onError already handled by hooks → setErrText
         }
     };
 

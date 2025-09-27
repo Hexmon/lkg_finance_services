@@ -1,7 +1,9 @@
 // src/features/retailer/dmt/fund-transfer/data/hooks.ts
-import { useMutation } from '@tanstack/react-query';
-import { apiFundTransfer, apiVerifyTransferOtp } from './endpoints';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
+import { apiFundTransfer, apiGetBankInfo, apiVerifyTransferOtp } from './endpoints';
 import type {
+    BankInfoQuery,
+    BankInfoResponse,
     FundTransferRequest,
     FundTransferResponse,
     VerifyTransferOtpRequest,
@@ -36,4 +38,18 @@ export function useFundTransfer() {
         fundTransferAsync: mutation.mutateAsync,
         reset: mutation.reset,
     };
+}
+
+export const bankInfoKeys = {
+    all: ['dmt', 'fund-transfer', 'bank-info'] as const,
+    list: (q: BankInfoQuery) => [...bankInfoKeys.all, q] as const,
+};
+
+export function useBankInfo(query: BankInfoQuery, enabled = true) {
+    return useQuery<BankInfoResponse>({
+        queryKey: bankInfoKeys.list(query),
+        queryFn: () => apiGetBankInfo(query),
+        enabled,
+        placeholderData: keepPreviousData,
+    });
 }

@@ -1,13 +1,15 @@
 // src/features/wallet/data/hooks.ts
 "use client";
 
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     type WalletStatementQuery,
     type WalletStatementResponse,
+    PayoutRequest,
+    PayoutResponse,
     WalletStatementQuerySchema,
 } from "@/features/wallet/domain/types";
-import { apiGetWalletStatement } from "./endpoints";
+import { apiCreatePayout, apiGetWalletStatement } from "./endpoints";
 
 export const walletStatementKeys = {
     all: ["wallet", "statement"] as const,
@@ -27,5 +29,17 @@ export function useWalletStatement(
         enabled,
         placeholderData: keepPreviousData,
         staleTime: 30_000,
+    });
+}
+
+/** Create payout */
+export function useCreatePayout() {
+    const qc = useQueryClient();
+    return useMutation<PayoutResponse, unknown, PayoutRequest>({
+        mutationFn: apiCreatePayout,
+        onSuccess: async () => {
+            // Optionally refresh wallet statement after payout
+            await qc.invalidateQueries({ queryKey: walletStatementKeys.all as any });
+        },
     });
 }

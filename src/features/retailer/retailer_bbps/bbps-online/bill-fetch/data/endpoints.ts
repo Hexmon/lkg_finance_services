@@ -40,6 +40,35 @@ export async function apiGetCategoryList(
  */
 
 // ✅ apiGetBillerList — always send is_active (defaults to true)
+// export async function apiGetBillerList<T = unknown>(
+//   params: {
+//     service_id: string;
+//     bbps_category_id: string;
+//     is_offline: boolean;
+//     mode: "ONLINE" | "OFFLINE";
+//     opr_id?: string;
+//     is_active?: boolean | string;
+//   },
+//   opts?: { signal?: AbortSignal }
+// ): Promise<T> {
+//   if (!params?.service_id) throw new Error("service_id is required");
+//   if (!params?.bbps_category_id) throw new Error("bbps_category_id is required");
+
+//   const qs = new URLSearchParams({
+//     is_offline: params.is_offline ? "true" : "false",
+//     mode: params.mode || "ONLINE",
+//     // ⬇️ CHANGED: always include is_active, default "true"
+//     is_active: String(params.is_active ?? true),
+//     ...(params.opr_id ? { opr_id: params.opr_id } : {}),
+//   }).toString();
+
+//   const path = `/retailer/bbps/bbps-online/bill-fetch/biller-list/${encodeURIComponent(
+//     params.service_id
+//   )}/${encodeURIComponent(params.bbps_category_id)}?${qs}`;
+
+//   return getJSON<T>(path, { signal: opts?.signal });
+// }
+// ✅ keep as-is; it already returns raw JSON and includes is_active by default
 export async function apiGetBillerList<T = unknown>(
   params: {
     service_id: string;
@@ -57,7 +86,6 @@ export async function apiGetBillerList<T = unknown>(
   const qs = new URLSearchParams({
     is_offline: params.is_offline ? "true" : "false",
     mode: params.mode || "ONLINE",
-    // ⬇️ CHANGED: always include is_active, default "true"
     is_active: String(params.is_active ?? true),
     ...(params.opr_id ? { opr_id: params.opr_id } : {}),
   }).toString();
@@ -82,10 +110,10 @@ export async function apiGetPlanPull(
   if (!params?.billerId) throw new Error("billerId is required");
 
   const qs = new URLSearchParams({ mode: params.mode }).toString();
-
+  
   // ✅ point to plan-pull, not biller-list
   const path =
-    `/retailer/bbps/bbps-online/bill-fetch/plan-pull/` +
+    `/retailer/bbps/bbps-online/bill-fetch/all-plans/` +
     `${encodeURIComponent(params.service_id)}/` +
     `${encodeURIComponent(params.billerId)}?${qs}`;
 
