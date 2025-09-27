@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         // Ensure we **do not** include service_id in the body; send only payload
-        body: JSON.stringify(payload satisfies AddOnlineBillerRequest),
+        body: payload satisfies AddOnlineBillerRequest,
       }
     );
 

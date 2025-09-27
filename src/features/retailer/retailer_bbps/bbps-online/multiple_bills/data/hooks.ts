@@ -29,10 +29,21 @@ import type {
  * Online Biller List (GET)
  * --------------------------------------------- */
 export function useOnlineBillerListQuery(
-  params: { service_id: string } & Partial<OnlineBillerListQuery>,
+  params: {
+    service_id: string;
+    per_page?: number | string;
+    page?: number | string;
+    order?: "asc" | "desc";
+    sort_by?: string;
+  },
   _opt?: {
     query?: Omit<
-      UseQueryOptions<OnlineBillerListResponse, Error, OnlineBillerListResponse, QueryKey>,
+      UseQueryOptions<
+        OnlineBillerListResponse,
+        Error,
+        OnlineBillerListResponse,
+        QueryKey
+      >,
       "queryKey" | "queryFn"
     >;
   }
@@ -44,23 +55,19 @@ export function useOnlineBillerListQuery(
   return useQuery({
     queryKey: [
       "bbps",
-      "multiple-bills",
       "online-biller-list",
       params.service_id,
-      params.per_page,
-      params.page,
-      params.order,
-      params.sort_by,
-      params.status,
-      params.is_active,
-      params.is_direct,
+      params.per_page ?? 10,
+      params.page ?? 1,
+      params.order ?? "desc",
+      params.sort_by ?? "created_at",
     ],
     queryFn: ({ signal }) => apiGetOnlineBillerList(params, { signal }),
-    // spread first, then enforce our final enabled
     ...(_opt?.query ?? {}),
     enabled,
   });
 }
+
 
 /* ---------------------------------------------
  * Online Bill Proceed (POST) - low-level mutation
@@ -110,7 +117,7 @@ export function useOnlineBillProceed(
 /* ---------------------------------------------
  * Remove Online Biller (DELETE) - low-level mutation
  * --------------------------------------------- */
-type RemoveVars = { biller_batch_id: string };
+type RemoveVars = { biller_batch_id: string, service_id: string };
 
 export function useRemoveOnlineBillerMutation(
   options?: UseMutationOptions<RemoveOnlineBillerResponse, Error, RemoveVars>

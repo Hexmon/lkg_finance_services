@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// src\app\api\v1\retailer\bbps\bbps-online\multiple-bills\online-bill-proceed\[service_id]\route.ts
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -17,6 +18,8 @@ export const dynamic = 'force-dynamic';
 type Ctx = { params: Promise<{ service_id: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx) {
+  console.log("qwertyuiopokjhbv khbdfjsdh   ");
+  
   const { service_id } = await ctx.params;
 
   // ---- Auth (JWT from HttpOnly cookie; never expose) ----

@@ -5,6 +5,7 @@ import { Card, Typography, Form, Input, Button, Table } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
+import { DEFAULT_DASHBOARD, useRetailerDashboardQuery } from "@/features/retailer/general";
 
 const { Text } = Typography;
 
@@ -13,7 +14,8 @@ type FormValues = {
 };
 
 export default function MoveToWalletPage() {
-  const [form] = Form.useForm<FormValues>();
+  const [form] = Form.useForm<FormValues>();  
+  const { data: { balances: { MAIN, AEPS } = {}} = DEFAULT_DASHBOARD ?? {}, isFetching, isPending, error: dashboardError } = useRetailerDashboardQuery();
 
   const handleSubmit = (values: FormValues) => {
     console.log("Submitted:", values);
@@ -89,10 +91,10 @@ export default function MoveToWalletPage() {
             <Text className="!text-[15px] !font-medium">Transfer Funds From AEPS TO MAIN</Text>
           <div className="flex justify-between mb-4 mt-3">
             <Text className="!text-[#3386FF] font-medium">
-              Your AEPS Balance: ₹ 5,000
+              Your AEPS Balance: ₹ {AEPS}
             </Text>
             <Text className="!text-[#3386FF] font-medium">
-              Your Main Balance: ₹ 20,000
+              Your Main Balance: ₹ {MAIN}
             </Text>
           </div>
 

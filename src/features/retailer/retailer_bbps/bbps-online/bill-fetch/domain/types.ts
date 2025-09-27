@@ -38,6 +38,142 @@ export type Category = z.infer<typeof CategorySchema>;
 export type CategoryListResponse = z.infer<typeof CategoryListResponseSchema>;
 
 /** ------------ Biller List ------------ */
+/** Single row inside `data[]` from /online-biller-list */
+export const OnlineBillerListItemSchema = z.object({
+  status: z.string(),
+  biller_batch_id: z.string(),
+  service_id: z.string(),
+  batch_id: z.string(),
+  user_id: z.string(),
+  opr_id: z.string().nullable().optional(),
+
+  input_json: z.object({
+    billerId: z.string(),
+    requestId: z.string().optional(),
+    amountInfo: z
+      .object({
+        amount: z.string(), // paise
+        currency: z.string().optional(),
+        custConvFee: z.string().optional(),
+      })
+      .optional(),
+    inputParams: z
+      .object({
+        input: z.array(
+          z.object({
+            paramName: z.string(),
+            paramValue: z.string(),
+          })
+        ),
+      })
+      .optional(),
+    paymentInfo: z
+      .object({
+        info: z
+          .object({
+            infoName: z.string().optional(),
+            infoValue: z.string().optional(),
+          })
+          .or(
+            z.array(
+              z.object({
+                infoName: z.string().optional(),
+                infoValue: z.string().optional(),
+              })
+            )
+          )
+          .optional(),
+      })
+      .optional(),
+    customerInfo: z
+      .object({
+        customerPan: z.string().optional(),
+        customerName: z.string().optional(),
+        REMITTER_NAME: z.string().optional(),
+        customerEmail: z.string().optional(),
+        customerMobile: z.string().optional(),
+      })
+      .optional(),
+    paymentMethod: z
+      .object({
+        quickPay: z.string().optional(),
+        splitPay: z.string().optional(),
+        paymentMode: z.string().optional(),
+      })
+      .optional(),
+    additionalInfo: z
+      .object({
+        info: z
+          .object({
+            infoName: z.string().optional(),
+            infoValue: z.string().optional(),
+          })
+          .or(
+            z.array(
+              z.object({
+                infoName: z.string().optional(),
+                infoValue: z.string().optional(),
+              })
+            )
+          )
+          .optional(),
+      })
+      .optional(),
+    billerResponse: z
+      .object({
+        billAmount: z.string().optional(), // paise
+        customerName: z.string().optional(),
+        billDate: z.string().optional(),
+        billNumber: z.string().optional(),
+        billPeriod: z.string().optional(),
+        dueDate: z.string().optional(),
+      })
+      .optional(),
+  }),
+
+  charges: z
+    .object({
+      CCF1: z.number().optional(),
+      gst_amount: z.number().optional(),
+      net_amount: z.number().optional(),
+      txn_amount: z.number().optional(),
+      gst_percent: z.number().optional(),
+      base_charges: z.number().optional(),
+      charges_incl: z.number().optional(),
+      bbps_category_id: z.string().nullable().optional(),
+      is_gst_inclusive: z.boolean().optional(),
+    })
+    .optional(),
+
+  commissions: z.unknown().nullable().optional(),
+  is_active: z.boolean().optional(),
+  is_direct: z.boolean().optional(),
+  txn_id: z.string().optional(),
+  net_amount: z.number().optional(),
+  created_at: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export type OnlineBillerListItem = z.infer<typeof OnlineBillerListItemSchema>;
+
+/** Full paginated response */
+export const OnlineBillerListResponseSchema = z.object({
+  total: z.number(),
+  page: z.number(),
+  per_page: z.number(),
+  pages: z.number(),
+  has_next: z.boolean(),
+  has_prev: z.boolean(),
+  next_page: z.number().nullable(),
+  prev_page: z.number().nullable(),
+  sort_by: z.string().optional(),
+  data: z.array(OnlineBillerListItemSchema),
+});
+
+export type OnlineBillerListResponse = z.infer<
+  typeof OnlineBillerListResponseSchema
+>;
+
 export const BillerInputParamSchema = z.object({
   opr_id: z.string(),
   param_name: z.string(),

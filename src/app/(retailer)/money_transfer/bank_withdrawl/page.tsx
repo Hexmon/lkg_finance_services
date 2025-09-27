@@ -13,6 +13,7 @@ import { useCreatePayout } from "@/features/wallet/data/hooks";
 // NOTE: we keep the import, but we won't *require* it to run
 import { useWalletStatement } from "@/features/retailer/wallet/data/hooks";
 import type { WalletStatementQuery } from "@/features/retailer/wallet/domain/types";
+import { useMessage } from "@/hooks/useMessage";
 
 const { Text } = Typography;
 
@@ -23,7 +24,7 @@ type FormValues = {
 
 export default function BankWithdrawalPage() {
     const [form] = Form.useForm<FormValues>();
-
+    const { error, success } = useMessage()
     const userId = useAppSelector(selectUserId) || "";
     const { data: { data: accData } = {}, isLoading: accListLoading } = useBankAccounts(
         userId,
@@ -77,13 +78,7 @@ export default function BankWithdrawalPage() {
             },
             {
                 onSuccess: (res) => {
-                    Modal.success({
-                        title: "Transaction Successful",
-                        content: res?.message || `₹${values.amount} has been transferred successfully.`,
-                        centered: true,
-                        zIndex: 9999,
-                    });
-                    // keep disabled after submit (per your rule)
+                    success(res?.message ?? `₹${values.amount} has been transferred successfully.`)
                 },
                 onError: (err: any) => {
                     const msg =
@@ -160,65 +155,63 @@ export default function BankWithdrawalPage() {
             pageTitle="Bank Withdrawal"
             isLoading={accListLoading}
         >
-            <DashboardSectionHeader title="" />
-
             <div className="p-6 min-h-screen !mt-0">
                 {/* Bank Withdrawal Form */}
                 <Card className="!rounded-2xl !shadow-md !mb-6">
                     <Text className="!text-[15px] !font-medium">Bank Withdrawal</Text>
-
-                    {/* Bank Accounts Section (UI unchanged; now uses api data) */}
                     <div className="flex gap-6 mt-8 flex-wrap mb-6 justify-center items-center">
-                        {uiAccounts.map((acc) => (
-                            <div
-                                key={acc.id}
-                                onClick={() => !isBusy && setSelectedId(acc.id)}
-                                className={`flex items-start gap-4 border rounded-2xl p-4 w-[280px] cursor-pointer transition ${selectedId === acc.id ? "border-blue-500 shadow-md" : "border-gray-200"
-                                    } ${isBusy ? "opacity-60 cursor-not-allowed" : ""}`}
-                            >
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                        {/* Avatar */}
-                                        <div className="bg-[#5298FF54] rounded-full w-[55px] h-[55px] flex items-center justify-center shrink-0">
+                        {uiAccounts.map((acc) => {
+                            return (
+                                <div
+                                    key={acc.id}
+                                    onClick={() => !isBusy && setSelectedId(acc.id)}
+                                    className={`flex items-start gap-4 border rounded-2xl p-4 w-[280px] cursor-pointer transition ${selectedId === acc.id ? "border-blue-500 shadow-md" : "border-gray-200"
+                                        } ${isBusy ? "opacity-60 cursor-not-allowed" : ""}`}
+                                >
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start">
+                                            {/* Avatar */}
+                                            <div className="bg-[#5298FF54] rounded-full w-[55px] h-[55px] flex items-center justify-center shrink-0">
+                                                <Image
+                                                    src="/person-blue.svg"
+                                                    alt="person image"
+                                                    width={28}
+                                                    height={28}
+                                                    className="object-contain"
+                                                />
+                                            </div>
+
+                                            {/* Name + Bank */}
+                                            <div className="flex flex-col ml-3">
+                                                <Text strong className="text-[15px]">{acc.name}</Text>
+                                                <Text type="secondary" className="text-[14px]">{acc.bank}</Text>
+                                            </div>
+
+                                            {/* Right Tick */}
                                             <Image
-                                                src="/person-blue.svg"
-                                                alt="person image"
-                                                width={28}
-                                                height={28}
-                                                className="object-contain"
+                                                src={selectedId === acc.id ? "/tick-blue.svg" : "/tick-gray.svg"}
+                                                alt="tick"
+                                                width={15}
+                                                height={15}
+                                                className="ml-6"
                                             />
                                         </div>
 
-                                        {/* Name + Bank */}
-                                        <div className="flex flex-col ml-3">
-                                            <Text strong className="text-[15px]">{acc.name}</Text>
-                                            <Text type="secondary" className="text-[14px]">{acc.bank}</Text>
-                                        </div>
-
-                                        {/* Right Tick */}
-                                        <Image
-                                            src={selectedId === acc.id ? "/tick-blue.svg" : "/tick-gray.svg"}
-                                            alt="tick"
-                                            width={15}
-                                            height={15}
-                                            className="ml-6"
-                                        />
-                                    </div>
-
-                                    {/* Account & IFSC */}
-                                    <div className="mt-3 space-y-1">
-                                        <div className="flex justify-between">
-                                            <Text type="secondary">Account:</Text>
-                                            <Text className="font-semibold">{acc.account}</Text>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <Text type="secondary">IFSC Code:</Text>
-                                            <Text strong>{acc.ifsc}</Text>
+                                        {/* Account & IFSC */}
+                                        <div className="mt-3 space-y-1">
+                                            <div className="flex justify-between">
+                                                <Text type="secondary">Account:</Text>
+                                                <Text className="font-semibold">{acc.account}</Text>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <Text type="secondary">IFSC Code:</Text>
+                                                <Text strong>{acc.ifsc}</Text>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     {/* Transfer Form */}
@@ -289,7 +282,7 @@ export default function BankWithdrawalPage() {
                                 type="primary"
                                 size="large"
                                 htmlType="submit"
-                                className="!bg-[#3386FF] !px-8 !h-[33px] !w-[199px]"
+                                className="!bg-[#3386FF] !px-8 !h-[33px] !w-[199px] !text-white"
                                 disabled={!canSubmit}
                                 title={
                                     !selectedId
