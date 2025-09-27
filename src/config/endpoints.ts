@@ -17,6 +17,9 @@ export const RETAILER_ENDPOINTS = {
     },
     FUND_REQUEST: {
         COMPANY_BANK_ACCOUNTS: "/secure/retailer/company_bank_accounts",
+        RECEIPT_FILE_UPLOAD: "/secure/retailer/receipt-file-upload",
+        REQUEST_FUND: "/secure/retailer/request_fund",
+        
     },
     RETAILER_BBPS: {
         BBPS_ONLINE: {
