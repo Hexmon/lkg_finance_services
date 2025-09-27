@@ -118,8 +118,7 @@ export async function apiOnlineBillProceed(
   return OnlineBillProceedResponseSchema.parse(json);
 }
 
-const ADD_ONLINE_BILLER_PATH =
-  '/retailer/bbps/bbps-online/multiple-bills/add-online-biller';
+const ADD_ONLINE_BILLER_PATH = '/retailer/bbps/bbps-online/multiple-bills/add-online-biller';
 
 export async function apiAddOnlineBiller(
   body: AddOnlineBillerBffRequest

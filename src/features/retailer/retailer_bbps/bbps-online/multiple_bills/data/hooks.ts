@@ -138,7 +138,7 @@ export function useRemoveOnlineBiller(
   });
 
   return {
-    removeBiller: mutation.mutateAsync, // function to call
+    removeBillerasync: mutation.mutateAsync, // function to call
     data: mutation.data,                // response payload
     isLoading: mutation.isPending,      // loading flag
     error: mutation.error,              // Error | null

@@ -12,9 +12,10 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { useBbpsCategoryListQuery } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
 import { useParams, useRouter } from "next/navigation";
-import { useOnlineBillerListQuery, useOnlineBillProceedMutation } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
+import { useOnlineBillerListQuery, useOnlineBillProceed, useOnlineBillProceedMutation, useRemoveOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
 import { useMessage } from "@/hooks/useMessage";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
+import { ApiError } from "@/lib/api/client";
 
 const { Text } = Typography;
 
@@ -23,12 +24,11 @@ export default function ChooseServicePage() {
   const { service_id } = useParams<RouteParams>();
   const router = useRouter()
   const { success, error, warning } = useMessage()
-
+  const { } = useOnlineBillProceed(service_id)
   const { data, isLoading: isCatLoading, error: bbpsCatError } = useBbpsCategoryListQuery(
     { service_id, mode: "ONLINE" },
     { query: { enabled: Boolean(service_id) } }
   );
-
   const { data: catData } = data || {}
 
   const onlineParams = useMemo(
@@ -45,8 +45,8 @@ export default function ChooseServicePage() {
     [service_id]
   );
 
-  const { data: billersResp, isLoading: isBillersLoading, error: billersError } = useOnlineBillerListQuery(onlineParams, { query: { enabled: Boolean(service_id) } });
-  const billers = billersResp?.data?.map(
+  const { data: {data: billerLIst} = {}, isLoading: isBillersLoading, error: billersError } = useOnlineBillerListQuery(onlineParams, { query: { enabled: Boolean(service_id) } });
+  const billers = (billerLIst ?? [])?.map(
     ({
       status,
       biller_batch_id,
@@ -64,6 +64,7 @@ export default function ChooseServicePage() {
       billAmount,
     })
   ) ?? [];
+console.log({billerLIst});
 
   const totalAmount = billers.reduce(
     (sum, { amount }) => sum + Number(amount || 0),
@@ -91,7 +92,7 @@ export default function ChooseServicePage() {
     // Choose which online batch to proceed.
     // Here we pick the *first* returned online biller and use its biller_batch_id as the batch_id payload.
     // If your API requires a different id, adjust mapping here.
-    const firstOnline = billersResp?.data?.[0];
+    const firstOnline = billerLIst?.[0];
     const batchId = firstOnline?.biller_batch_id;
 
     if (!batchId) {
@@ -125,12 +126,26 @@ export default function ChooseServicePage() {
     });
   }, [catData, searchText]);
 
-  const removeBiller = (id: string) => {
-    // setBillers(billers.filter((b) => b.id !== id));
+  const removeBiller = async (id: string) => {
+    try {
+      const res = await removeBillerasync({ biller_batch_id: '' })
+      if (res?.status === 200) {
+        success(res?.message ?? "biller deleted successfully")
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        error(err.backendMessage ?? err.message ?? '');
+      } else if (err instanceof DOMException && err.name === 'AbortError') {
+        error('Request timed out');
+      } else if (err instanceof Error) {
+        error(err.message);
+      } else {
+        error('Something went wrong');
+      }
+    }
   };
 
-  // const { removeBiller, data, isLoading, error } = useRemoveOnlineBiller();
-  // await removeBiller({ biller_batch_id });
+  const { removeBillerasync, isLoading: deleteBillerLoading, error: deleteBillerErr } = useRemoveOnlineBiller();
 
   const items = [
     {

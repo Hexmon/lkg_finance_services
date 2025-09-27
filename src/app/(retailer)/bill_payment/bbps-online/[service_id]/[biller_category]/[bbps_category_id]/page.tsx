@@ -13,6 +13,7 @@ import BillDetailsHeader from "@/components/bbps/BillDetails/BillDetailsHeader";
 import BillInfoGrid, { BillerResponseLite } from "@/components/bbps/BillDetails/BillInfoGrid";
 import FeeBreakdown, { FeeState } from "@/components/bbps/BillDetails/FeeBreakdown";
 import PayModal from "@/components/bbps/BillDetails/PayModal";
+import { ApiError } from "@/lib/api/client";
 
 const { Title } = Typography;
 const STORAGE_KEY = "bbps:lastBillFetch";
@@ -40,14 +41,14 @@ export default function BillDetailsPage() {
   const [paymentMode, setPaymentMode] = useState<PayModeUI>("Wallet");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { error, warning } = useMessage();
+  const { error, warning, success } = useMessage();
   const [resp, setResp] = useState<any | null>(null);
   const [paymentAmountPaise, setPaymentAmountPaise] = useState(resp?.data?.billerResponse?.billAmount ?? '')
 
   const { billPaymentAsync, isLoading: payLoading } = useBillPayment();
   const { biller_category, service_id } = useParams() as { biller_category?: string; service_id?: string };
   const billerCategory = searchParams.get("biller_category") ?? biller_category ?? "";
-  // const { addOnlineBillerAsync } = useAddOnlineBiller();
+  const { addOnlineBillerAsync, error: addToBillerErr, isLoading: addToBillerLoading } = useAddOnlineBiller();
 
   const [feeState, setFeeState] = useState<FeeState>({
     paymentAmountPaise: 0,
@@ -307,6 +308,57 @@ export default function BillDetailsPage() {
       console.error("❌ Bill Payment Error:", e);
     }
   }
+  console.log({ resp });
+
+  console.log({ bfr });
+
+  const handleAddtoBiller = async () => {
+    try {
+      const res = await addOnlineBillerAsync({
+        is_direct: false,
+        service_id: service_id ?? "",
+        input_json: {
+          amountInfo: {
+            amount: String(ctaTotalPaise),
+            currency: "356",
+            custConvFee: "0",
+            amountTags: {
+              amountTag: "",
+              value: ""
+            },
+            CCF1: ""
+          },
+          billerId: resp?.billerId ?? "",
+          billerResponse: {
+            billAmount: String(bfr?.billAmount) ?? "",
+            billNumber: bfr?.billNumber ?? "",
+            customerName: bfr?.customerName ?? "",
+            billDate: bfr?.billDate ?? "",
+            billPeriod: bfr?.billPeriod ?? "",
+            dueDate: bfr?.dueDate ?? "",
+          },
+          customerInfo: resp?.customerInfo ?? {},
+          inputParams: resp?.inputParams ?? {},
+          request_id: resp?.requestId ?? "",
+        }
+      })
+
+      if ((res?.status ?? 404) === 200) {
+        success('')
+        console.log({ res });
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        error(err.backendMessage ?? err.message ?? '');
+      } else if (err instanceof DOMException && err.name === 'AbortError') {
+        error('Request timed out');
+      } else if (err instanceof Error) {
+        error(err.message);
+      } else {
+        error('Something went wrong');
+      }
+    }
+  }
 
   return (
     <DashboardLayout
@@ -357,7 +409,7 @@ export default function BillDetailsPage() {
             <Button
               block
               className="!h-[42px] !rounded-xl !shadow-md"
-              disabled={payLoading}
+              disabled={payLoading || addToBillerLoading}
               onClick={() => history.back()}
             >
               Back to Edit
@@ -368,7 +420,7 @@ export default function BillDetailsPage() {
                 block
                 className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !shadow-md"
                 onClick={() => setIsModalOpen(true)}
-                disabled={payLoading}
+                disabled={payLoading || addToBillerLoading}
               >{
                   resp?.billerAdhoc ?
                     payLoading ? "Processing..." : `Pay`
@@ -377,6 +429,17 @@ export default function BillDetailsPage() {
                 }
               </Button>
             )}
+          </div>
+          <div className="flex justify-center">
+            <Button
+              block
+              className="!h-[42px] !bg-[#3386FF] !text-white !rounded-xl !w-1/2 !mx-auto !shadow-md"
+              onClick={handleAddtoBiller}
+              disabled={payLoading || addToBillerLoading}
+              loading={addToBillerLoading}
+            >
+              {payLoading ? "Adding..." : `Add to Biller`}
+            </Button>
           </div>
         </div>
       </div>
