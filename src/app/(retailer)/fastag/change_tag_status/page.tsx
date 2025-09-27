@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, Typography, Button, Select, Input, message } from "antd";
+import { Card, Typography, Button, Select, message } from "antd";
 import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
@@ -10,24 +10,24 @@ import Image from "next/image";
 const { Text } = Typography;
 const { Option } = Select;
 
-export default function TagReplacement() {
+export default function ChangeTagStatus() {
   const [messageApi, contextHolder] = message.useMessage();
 
-  const handleReplaceTag = () => {
-    messageApi.success("Tag has been replaced successfully!");
+  const handleChangeStatus = () => {
+    messageApi.success("Tag status has been updated successfully!");
   };
 
   return (
     <DashboardLayout
       sections={moneyTransferSidebarConfig}
-      activePath="/fastag/tag-replacement"
+      activePath="/fastag/change-tag-status"
       pageTitle="FASTag"
     >
       {contextHolder}
 
       {/* Section Header */}
       <DashboardSectionHeader
-        title="Tag Replacement"
+        title="Change Tag Status"
         titleClassName="!text-[#2F2F2F] !font-semibold !text-[22px]"
         arrowClassName="!text-[#2F2F2F]"
       />
@@ -97,43 +97,48 @@ export default function TagReplacement() {
               <Text className="block mb-1 text-black-600 font-medium text-[12px]">
                 Vehicle Number
               </Text>
-              <Select defaultValue="MH14DL2996" className="w-full !h-[42px]">
-                <Option value="MH14DL2996">MH14DL2996</Option>
-              </Select>
-            </div>
-
-            {/* Old Kit No. */}
-            <div>
-              <Text className="block mb-1 text-black-600 font-medium text-[12px]">
-                OLD Kit No.
-              </Text>
               <Select
-                defaultValue="3415272358163F357383F92690"
+                defaultValue="UP78ES5388"
                 className="w-full !h-[42px]"
               >
-                <Option value="3415272358163F357383F92690">
-                  3415272358163F357383F92690
-                </Option>
+                <Option value="UP78ES5388">UP78ES5388</Option>
               </Select>
             </div>
 
-            {/* New Kit No. */}
+            {/* Kit Number */}
             <div>
               <Text className="block mb-1 text-black-600 font-medium text-[12px]">
-                NEW Kit No.
+                Kit Number
               </Text>
-              <Input
-                defaultValue="34165325FAI6372D78902"
+              <Select
+                defaultValue="34161AR32678900"
                 className="w-full !h-[42px]"
-              />
+              >
+                <Option value="34161AR32678900">34161AR32678900</Option>
+              </Select>
             </div>
 
-            {/* Profile ID */}
+            {/* Tag Operation */}
             <div>
               <Text className="block mb-1 text-black-600 font-medium text-[12px]">
-                Profile ID
+                Tag Operation
               </Text>
-              <Input defaultValue="VC4" className="w-full !h-[42px]" />
+              <Select defaultValue="Add" className="w-full !h-[42px]">
+                <Option value="Add">Add</Option>
+                <Option value="Remove">Remove</Option>
+              </Select>
+            </div>
+
+            {/* EXC Code */}
+            <div>
+              <Text className="block mb-1 text-black-600 font-medium text-[12px]">
+                EXC Code
+              </Text>
+              <Select defaultValue="Closed" className="w-full !h-[42px]">
+                <Option value="Closed">Closed</Option>
+                <Option value="Hotlist">Hotlist</Option>
+                <Option value="Low Balance">Low Balance</Option>
+              </Select>
             </div>
           </div>
 
@@ -148,9 +153,9 @@ export default function TagReplacement() {
             <Button
               type="default"
               className="!bg-[#3386FF] !h-[42px] !rounded-lg !text-[#FFFFFF] !font-normal hover:!bg-[#2c76db] !w-[300px] text-[12px]"
-              onClick={handleReplaceTag}
+              onClick={handleChangeStatus}
             >
-              Replace Tag
+              Change Status
             </Button>
           </div>
         </Card>

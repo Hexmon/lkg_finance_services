@@ -6,10 +6,12 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { moneyTransferSidebarConfig } from "@/config/sidebarconfig";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
 export default function FastTagSuccessPage() {
+  const router = useRouter();
   return (
     <DashboardLayout
       sections={moneyTransferSidebarConfig}
@@ -22,8 +24,8 @@ export default function FastTagSuccessPage() {
         subtitle="Fastag Recharge"
         titleClassName="!text-[#2F2F2F] !font-semibold !text-[22px]"
         arrowClassName="!text-[#2F2F2F]"
-        imgSrc="/logo.svg"
-        imgClassName="!w-[98px] !h-[36px] !mr-8"
+        // imgSrc="/logo.svg"
+        // imgClassName="!w-[98px] !h-[36px] !mr-8"
       />
 
       {/* Page Content */}
@@ -60,6 +62,7 @@ export default function FastTagSuccessPage() {
             <Button
               type="default"
               className="!bg-[#00A321] !text-white w-[425px] h-[39px] rounded-[8px] rotate-0 opacity-100 !text-[12px]"
+              onClick={()=>router.push("/fastag/dashboard")}
             >
               Proceed to Fastag Recharge
             </Button>
