@@ -12,10 +12,11 @@ import DashboardLayout from "@/lib/layouts/DashboardLayout";
 import { billPaymentSidebarConfig } from "@/config/sidebarconfig";
 import { useBbpsCategoryListQuery } from "@/features/retailer/retailer_bbps/bbps-online/bill-fetch";
 import { useParams, useRouter } from "next/navigation";
-import { useOnlineBillerListQuery, useOnlineBillProceed, useOnlineBillProceedMutation, useRemoveOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
+import { useOnlineBillerListQuery, useOnlineBillProceedMutation, useRemoveOnlineBiller } from "@/features/retailer/retailer_bbps/bbps-online/multiple_bills";
 import { useMessage } from "@/hooks/useMessage";
 import DashboardSectionHeader from "@/components/ui/DashboardSectionHeader";
 import { ApiError } from "@/lib/api/client";
+import PayModal from "@/components/bbps/BillDetails/PayModal";
 
 const { Text } = Typography;
 
@@ -24,12 +25,16 @@ export default function ChooseServicePage() {
   const { service_id } = useParams<RouteParams>();
   const router = useRouter()
   const { success, error, warning } = useMessage()
-  const { } = useOnlineBillProceed(service_id)
   const { data, isLoading: isCatLoading, error: bbpsCatError } = useBbpsCategoryListQuery(
     { service_id, mode: "ONLINE" },
     { query: { enabled: Boolean(service_id) } }
   );
   const { data: catData } = data || {}
+
+  const { removeBillerasync, isLoading: deleteBillerLoading, error: deleteBillerErr } = useRemoveOnlineBiller();
+
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<"Wallet" | "Cashfree">("Wallet");
 
   const onlineParams = useMemo(
     () => ({
@@ -45,7 +50,16 @@ export default function ChooseServicePage() {
     [service_id]
   );
 
-  const { data: {data: billerLIst} = {}, isLoading: isBillersLoading, error: billersError } = useOnlineBillerListQuery(onlineParams, { query: { enabled: Boolean(service_id) } });
+  const { data: ldata, isLoading: isBillersLoading, error: billersError } = useOnlineBillerListQuery({
+    service_id,                       // make sure this exists
+    per_page: 10,
+    page: 1,
+    order: "desc",
+    sort_by: "created_at",
+  });
+  const billerLIst = ldata?.data ?? [];
+  console.log({ ldata });
+
   const billers = (billerLIst ?? [])?.map(
     ({
       status,
@@ -64,7 +78,6 @@ export default function ChooseServicePage() {
       billAmount,
     })
   ) ?? [];
-console.log({billerLIst});
 
   const totalAmount = billers.reduce(
     (sum, { amount }) => sum + Number(amount || 0),
@@ -88,12 +101,15 @@ console.log({billerLIst});
     },
   });
 
-  const handleProceed = async () => {
+  const openPayModal = () => setIsPayModalOpen(true);
+  const closePayModal = () => setIsPayModalOpen(false);
+
+  const onProceedFromModal = async () => {
     // Choose which online batch to proceed.
     // Here we pick the *first* returned online biller and use its biller_batch_id as the batch_id payload.
     // If your API requires a different id, adjust mapping here.
     const firstOnline = billerLIst?.[0];
-    const batchId = firstOnline?.biller_batch_id;
+    const batchId = firstOnline?.batch_id;
 
     if (!batchId) {
       warning("No online biller found to proceed.");
@@ -106,7 +122,7 @@ console.log({billerLIst});
 
     try {
       await proceed({ service_id, batch_id: batchId });
-      // proceedData will have the latest successful response after this resolves
+      setIsPayModalOpen(false);
     } catch {
       // onError already handled by the mutation config
     }
@@ -128,7 +144,7 @@ console.log({billerLIst});
 
   const removeBiller = async (id: string) => {
     try {
-      const res = await removeBillerasync({ biller_batch_id: '' })
+      const res = await removeBillerasync({ biller_batch_id: id, service_id })
       if (res?.status === 200) {
         success(res?.message ?? "biller deleted successfully")
       }
@@ -144,8 +160,6 @@ console.log({billerLIst});
       }
     }
   };
-
-  const { removeBillerasync, isLoading: deleteBillerLoading, error: deleteBillerErr } = useRemoveOnlineBiller();
 
   const items = [
     {
@@ -276,29 +290,32 @@ console.log({billerLIst});
               {/* Billers List */}
               <div className="flex flex-col gap-4">
                 {billers.map(
-                  ({ billAmount, customerName, biller_batch_id }) => (
-                    <div
-                      key={biller_batch_id}
-                      className="flex justify-between items-center bg-white rounded-xl px-4 py-3 shadow-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <Text strong>{customerName ?? "Unknown"}</Text>
-                          <div className="text-xs text-gray-500">
-                            {biller_batch_id}
+                  ({ billAmount, customerName, biller_batch_id }) => {
+                    return (
+                      <div
+                        key={biller_batch_id}
+                        className="flex justify-between items-center bg-white rounded-xl px-4 py-3 shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <Text strong>{customerName ?? "Unknown"}</Text>
+                            <div className="text-xs text-gray-500">
+                              {biller_batch_id}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-4">
+                          <Text strong>₹{billAmount ?? 0}</Text>
+                          <Button
+                            type="text"
+                            onClick={() => removeBiller(biller_batch_id)}
+                            icon={<DeleteOutlined className="!text-red-500" />}
+                          />
+
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Text strong>₹{billAmount ?? 0}</Text>
-                        <DeleteOutlined
-                          onClick={() => removeBiller(biller_batch_id)}
-                          className="!text-red-500 !cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )
-                )}
+                    )
+                  })}
               </div>
 
               {/* Total Section */}
@@ -309,17 +326,17 @@ console.log({billerLIst});
                 <Text strong>₹{totalAmount}.00</Text>
               </div>
 
-              {/* Proceed Button */}
               <Button
                 type="primary"
                 block
                 className="!bg-[#3386FF] !border-[#3386FF] !text-white !rounded-xl !py-5 !text-[12px] !shadow-md !w-full !h-[39px]"
                 disabled={isProceeding}
                 loading={isProceeding}
-                onClick={handleProceed}
+                onClick={openPayModal}
               >
                 Proceed to Pay
               </Button>
+
 
               {/* Error Message */}
               {proceedError && (
@@ -335,9 +352,22 @@ console.log({billerLIst});
           )}
 
         </Card>
-
-
       </div>
+      <PayModal
+        open={isPayModalOpen}
+        onClose={closePayModal}
+        payLoading={isProceeding}
+        ctaAmountText={Number(totalAmount || 0).toFixed(2)}  // already formatted ₹ in the modal
+        paymentMode={paymentMode}
+        setPaymentMode={setPaymentMode}
+        onProceed={onProceedFromModal}
+
+        /* per your note: keep UI the same but don't use adhoc or amount inputs */
+        billerAdhoc={false}
+        paymentAmount={null}
+        setPaymentAmount={() => { }}
+      />
+
     </DashboardLayout>
   );
 }

@@ -56,14 +56,15 @@ export const LoginMain = () => {
       }
       // router.replace('/');
       // router.refresh();
-    } catch (e) {
-      if (e instanceof ApiError) {
-        error(e.message || 'Unable to sign in. Please try again.');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } else if (e && typeof e === 'object' && 'message' in e && typeof (e as any).message === 'string') {
-        error((e as { message: string }).message);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        error(err.backendMessage ?? err.message ?? '');
+      } else if (err instanceof DOMException && err.name === 'AbortError') {
+        error('Request timed out');
+      } else if (err instanceof Error) {
+        error(err.message);
       } else {
-        error('Something went wrong. Please try again later.');
+        error('Something went wrong');
       }
     }
   };

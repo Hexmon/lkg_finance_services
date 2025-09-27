@@ -30,7 +30,7 @@ export const AddOBCustomerInfoSchema = z.object({
   customerAdhaar: z.string().optional().nullable(),
   customerName: z.string().optional().nullable(),
   customerPan: z.string().optional().nullable(),
-});
+}).passthrough();
 
 export const AddOBBillerResponseSchema = z.object({
   billAmount: z.string(),
@@ -41,6 +41,25 @@ export const AddOBBillerResponseSchema = z.object({
   dueDate: z.string().optional(),
 });
 
+export const AddOBAdditionalInfoItemSchema = z.object({
+  infoName: z.string(),
+  infoValue: z.string().optional().nullable(),
+});
+
+export const AddOBAdditionalInfoSchema = z
+  .union([
+    // Preferred: { info: [{ infoName, infoValue }...] }
+    z
+      .object({
+        info: z.array(AddOBAdditionalInfoItemSchema).default([]),
+      })
+      .passthrough(),
+    // Fallback: any KV bag/object if provider changes shape
+    z.record(z.string(), z.unknown())
+  ])
+  .optional()
+  .default({});
+
 export const AddOnlineBillerRequestSchema = z.object({
   is_direct: z.boolean().default(false),
   input_json: z.object({
@@ -50,6 +69,7 @@ export const AddOnlineBillerRequestSchema = z.object({
     inputParams: AddOBInputParamsSchema,
     billerResponse: AddOBBillerResponseSchema,
     amountInfo: AddOBAmountInfoSchema,
+    additionalInfo: AddOBAdditionalInfoSchema,
   }),
 });
 export type AddOnlineBillerRequest = z.infer<typeof AddOnlineBillerRequestSchema>;
@@ -73,8 +93,31 @@ export const AddOnlineBillerResponseSchema = z
 export type AddOnlineBillerResponse = z.infer<typeof AddOnlineBillerResponseSchema>;
 
 /** ============== Online Biller List ============== */
+/** ---- charges object ---- */
+const ChargesSchema = z.object({
+  // backend sometimes includes this, sometimes not
+  CCF1: z.number().optional().nullable(),
+  gst_amount: z.number(),
+  net_amount: z.number(),
+  txn_amount: z.number(),
+  gst_percent: z.number(),
+  base_charges: z.number(),       // <-- rename from `charges` to `base_charges`
+  charges_incl: z.number(),
+  bbps_category_id: z.string().nullable().optional(),
+  is_gst_inclusive: z.boolean(),
+}).passthrough();
 
-/** ---- Nested shapes (input_json.*) ---- */
+/** ---- inputParams: allow object OR array ---- */
+const InputParamSchema = z.object({
+  paramName: z.string(),
+  paramValue: z.string(),
+});
+
+const InputParamsSchema = z.object({
+  input: z.union([InputParamSchema, z.array(InputParamSchema)]),
+}).passthrough();
+
+/** ---- amountInfo (unchanged) ---- */
 const AmountTagsSchema = z.object({
   value: z.string().optional().nullable(),
   amountTag: z.string().optional().nullable(),
@@ -82,21 +125,13 @@ const AmountTagsSchema = z.object({
 
 const AmountInfoSchema = z.object({
   CCF1: z.string().optional().nullable(),
-  amount: z.union([z.string(), z.number()])
-    .transform((v) => Number(v)),
-  currency: z.string(),            // "356" in sample
+  amount: z.union([z.string(), z.number()]).transform((v) => Number(v)),
+  currency: z.string(),
   amountTags: AmountTagsSchema.optional(),
-  custConvFee: z.union([z.string(), z.number()])
-    .transform((v) => Number(v)),
+  custConvFee: z.union([z.string(), z.number()]).transform((v) => Number(v)),
 }).passthrough();
 
-const InputParamsSchema = z.object({
-  input: z.object({
-    paramName: z.string(),
-    paramValue: z.string(),
-  }),
-}).passthrough();
-
+/** ---- customer/biller response (unchanged) ---- */
 const CustomerInfoSchema = z.object({
   customerPan: z.string().optional().nullable(),
   customerName: z.string().optional().nullable(),
@@ -105,56 +140,54 @@ const CustomerInfoSchema = z.object({
 }).passthrough();
 
 const BillerResponseSchema = z.object({
-  dueDate: z.string().optional(),   // "YYYY-MM-DD"
-  billDate: z.string().optional(),  // "YYYY-MM-DD"
-  billAmount: z.string().optional(),// e.g. "5459000" (often paise)
+  dueDate: z.string().optional(),
+  billDate: z.string().optional(),
+  billAmount: z.string().optional(),
   billNumber: z.string().optional(),
   billPeriod: z.string().optional(),
   customerName: z.string().optional(),
 }).passthrough();
 
+/** ---- input_json: accept requestId OR request_id and normalize ---- */
 const InputJsonSchema = z.object({
   billerId: z.string(),
   amountInfo: AmountInfoSchema,
-  request_id: z.string(),
+  request_id: z.string().optional(),
+  requestId: z.string().optional(),
   inputParams: InputParamsSchema,
   customerInfo: CustomerInfoSchema.optional(),
   billerResponse: BillerResponseSchema.optional(),
-}).passthrough();
+})
+  .passthrough()
+  .transform((v) => ({
+    ...v,
+    // unify to request_id for consumers
+    request_id: v.request_id ?? v.requestId ?? "",
+  }));
 
-/** ---- charges object ---- */
-const ChargesSchema = z.object({
-  charges: z.number(),
-  gst_amount: z.number(),
-  net_amount: z.number(),
-  txn_amount: z.number(),
-  gst_percent: z.number(),
-  charges_incl: z.number(),
-  bbps_category_id: z.string().nullable().optional(), // "None" in sample
-  is_gst_inclusive: z.boolean(),
-}).passthrough();
-
-/** ---- Single list item (matches your response) ---- */
-export const OnlineBillerListItemSchema = z.object({
-  status: z.string(),
-  biller_batch_id: z.string(),
-  service_id: z.string(),
-  batch_id: z.string(),                 // present in response
-  user_id: z.string(),
-  opr_id: z.string(),
-  input_json: InputJsonSchema,
-  charges: ChargesSchema,
-  commissions: z.any().nullable(),
-  is_active: z.boolean(),
-  is_direct: z.boolean(),
-  txn_id: z.string().nullable(),
-  created_at: z.string(),               // ISO string
-  updated_at: z.string().nullable(),
-}).passthrough();
+/** ---- list item ---- */
+export const OnlineBillerListItemSchema = z
+  .object({
+    status: z.string(),
+    biller_batch_id: z.string(),
+    service_id: z.string(),
+    batch_id: z.string(),
+    user_id: z.string(),
+    opr_id: z.string(),
+    input_json: InputJsonSchema,
+    charges: ChargesSchema,
+    commissions: z.any().nullable(),
+    is_active: z.boolean(),
+    is_direct: z.boolean(),
+    txn_id: z.string().nullable(),
+    created_at: z.string(),
+    updated_at: z.string().nullable(),
+  })
+  .passthrough();
 
 export type OnlineBillerListItem = z.infer<typeof OnlineBillerListItemSchema>;
 
-/** ---- Envelope ---- */
+/** ---- envelope ---- */
 export const OnlineBillerListResponseSchema = z.object({
   total: z.number(),
   page: z.number(),

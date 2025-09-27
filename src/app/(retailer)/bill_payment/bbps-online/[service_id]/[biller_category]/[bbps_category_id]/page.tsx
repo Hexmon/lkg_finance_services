@@ -303,14 +303,18 @@ export default function BillDetailsPage() {
           "Error while payment !!";
         warning(errMsg);
       }
-    } catch (e: any) {
-      error(e?.message || "Payment failed");
-      console.error("❌ Bill Payment Error:", e);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        error(err.backendMessage ?? err.message ?? '');
+      } else if (err instanceof DOMException && err.name === 'AbortError') {
+        error('Request timed out');
+      } else if (err instanceof Error) {
+        error(err.message);
+      } else {
+        error('Something went wrong');
+      }
     }
   }
-  console.log({ resp });
-
-  console.log({ bfr });
 
   const handleAddtoBiller = async () => {
     try {
@@ -322,11 +326,11 @@ export default function BillDetailsPage() {
             amount: String(ctaTotalPaise),
             currency: "356",
             custConvFee: "0",
-            amountTags: {
-              amountTag: "",
-              value: ""
-            },
-            CCF1: ""
+            // amountTags: {
+            //   amountTag: "",
+            //   value: ""
+            // },
+            // CCF1: ""
           },
           billerId: resp?.billerId ?? "",
           billerResponse: {
@@ -340,14 +344,17 @@ export default function BillDetailsPage() {
           customerInfo: resp?.customerInfo ?? {},
           inputParams: resp?.inputParams ?? {},
           request_id: resp?.requestId ?? "",
+          additionalInfo: resp?.data?.additionalInfo ?? {},
         }
       })
 
-      if ((res?.status ?? 404) === 200) {
-        success('')
-        console.log({ res });
+      if ((res?.status ?? 404) === 201) {
+        success('Biller Added Successfully !!')
+        router.replace(`/bill_payment/bbps-online/${service_id}`)
       }
     } catch (err) {
+      console.log({ err });
+
       if (err instanceof ApiError) {
         error(err.backendMessage ?? err.message ?? '');
       } else if (err instanceof DOMException && err.name === 'AbortError') {

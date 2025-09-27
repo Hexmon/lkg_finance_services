@@ -13,10 +13,10 @@ import {
 // Avoid caching for auth-backed data
 export const dynamic = 'force-dynamic';
 
-type Ctx = { params: Promise<{ biller_batch_id: string }> };
+type Ctx = { params: Promise<{ biller_batch_id: string, service_id: string }> };
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
-  const { biller_batch_id } = await ctx.params;
+  const { biller_batch_id, service_id } = await ctx.params;
 
   const jar = await cookies();
   let token = jar.get(AUTH_COOKIE_NAME)?.value;
@@ -24,9 +24,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   token = token.replace(/^Bearer\s+/i, '').trim(); // prevent double "Bearer "
 
   try {
-    const path = `${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.MULTIPLE_BILLS.REMOVE_ONLINE_BILLER}/${encodeURIComponent(
-      biller_batch_id
-    )}`;
+    const path = `${RETAILER_ENDPOINTS.RETAILER_BBPS.BBPS_ONLINE.MULTIPLE_BILLS.REMOVE_ONLINE_BILLER}/${encodeURIComponent(service_id)}/${encodeURIComponent(biller_batch_id)}`;
 
     const raw = await bbpsFetch<RemoveOnlineBillerResponse>(path, {
       method: 'DELETE',
@@ -37,6 +35,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     });
 
     const data = RemoveOnlineBillerResponseSchema.parse(raw);
+
     return NextResponse.json(data, { status: 200 });
   } catch (err: any) {
     const status = err?.status ?? err?.data?.status ?? 502;
